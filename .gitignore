@@ -1,0 +1,14 @@
+### Node
+node_modules/
+
+out/
+dist/
+
+### Editor
+workspace.code-workspace
+
+### Testing
+__tests__/
+coverage/
+
+

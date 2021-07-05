@@ -1,2 +1,2 @@
 # automizer-data
-Stores and browses aggregated data using Prisma database tools
+Store and browse aggregated data with [Prisma](https://github.com/prisma/prisma) ORM tools.
