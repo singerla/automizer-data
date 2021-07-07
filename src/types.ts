@@ -7,6 +7,14 @@ export type DataTag = {
   categoryId?: number
 }
 
+export type DataPoint = {
+  tags: DataTag[]
+  row: string
+  column: string
+  value: number|string|null
+  meta: number|string|null
+}
+
 export type Datasheet = {
   id?: number
   tags: DataTag[]
@@ -29,11 +37,30 @@ export type Sheets = (Sheet & {
   tags: Tag[];
 })[]
 
+export type DataPointFilter = {
+  (points: DataPoint[]): DataPoint[]
+}
+
+export type DataGridFunction = {
+  (tag: DataTag|string): DataPointFilter
+}
+
 export type DataGrid = {
-  rows: string|number,
-  columns: string|number
+  rows: DataPointFilter[],
+  columns: DataPointFilter[],
+  cell(points: DataPoint[]): ResultCell
 }
 
 export type CellKey = {
   [key: string]: string|boolean
+}
+
+export type ResultCell = number|string|null
+
+export type ResultRow = {
+  [key: string]: ResultCell
+}
+
+export type Result = {
+  [key: string]: ResultRow
 }
