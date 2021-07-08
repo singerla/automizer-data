@@ -12,3 +12,6 @@ __tests__/
 coverage/
 
 
+/.idea/automizer-data.iml
+/.idea/modules.xml
+/.idea/inspectionProfiles/Project_Default.xml

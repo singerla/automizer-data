@@ -1,9 +1,19 @@
 {
   "compilerOptions": {
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "target": "es6",
+    "moduleResolution": "node",
     "sourceMap": true,
     "outDir": "dist",
+    "baseUrl": "/",
     "strict": true,
-    "lib": ["esnext", "dom"],
-    "esModuleInterop": true
-  }
+    "lib": ["es2015"],
+    "declaration": true,
+    "declarationDir": "./dist",
+    "types": ["jest", "node"],
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "__tests__/**/*", "__customer__/**/*", "docs"]
 }

@@ -8,13 +8,13 @@ import {
   DataTag,
 } from './types';
 
-export const filterByDataTag = <DataGridFunction> function(targetTag: DataTag): DataPointFilter {
+export const filterByDataTag = <DataGridFunction> function(targetTag: DataTag, label: string): DataPointFilter {
   return (points: DataPoint[]): DataPointFilterResult => {
     return {
       points: points.filter(
         (point: DataPoint) => point.tags.find(
           (tag: DataTag) => tag.value === targetTag.value)),
-      label: 'filterByDataTag'
+      label: label
     }
   }
 }

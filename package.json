@@ -9,15 +9,31 @@
   "author": "Thomas Singer <tsinger@gmx.de> (github.com/singerla)",
   "license": "MIT",
   "private": false,
+  "jest": {
+    "collectCoverageFrom": [
+      "src/{!(pretty),}.js"
+    ]
+  },
+  "files": [
+    "dist",
+    "README"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.js",
   "devDependencies": {
+    "@types/node": "15.12.4",
+    "@types/jest": "^26.0.20",
     "prisma": "2.26.0",
     "ts-node": "10.0.0",
     "typescript": "4.3.3",
-    "@types/node": "15.12.4"
+    "jest": "^26.6.3",
+    "ts-jest": "^26.5.2"
   },
   "scripts": {
     "dev": "ts-node ./index.ts",
-    "read": "ts-node ./read.ts"
+    "read": "ts-node ./read.ts",
+    "test": "npx jest",
+    "build": "tsc"
   },
   "dependencies": {
     "@prisma/client": "2.26.0"
