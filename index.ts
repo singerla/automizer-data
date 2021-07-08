@@ -1,48 +1,52 @@
 
 import { PrismaClient } from '@prisma/client'
-import { filterByColumn, filterByDataTag, filterByRow } from './src/filter'
+import { all, filterByDataTag } from './src/filter';
+import { value, difference } from './src/cell'
 import { Query } from './src/query'
-import { DataTag, DataGrid, DataPoint, DataGridFunction, DataPointFilter, ResultCell } from './src/types'
+import { DataTag, DataGrid, DataPoint, ResultCell } from './src/types'
 
-const data = require('./test-data.json')
 
 const query = new Query(
   new PrismaClient()
 )
 
 const tags = [
-  // {
-  //   category: 'country',
-  //   value: 'Norway'
-  // },
+  {
+    category: 'country',
+    value: 'Norway'
+  },
   {
     category: "variable",
     value: "Q12"
   }
 ]
 
+// const grid = <DataGrid> {
+//   categories: [
+//     filterByColumn('19-29'),
+//     filterByColumn('30-39')
+//   ],
+//   series: [
+//     filterByRow('answer 1'),
+//     filterByRow('answer 2'),
+//     filterByDataTag(<DataTag> {
+//       value: 'Bar soap',
+//     })
+//   ],
+//   cell: difference
+// }
+
 const grid = <DataGrid> {
-  rows: [
-    filterByColumn('19-29'),
-    filterByColumn('30-39')
-  ],
-  columns: [
-    filterByRow('answer 1'),
-    filterByRow('answer 2'),
-    filterByDataTag(<DataTag> {
-      value: 'Bar soap',
-    })
-  ],
-  cell: (points: DataPoint[]): ResultCell => {
-    return points.map(point => point.value + ' ' + point.meta).join('|') 
-  }
+  rows: all('row'),
+  columns: all('column'),
+  cell: value
 }
 
 const getData = async() => {
   await query.get(tags)
   query.merge(grid)
 
-  console.dir(query.result, {depth: 10})
+  console.dir(query.toSeriesCategories(), {depth: 10})
 }
 
 getData()

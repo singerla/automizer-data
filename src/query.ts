@@ -1,11 +1,23 @@
 import { PrismaClient } from '@prisma/client'
-import { Datasheet, TagWhereBySomeId, DataTag, Sheets, DataGrid, CellKey, DataPoint, Result, ResultRow, ResultCell } from './types'
+import {
+  Datasheet,
+  TagWhereBySomeId,
+  DataTag,
+  Sheets,
+  DataGrid,
+  CellKey,
+  DataPoint,
+  Result,
+  ResultRow,
+  ResultCell,
+  CellKeys, DataGridCategories, DataPointFilter,
+} from './types';
 
 export class Query {
   prisma: PrismaClient
   clause: any
   sheets: Datasheet[]
-  keys: any
+  keys: CellKeys
   points: DataPoint[]
   grid: DataGrid
   result: Result
@@ -13,7 +25,7 @@ export class Query {
   constructor(prisma: PrismaClient) {
     this.prisma = prisma
     this.sheets = []
-    this.keys = {}
+    this.keys = <CellKeys> {}
     this.result = <Result> {}
     this.points = <DataPoint[]> []
     this.grid = <DataGrid> {}
@@ -58,11 +70,17 @@ export class Query {
         data: JSON.parse(sheet.data),
         meta: JSON.parse(sheet.meta),
       }
-    })    
+    })
   }
-  
+
   setDataPoints() {
     this.sheets.forEach(sheet => {
+      sheet.tags.forEach(tag => {
+        if(tag.categoryId) {
+          this.addKey(String(tag.categoryId), tag.value)
+        }
+      })
+
       sheet.data.forEach((points, r) => {
         points.forEach((point, c) => {
           this.points.push({
@@ -72,23 +90,70 @@ export class Query {
             value: point,
             meta: (sheet.meta) ? sheet.meta[r][c] : null,
           })
+
+          this.addKey('row', sheet.rows[r])
+          this.addKey('column', sheet.columns[c])
         })
       })
     })
   }
 
+  addKey(category: string, value: string) {
+    if(!this.keys[category]) {
+      this.keys[category] = {}
+    }
+
+    this.keys[category][value] = true
+  }
+
   merge(grid: DataGrid) {
+    let rows = this.checkForCallback(grid.rows, this.keys)
+    let columns = this.checkForCallback(grid.columns, this.keys)
+
     let points = <any> []
-    grid.rows.forEach((row,r) => {
-      let rowKey = 'row' + r
+    rows.forEach((rowCb,r) => {
+      let rowCbResult = rowCb(this.points)
+      points[r] = rowCbResult.points
+      let rowKey = rowCbResult.label
       this.result[rowKey] = <ResultRow> {}
-      points[r] = row(this.points)
-      grid.columns.forEach((column,c) => {
-        let colKey = 'col' + c
-        let cell = <ResultCell> grid.cell(column(points[r]))
+      columns.forEach((columnCb,c) => {
+        let cellPoints = columnCb(points[r])
+        let colKey = cellPoints.label
+        let cell = grid.cell(cellPoints.points)
         this.result[rowKey][colKey] = cell
       })
     })
+
+    return this
+  }
+
+  toSeriesCategories() {
+    let series = <any> {}
+    let categories = []
+    for(let r in this.result) {
+      let values = []
+      for(let c in this.result[r]) {
+        series[c] = {
+          label: c
+        }
+        values.push(this.result[r][c])
+      }
+      categories.push({
+        label: r,
+        values: values
+      })
+    }
+
+    return {
+      series: Object.values(series),
+      categories: categories
+    }
+  }
+
+  checkForCallback = function(cb: any, keys: CellKeys): DataPointFilter[] {
+    return (typeof cb === 'function')
+      ? cb(keys)
+      : cb
   }
 
   clauseCallback = function (id: number): TagWhereBySomeId {
