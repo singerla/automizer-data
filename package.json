@@ -30,7 +30,7 @@
     "typescript": "4.3.3"
   },
   "scripts": {
-    "dev": "ts-node ./index.ts",
+    "dev": "ts-node src/index.ts",
     "read": "ts-node ./read.ts",
     "test": "npx jest",
     "build": "tsc"

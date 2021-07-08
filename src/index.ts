@@ -1,9 +1,7 @@
 
 import { PrismaClient } from '@prisma/client'
-import { all, filterByDataTag } from './src/filter';
-import { value, difference } from './src/cell'
-import { Query } from './src/query'
-import { DataTag, DataGrid, DataPoint, ResultCell } from './src/types'
+import { Query } from './query'
+import { DataTag, DataGrid } from './types'
 
 const query = new Query(
   new PrismaClient()

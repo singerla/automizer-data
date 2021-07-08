@@ -1,4 +1,4 @@
-import { getData } from '../index';
+import { getData } from '../src';
 import { DataGrid } from '../src/types';
 import { all, filterByDataTag, filterBy } from '../src/filter';
 import { value, difference } from '../src/cell'
