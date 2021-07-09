@@ -1,13 +1,15 @@
 
-import { PrismaClient } from '@prisma/client'
+// import { PrismaClient } from '@prisma/client'
+
 import { Query } from './query'
+import { Import } from './import'
 import { DataTag, DataGrid } from './types'
+import { all } from './filter';
+import { value } from './cell';
 
-const query = new Query(
-  new PrismaClient()
-)
+const getData = async(selector: DataTag[], grid: any, prisma: any) => {
+  const query = new Query(prisma)
 
-export const getData = async(selector: DataTag[], grid: DataGrid) => {
   await query.get(selector)
 
   const result = query.merge(grid)
@@ -16,3 +18,10 @@ export const getData = async(selector: DataTag[], grid: DataGrid) => {
   await query.prisma.$disconnect()
   return result
 }
+
+const Reader = Import
+const grid = {
+  all, value
+}
+
+export { Reader, grid, getData }
