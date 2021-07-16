@@ -82,7 +82,7 @@ export class Query {
       })
 
       sheet.data.forEach((points, r) => {
-        points.forEach((point, c) => {
+        points.forEach((point: any, c: number) => {
           this.points.push({
             tags: sheet.tags,
             row: sheet.rows[r],
