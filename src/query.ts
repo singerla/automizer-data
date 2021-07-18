@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { cachedDataVersionTag } from 'v8';
 import {
   Datasheet,
   TagWhereBySomeId,
@@ -31,26 +32,31 @@ export class Query {
     this.grid = <DataGrid> {}
   }
 
-  async get(tags: DataTag[]): Promise<Query> {
-    const ids = await this.getTagIds(tags)
-
-    let clause = this.clauseCallback(ids[0])
-    for(let i in ids) {
-      if(Number(i) > 0) {
-        this.setNestedClause(clause, ids[i])
+  async get(tags: DataTag[] | DataTag[][]): Promise<Query> {
+    const allTags = (tags[0].hasOwnProperty('category'))
+      ? [ tags ] : tags
+    
+    for(const i in allTags) {
+      const ids = await this.getTagIds(<DataTag[]> allTags[i])
+  
+      let clause = this.clauseCallback(ids[0])
+      for(let i in ids) {
+        if(Number(i) > 0) {
+          this.setNestedClause(clause, ids[i])
+        }
       }
+  
+      let sheets = await this.prisma.sheet.findMany({
+        where: clause,
+        include: {
+          tags: true
+        }
+      })
+  
+      this.parseSheets(sheets)
+      this.setDataPoints()
     }
-
-    let sheets = await this.prisma.sheet.findMany({
-      where: clause,
-      include: {
-        tags: true
-      }
-    })
-
-    this.parseSheets(sheets)
-    this.setDataPoints()
-
+    
     return this
   }
 
@@ -127,29 +133,6 @@ export class Query {
     return this
   }
 
-  toSeriesCategories() {
-    let series = <any> {}
-    let categories = []
-    for(let r in this.result) {
-      let values = []
-      for(let c in this.result[r]) {
-        series[c] = {
-          label: c
-        }
-        values.push(this.result[r][c])
-      }
-      categories.push({
-        label: r,
-        values: values
-      })
-    }
-
-    return {
-      series: Object.values(series),
-      categories: categories
-    }
-  }
-
   checkForCallback = function(cb: any, keys: CellKeys): DataPointFilter[] {
     return (typeof cb === 'function')
       ? cb(keys)
@@ -215,5 +198,69 @@ export class Query {
     }
 
     tag.id = tagItem.id
+  }
+
+  sort(cb: any) {
+    const sorted = Object
+      .entries(this.result)
+      .sort((a, b) => cb(a[1], b[1]))
+    
+    const ret = <Result> {}
+    sorted.forEach((key, row) => {
+      ret[String(key[0])] = key[1]
+    })
+
+    this.result = ret
+  }
+
+  toSeriesCategories() {
+    let series = <any> {}
+    let categories = []
+    for(let r in this.result) {
+      let values = []
+      for(let c in this.result[r]) {
+        series[c] = {
+          label: c
+        }
+        values.push(this.result[r][c])
+      }
+      categories.push({
+        label: r,
+        values: values
+      })
+    }
+
+    return {
+      series: Object.values(series),
+      categories: categories
+    }
+  }
+
+  toLabels() {
+    let body = []
+    for(let r in this.result) {
+      body.push({
+        values: [ r ]
+      })
+    }
+    return {
+      body: body,
+    }
+  }
+
+  toTable(columns: number[]|string[]) {
+    let body = []
+    for(let r in this.result) {
+      let values = <any> []
+      columns.forEach(colId => {
+        values.push(this.result[r][colId])
+      })
+      body.push({
+        values: values
+      })
+    }
+    return {
+      body: body,
+    }
   }
 }
