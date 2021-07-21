@@ -6,7 +6,7 @@ import { Import } from './import'
 import { DataTag, DataGrid } from './types'
 import { all, filterByDataTag, filterBy } from './filter';
 import { value, valueMeta, difference, dump } from './cell';
-
+import { byColId } from './sort';
 
 const getData = async(selector: DataTag[] | DataTag[][], grid: any, prisma?: PrismaClient) => {
   if(!prisma) {
@@ -31,5 +31,8 @@ const cell = {
 const filter = {
   all, filterByDataTag, filterBy
 }
+const sort = {
+  byColId
+}
 
-export { Reader, filter, cell, getData }
+export { Reader, filter, cell, sort, getData }
