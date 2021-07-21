@@ -70,10 +70,16 @@ export type CellKeys = {
 
 export type ResultCell = number|string|null
 
+export type ResultColumn = {
+  key: string,
+  value: ResultCell
+}
+
 export type ResultRow = {
-  [key: string]: ResultCell
+  key: string,
+  cols: ResultColumn[]
 }
 
 export type Result = {
-  [key: string]: ResultRow
+  body: ResultRow[]
 }

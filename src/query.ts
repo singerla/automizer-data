@@ -1,18 +1,20 @@
 import { PrismaClient } from '@prisma/client'
-import { cachedDataVersionTag } from 'v8';
+
 import {
   Datasheet,
   TagWhereBySomeId,
   DataTag,
   Sheets,
   DataGrid,
-  CellKey,
   DataPoint,
   Result,
   ResultRow,
-  ResultCell,
-  CellKeys, DataGridCategories, DataPointFilter,
+  CellKeys,
+  DataPointFilter
 } from './types';
+
+import { ChartData, ChartCategory } from 'pptx-automizer/dist/types/chart-types';
+import { TableData } from 'pptx-automizer/dist/types/table-types';
 
 export class Query {
   prisma: PrismaClient
@@ -27,7 +29,9 @@ export class Query {
     this.prisma = prisma
     this.sheets = []
     this.keys = <CellKeys> {}
-    this.result = <Result> {}
+    this.result = <Result> {
+      body: <ResultRow[]> []
+    }
     this.points = <DataPoint[]> []
     this.grid = <DataGrid> {}
   }
@@ -35,28 +39,28 @@ export class Query {
   async get(tags: DataTag[] | DataTag[][]): Promise<Query> {
     const allTags = (tags[0].hasOwnProperty('category'))
       ? [ tags ] : tags
-    
+
     for(const i in allTags) {
       const ids = await this.getTagIds(<DataTag[]> allTags[i])
-  
+
       let clause = this.clauseCallback(ids[0])
       for(let i in ids) {
         if(Number(i) > 0) {
           this.setNestedClause(clause, ids[i])
         }
       }
-  
+
       let sheets = await this.prisma.sheet.findMany({
         where: clause,
         include: {
           tags: true
         }
       })
-  
+
       this.parseSheets(sheets)
       this.setDataPoints()
     }
-    
+
     return this
   }
 
@@ -117,29 +121,31 @@ export class Query {
     let columns = this.checkForCallback(grid.columns, this.keys)
 
     let points = <any> []
+    let result = <any> {}
     rows.forEach((rowCb,r) => {
       let rowCbResult = rowCb(this.points)
       points[r] = rowCbResult.points
       let rowKey = rowCbResult.label
-      this.result[rowKey] = <ResultRow> {}
+      result[rowKey] = <ResultRow> {}
       columns.forEach((columnCb,c) => {
         let cellPoints = columnCb(points[r])
         let colKey = cellPoints.label
-        let cell = grid.cell(cellPoints.points)
-        this.result[rowKey][colKey] = cell
+        result[rowKey][colKey] = grid.cell(cellPoints.points)
       })
     })
+
+    this.setResult(result)
 
     return this
   }
 
-  checkForCallback = function(cb: any, keys: CellKeys): DataPointFilter[] {
+  checkForCallback(cb: any, keys: CellKeys): DataPointFilter[] {
     return (typeof cb === 'function')
       ? cb(keys)
       : cb
   }
 
-  clauseCallback = function (id: number): TagWhereBySomeId {
+  clauseCallback(id: number): TagWhereBySomeId {
     return {
       tags: {
         some: {
@@ -200,67 +206,75 @@ export class Query {
     tag.id = tagItem.id
   }
 
-  sort(cb: any) {
-    const sorted = Object
-      .entries(this.result)
-      .sort((a, b) => cb(a[1], b[1]))
-    
-    const ret = <Result> {}
-    sorted.forEach((key, row) => {
-      ret[String(key[0])] = key[1]
-    })
-
-    this.result = ret
-  }
-
-  toSeriesCategories() {
-    let series = <any> {}
-    let categories = []
-    for(let r in this.result) {
-      let values = []
-      for(let c in this.result[r]) {
-        series[c] = {
-          label: c
-        }
-        values.push(this.result[r][c])
+  setResult(result: any): void {
+    for(const r in result) {
+      const cols = []
+      for(const c in result[r]) {
+        cols.push({
+          key: c,
+          value: result[r][c]
+        })
       }
-      categories.push({
-        label: r,
-        values: values
+
+      this.result.body.push({
+        key: r,
+        cols: cols
       })
     }
+  }
+
+  filterColumns(columns: number|number[]): Query {
+    let targetColumns = <number[]> []
+    targetColumns = (typeof (columns) !== 'object') ? [ columns ] : columns
+
+    this.result.body.forEach((row, r) => {
+      this.result.body[r].cols = row.cols.filter((col,c) => {
+        return targetColumns.indexOf(c) >= 0
+      })
+    })
+
+    return this
+  }
+
+  sort(cb: any): Query {
+    this.result.body.sort((a, b) => cb(a, b))
+    return this
+  }
+
+  toSeriesCategories(): ChartData {
+    const series = this.result.body[0].cols.map(col => { return { label: col.key } } )
+    const categories = <ChartCategory[]> []
+
+    this.result.body.forEach(row => {
+      categories.push({
+        label: row.key,
+        values: row.cols.map(cell => { return <number> cell.value })
+      })
+    })
 
     return {
-      series: Object.values(series),
+      series: series,
       categories: categories
     }
   }
 
-  toLabels() {
-    let body = []
-    for(let r in this.result) {
-      body.push({
-        values: [ r ]
-      })
-    }
+  toLabels(): TableData {
     return {
-      body: body,
+      body: this.result.body.map(row => {
+        return {
+          values: [ row.key ]
+        }
+      })
     }
   }
 
-  toTable(columns: number[]|string[]) {
-    let body = []
-    for(let r in this.result) {
-      let values = <any> []
-      columns.forEach(colId => {
-        values.push(this.result[r][colId])
-      })
-      body.push({
-        values: values
-      })
-    }
+  toTable(): TableData {
     return {
-      body: body,
+      body: this.result.body.map(row => {
+        return {
+          values: row.cols.map(cell => { return <number> cell.value } )
+        }
+      }),
     }
   }
 }
