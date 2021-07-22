@@ -1,5 +1,6 @@
 import { Sheet, Tag } from "@prisma/client"
 
+
 export type DataTag = {
   id?: number
   category: string
@@ -123,4 +124,13 @@ export type RawTable = {
   rows: string[],
   columns: string[],
   data: (string|number|null)[][]
+}
+
+export type StoreOptions = {
+  replace?: boolean
+}
+
+export type StoreSummary = {
+  ids: number[],
+  deleted: number
 }

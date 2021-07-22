@@ -37,9 +37,10 @@ test('get demo data and convert to SeriesCategories', async () => {
   }
 
   const result = await getData(selector, grid)
+  const chartData = result.toSeriesCategories()
 
-  // console.dir(result, {depth: 10})
+  // console.dir(chartData, {depth: 10})
 
-  expect(result.series.length).toBe(4);
-  expect(result.categories.length).toBe(4);
+  expect(chartData.series.length).toBe(4);
+  expect(chartData.categories.length).toBe(4);
 });

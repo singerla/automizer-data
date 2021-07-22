@@ -42,27 +42,32 @@ export class Query {
       ? [ tags ] : tags
 
     for(const i in allTags) {
-      const ids = await this.getTagIds(<DataTag[]> allTags[i])
-
-      let clause = this.clauseCallback(ids[0])
-      for(let i in ids) {
-        if(Number(i) > 0) {
-          this.setNestedClause(clause, ids[i])
-        }
-      }
-
-      let sheets = await this.prisma.sheet.findMany({
-        where: clause,
-        include: {
-          tags: true
-        }
-      })
-
+      const sheets = await this.getSheets(<DataTag[]> allTags[i])
       this.parseSheets(sheets)
       this.setDataPoints()
     }
 
     return this
+  }
+
+  async getSheets(tags: DataTag[]): Promise<Sheets> {
+    const ids = await this.getTagIds(tags)
+
+    let clause = this.clauseCallback(ids[0])
+    for(let i in ids) {
+      if(Number(i) > 0) {
+        this.setNestedClause(clause, ids[i])
+      }
+    }
+
+    let sheets = await this.prisma.sheet.findMany({
+      where: clause,
+      include: {
+        tags: true
+      }
+    })
+
+    return sheets
   }
 
   parseSheets(sheets: Sheets) {

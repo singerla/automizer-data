@@ -1,20 +1,39 @@
-import { PrismaClient } from '@prisma/client'
-import { Datasheet } from './types'
+import { PrismaClient, Sheet } from '@prisma/client'
+import { Query } from './query'
+import { Datasheet, DataTag, StoreOptions, StoreSummary } from './types'
 
 export class Store {
   prisma: PrismaClient
+  summary: StoreSummary
+  options: StoreOptions | undefined
+  query: Query
 
-  constructor(prisma: PrismaClient) {
+  constructor(prisma: PrismaClient, options?: StoreOptions) {
     this.prisma = prisma
-  }
+    this.summary = {
+      ids: [],
+      deleted: 0
+    }
 
-  async run(datasheets: Datasheet[]) {
-    for(let i in datasheets) {
-      await this.readData(datasheets[i])
+    this.query = new Query(this.prisma)
+    this.options = {
+      replace: true
+    }
+
+    if(options) {
+      this.options = Object.assign(options, this.options)
     }
   }
 
-  async readData(datasheet: Datasheet) {
+  async run(datasheets: Datasheet[]): Promise<StoreSummary> {
+    for(let i in datasheets) {
+      await this.storeData(datasheets[i])
+    }
+
+    return this.summary
+  }
+
+  async storeData(datasheet: Datasheet) {
     for(let i in datasheet.tags) {
       let cat = await this.prisma.category.findFirst({
         where: {
@@ -55,7 +74,15 @@ export class Store {
       }
     }
 
-    let newSheet = await this.prisma.sheet.create({
+    if(this.options?.replace) {
+      await this.deleteExistingDatasheets(datasheet.tags)
+    }
+
+    await this.createSheet(datasheet)
+  }
+
+  async createSheet(datasheet: Datasheet): Promise<Sheet> {
+    const newSheet = await this.prisma.sheet.create({
       data: {
         columns: JSON.stringify(datasheet.columns),
         rows: JSON.stringify(datasheet.rows),
@@ -69,7 +96,29 @@ export class Store {
       }
     })
 
-    datasheet.id = newSheet.id
-    console.log(datasheet)
+    if(newSheet.id) {
+      datasheet.id = newSheet.id
+      this.summary.ids.push(datasheet.id)
+    } else {
+      console.error(datasheet)
+      throw new Error('Could not store datasheet.')
+    }
+
+    return newSheet
+  }
+
+  async deleteExistingDatasheets(tags: DataTag[]) {
+    const existingSheets = await this.query.getSheets(tags)
+    if(existingSheets.length) {
+      const ids = existingSheets.map(sheet => sheet.id)
+      const deleted = await this.prisma.sheet.deleteMany({
+        where: {
+          id: {
+            in: ids
+          }
+        }
+      })
+      this.summary.deleted += Number(deleted)
+    }
   }
 }
