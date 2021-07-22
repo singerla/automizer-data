@@ -2,8 +2,9 @@
 import { PrismaClient } from '@prisma/client'
 
 import { Query } from './query'
-import { Import } from './import'
-import { DataTag, DataGrid } from './types'
+import { Store } from './store'
+import { Parser } from './parser'
+import { DataTag } from './types'
 import { all, filterByDataTag, filterBy } from './filter';
 import { value, valueMeta, difference, dump } from './cell';
 import { byColId } from './sort';
@@ -23,8 +24,6 @@ const getData = async(selector: DataTag[] | DataTag[][], grid: any, prisma?: Pri
   return result
 }
 
-const Reader = Import
-
 const cell = {
   value, valueMeta, difference, dump
 }
@@ -35,4 +34,4 @@ const sort = {
   byColId
 }
 
-export { Reader, filter, cell, sort, getData }
+export { Parser, Store, filter, cell, sort, getData }

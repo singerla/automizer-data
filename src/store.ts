@@ -1,13 +1,13 @@
 import { PrismaClient } from '@prisma/client'
 import { Datasheet } from './types'
 
-export class Import {
+export class Store {
   prisma: PrismaClient
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma
   }
-  
+
   async run(datasheets: Datasheet[]) {
     for(let i in datasheets) {
       await this.readData(datasheets[i])
@@ -18,10 +18,10 @@ export class Import {
     for(let i in datasheet.tags) {
       let cat = await this.prisma.category.findFirst({
         where: {
-          name: datasheet.tags[i].category, 
+          name: datasheet.tags[i].category,
         }
       })
-  
+
       if(cat && cat.id) {
         datasheet.tags[i].categoryId = cat.id
       } else {
@@ -33,7 +33,7 @@ export class Import {
         datasheet.tags[i].categoryId = newCat.id
       }
     }
-  
+
     for(let i in datasheet.tags) {
       let tag = await this.prisma.tag.findFirst({
         where: {
@@ -41,7 +41,7 @@ export class Import {
           name: datasheet.tags[i].value
         },
       })
-  
+
       if(!tag) {
         let newTag = await this.prisma.tag.create({
           data: {
@@ -54,7 +54,7 @@ export class Import {
         datasheet.tags[i].id = tag.id
       }
     }
-  
+
     let newSheet = await this.prisma.sheet.create({
       data: {
         columns: JSON.stringify(datasheet.columns),
@@ -62,13 +62,13 @@ export class Import {
         data: JSON.stringify(datasheet.data),
         meta: JSON.stringify(datasheet.meta),
         tags: {
-          connect: datasheet.tags.map(tag => { 
-            return { id: tag.id } 
+          connect: datasheet.tags.map(tag => {
+            return { id: tag.id }
           })
         }
       }
     })
-  
+
     datasheet.id = newSheet.id
     console.log(datasheet)
   }

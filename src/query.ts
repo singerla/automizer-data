@@ -99,7 +99,7 @@ export class Query {
             row: sheet.rows[r],
             column: sheet.columns[c],
             value: point,
-            meta: (sheet.meta) ? sheet.meta[r][c] : null,
+            meta: (sheet.meta && sheet.meta[r] && sheet.meta[r][c]) ? sheet.meta[r][c] : null,
           })
 
           this.addKey('row', sheet.rows[r])

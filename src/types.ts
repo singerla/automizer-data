@@ -83,3 +83,44 @@ export type ResultRow = {
 export type Result = {
   body: ResultRow[]
 }
+
+export type ParserConfig = {
+  separator: string
+  variablePrefix: string
+  varTitlePrefix: string
+  renderVariable: (info: string) => string
+  renderRow: (cells: string[]) => (string|number|null)[]
+  renderTags: (tags: DataTag[]) => DataTag[]
+  basePrefix: string
+  skipRows: string[]
+}
+
+export type CsvRow = {
+  [key: string] : string
+}
+
+export type RawResultMeta = {
+  significance: (string|number|null)[][]
+  base: CsvRow[]
+}
+
+export type RawResultData = {
+  info: string[],
+  header: CsvRow[],
+  body: CsvRow[],
+  meta: RawResultMeta
+}
+
+export type RawColumnSlice = {
+  label: string,
+  start: number,
+  end: number,
+  length: number
+}
+
+export type RawTable = {
+  label: string,
+  rows: string[],
+  columns: string[],
+  data: (string|number|null)[][]
+}

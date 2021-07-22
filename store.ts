@@ -1,14 +1,14 @@
 
 import { PrismaClient } from '@prisma/client'
-import { Import } from './src/import'
+import { Store } from './src/store'
 
-const data = require('./test-data.json')
+const data = require('./data/test-data.json')
 
-const importData = new Import(
+const store = new Store(
   new PrismaClient()
 )
 
-importData.run(data)
+store.run(data)
   .then(response => {
     console.log(response)
   })
@@ -16,5 +16,5 @@ importData.run(data)
     throw e
   })
   .finally(async () => {
-    await importData.prisma.$disconnect()
+    await store.prisma.$disconnect()
   })
