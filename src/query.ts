@@ -15,6 +15,7 @@ import {
 
 import { ChartData, ChartCategory } from 'pptx-automizer/dist/types/chart-types';
 import { TableData } from 'pptx-automizer/dist/types/table-types';
+import _ from "lodash";
 
 export class Query {
   prisma: PrismaClient
@@ -137,6 +138,10 @@ export class Query {
     this.setResult(result)
 
     return this
+  }
+
+  clone() {
+    return _.cloneDeep(this)
   }
 
   checkForCallback(cb: any, keys: CellKeys): DataPointFilter[] {
