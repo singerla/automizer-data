@@ -15,6 +15,7 @@ If you want to see how it works and you like to run own tests, you should clone 
 $ git clone git@github.com:singerla/automizer-data.git
 $ cd pptx-automizer
 $ yarn install
+$ yarn prisma generate
 ```
 
 ## Prisma studio
