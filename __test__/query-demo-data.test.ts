@@ -1,9 +1,16 @@
-import { getData } from '../src';
+import {getData, Store} from '../src';
 import { DataGrid } from '../src/types';
 import { all } from '../src/filter';
 import { value } from '../src/cell';
+import {PrismaClient} from "@prisma/client";
 
 test('get demo data and convert to SeriesCategories', async () => {
+  const data = require('./data/test-data.json')
+  const store = new Store(
+    new PrismaClient()
+  )
+  await store.run(data)
+
   const selector = [
     {
       category: 'country',
@@ -42,5 +49,5 @@ test('get demo data and convert to SeriesCategories', async () => {
   // console.dir(chartData, {depth: 10})
 
   expect(chartData.series.length).toBe(4);
-  expect(chartData.categories.length).toBe(4);
+  expect(chartData.categories.length).toBe(3);
 });

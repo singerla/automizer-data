@@ -1,4 +1,4 @@
-import { PrismaClient, Sheet } from '@prisma/client'
+import {Category, PrismaClient, Sheet, Tag } from '@prisma/client'
 import { Query } from './query'
 import { Datasheet, DataTag, StoreOptions, StoreSummary } from './types'
 
@@ -7,78 +7,115 @@ export class Store {
   summary: StoreSummary
   options: StoreOptions | undefined
   query: Query
+  categories: Category[]
+  tags: Tag[]
 
   constructor(prisma: PrismaClient, options?: StoreOptions) {
     this.prisma = prisma
     this.summary = {
       ids: [],
-      deleted: 0
+      deleted: []
     }
 
     this.query = new Query(this.prisma)
     this.options = {
-      replace: true
+      replaceExisting: true
     }
 
     if(options) {
-      this.options = Object.assign(options, this.options)
+      this.options = Object.assign(this.options, options)
     }
+
+    this.categories = []
+    this.tags = []
   }
 
   async run(datasheets: Datasheet[]): Promise<StoreSummary> {
+    if(this.options?.runBefore) {
+      await this.options?.runBefore(this.prisma)
+    }
+
+    await this.getCategories()
+    await this.getTags()
+
     for(let i in datasheets) {
       await this.storeData(datasheets[i])
     }
 
+    await this.prisma.$disconnect()
+
     return this.summary
   }
 
+  async getCategories(): Promise<void> {
+    this.categories = await this.prisma.category.findMany()
+  }
+
+  async createCategory(name: string): Promise<Category> {
+    const newCat = await this.prisma.category.create({
+      data: {
+        name: name,
+      }
+    })
+    this.categories.push(newCat)
+    return newCat
+  }
+
+  async getTags(): Promise<void> {
+    this.tags = await this.prisma.tag.findMany()
+  }
+
+  async createTag(name: string, catId: number): Promise<Tag> {
+    const newTag = await this.prisma.tag.create({
+      data: {
+        name: name,
+        categoryId: catId,
+      }
+    })
+    this.tags.push(newTag)
+    return newTag
+  }
+
   async storeData(datasheet: Datasheet) {
-    for(let i in datasheet.tags) {
-      let cat = await this.prisma.category.findFirst({
-        where: {
-          name: datasheet.tags[i].category,
-        }
-      })
+    await this.addCategoryIdToTags(datasheet.tags)
+    await this.addTagIdsToTags(datasheet.tags)
 
-      if(cat && cat.id) {
-        datasheet.tags[i].categoryId = cat.id
-      } else {
-        let newCat = await this.prisma.category.create({
-          data: {
-            name: datasheet.tags[i].category,
-          }
-        })
-        datasheet.tags[i].categoryId = newCat.id
-      }
-    }
-
-    for(let i in datasheet.tags) {
-      let tag = await this.prisma.tag.findFirst({
-        where: {
-          categoryId: datasheet.tags[i].categoryId,
-          name: datasheet.tags[i].value
-        },
-      })
-
-      if(!tag) {
-        let newTag = await this.prisma.tag.create({
-          data: {
-            name: datasheet.tags[i].value,
-            categoryId: <number> datasheet.tags[i].categoryId,
-          }
-        })
-        datasheet.tags[i].id = newTag.id
-      } else {
-        datasheet.tags[i].id = tag.id
-      }
-    }
-
-    if(this.options?.replace) {
+    if(this.options?.replaceExisting) {
       await this.deleteExistingDatasheets(datasheet.tags)
     }
 
     await this.createSheet(datasheet)
+  }
+
+  async addCategoryIdToTags(tags: DataTag[]): Promise<void> {
+    for(let i in tags) {
+      const tag = tags[i]
+      const cat = this.categories.find((cat: Category) => cat.name === tag.category)
+
+      if(cat && cat.id) {
+        tag.categoryId = cat.id
+      } else {
+        const newCat = await this.createCategory(tag.category)
+        tag.categoryId = newCat.id
+      }
+    }
+  }
+
+  async addTagIdsToTags(tags: DataTag[]): Promise<void> {
+    for(let i in tags) {
+      const tag = tags[i]
+      const existingTag = this.tags.find((existingTag: Tag) =>
+        existingTag.name === tag.value
+        && existingTag.categoryId === tag.categoryId
+      )
+
+      if(!existingTag) {
+        let newTag = await this.createTag(tag.value, <number> tag.categoryId)
+        tag.id = newTag.id
+      } else {
+        tag.id = existingTag.id
+      }
+    }
   }
 
   async createSheet(datasheet: Datasheet): Promise<Sheet> {
@@ -111,14 +148,14 @@ export class Store {
     const existingSheets = await this.query.getSheets(tags)
     if(existingSheets.length) {
       const ids = existingSheets.map(sheet => sheet.id)
-      const deleted = await this.prisma.sheet.deleteMany({
+      await this.prisma.sheet.deleteMany({
         where: {
           id: {
             in: ids
           }
         }
       })
-      this.summary.deleted += Number(deleted)
+      this.summary.deleted.push(...ids)
     }
   }
 }

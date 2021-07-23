@@ -1,6 +1,16 @@
-import {CsvRow, RawResultData, DataTag, RawColumnSlice, ParserConfig, RawTable, Datasheet} from "./types";
+import {
+  RawResultData,
+  DataTag,
+  RawColumnSlice,
+  ParserOptions,
+  RawTable,
+  Datasheet,
+  RawRow,
+  StoreSummary, ResultCell
+} from "./types";
 import {Store} from "./store";
 
+import xlsx from 'node-xlsx';
 const csv = require('csv-parser')
 const fs = require('fs')
 
@@ -10,12 +20,12 @@ const v = (v: any) => {
 
 export class Parser {
   results: RawResultData[];
-  config: ParserConfig;
+  config: ParserOptions;
   currentSection: string;
   count: number;
   datasheets: any[];
 
-  constructor(config: ParserConfig) {
+  constructor(config: ParserOptions) {
     this.results = <RawResultData[]> []
     this.datasheets = <Datasheet[]> []
     this.config = config
@@ -23,179 +33,216 @@ export class Parser {
     this.count = -1
   }
 
-  readFile(file: string, store?: Store) {
+  storeCsvFile(file: string, store: Store) {
     fs.createReadStream(file)
       .pipe(csv({ separator: ';', headers: false }))
       .on('data', (data: any) => {
+        data = Object.values(data)
         this.parseSections(this.config, data)
       })
       .on('end', async () => {
         this.setDatasheets()
-        if(store) {
-          await store.run(this.datasheets)
-        } else {
-          v(this.datasheets)
-        }
+        await store.run(this.datasheets)
+        console.log(store.summary)
       });
   }
 
-  parseSections(config: any, data: CsvRow): void  {
-    if(data[0].indexOf(config.separator) !== -1) {
+  async storeXlsxFile(file: string, store: Store): Promise<StoreSummary> {
+    const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file));
+    const data = workSheetsFromBuffer[0].data
+    data.forEach(row => {
+      this.parseSections(this.config, <RawRow> row)
+    })
+
+    this.setDatasheets()
+    await store.run(this.datasheets)
+
+    return store.summary
+  }
+
+  parseSections(config: any, data: RawRow): void  {
+    const firstCell = String(data[0]).trim()
+    const secondCell = data[1]
+
+    const hasFirstCell = (data[0] && String(data[0]).length > 0)
+    const hasSecondCell = (typeof (secondCell) !== 'undefined' && String(data[1]).length > 0)
+
+    if(firstCell.indexOf(config.separator) !== -1) {
       this.count++
-      this.currentSection = 'info';
+      this.currentSection = 'info'
       this.results[this.count] = <RawResultData> {
         info: [],
         header: [],
         body: [],
-        meta: {
-          base: [],
-          significance: []
-        }
+        meta: []
       }
     }
 
-    let rowLabel = data[0].trim();
-
-    if(config.skipRows.indexOf(rowLabel) > -1) {
+    if(firstCell.length === 0 && !hasSecondCell
+      || config.skipRows.indexOf(firstCell) > -1) {
       return;
     }
 
-    if(rowLabel.length === 0 && data[1].length > 0) {
-      this.currentSection = 'header';
+    if(hasFirstCell && !hasSecondCell) {
+      this.results[this.count].info.push({
+        key: this.currentSection,
+        value: firstCell
+      })
     }
 
-    if(rowLabel.length > 0 && data[1].length > 0) {
+    if(!hasFirstCell && hasSecondCell
+      && this.currentSection !== 'body') {
+      this.currentSection = 'header'
+      this.results[this.count].header.push(data.slice(1))
+    }
+
+    if(hasFirstCell && hasSecondCell) {
       this.currentSection = 'body';
-    }
-
-    if(this.currentSection === 'info' && rowLabel.length > 0) {
-      this.results[this.count][this.currentSection].push(data[0])
-    }
-
-    if(this.currentSection === 'header') {
-      this.results[this.count][this.currentSection].push(data)
-    }
-
-    if(this.currentSection === 'body'
-      && rowLabel.length > 0) {
-      if(rowLabel.indexOf(config.basePrefix) > -1) {
-        this.results[this.count].meta.base.push(data)
-        return
+      const isMeta = this.parseMeta(data, firstCell)
+      if(!isMeta) {
+        this.results[this.count].body.push(data)
       }
-
-      if(rowLabel.indexOf(config.varTitlePrefix) > -1) {
-        this.results[this.count].info.push(data[0])
-        return
-      }
-
-      this.results[this.count][this.currentSection].push(data)
     }
+  }
+
+  parseMeta(data: RawRow, firstCell: string): boolean {
+    for(const metaKey in this.config.metaMap) {
+      const isMeta = this.config.metaMap[metaKey].find(
+        metaLabel => firstCell.indexOf(metaLabel) === 0
+      )
+
+      if(isMeta) {
+        this.results[this.count].meta.push({
+          key: metaKey,
+          label: firstCell,
+          data: data
+        })
+        return true
+      }
+    }
+    return false
   }
 
   setDatasheets() {
     for(const r in this.results) {
       const table = <RawResultData> this.results[r]
-      const tags = <DataTag[]> []
 
-      this.parseTags(tags, table.info)
+      const tagsObj = {
+        tags: <DataTag[]> [],
+        push(cat: string, value: string) {
+          this.tags.push({
+            category: cat,
+            value: value
+          })
+        }
+      }
 
-      const slices = this.parseColumnSlices(table.header[0])
-      const subgroups = this.sliceColumns(table.body, table.header[1], slices)
+      this.config.renderTags(table.info, tagsObj)
+      const tags = tagsObj.tags
+      const slices = this.parseColumnSlices(table.header)
+      const subgroups = this.sliceColumns(table, table.header, slices)
 
       subgroups.forEach(subgroup => {
-        const targetTags = this.config.renderTags([
+        const targetTags = [
           ...tags,
-          this.pushTags('subgroup', subgroup.label)
-        ])
+          this.getTag('subgroup', subgroup.label)
+        ]
 
         this.datasheets.push({
           tags: targetTags,
           columns: subgroup.columns,
           rows: subgroup.rows,
           data: subgroup.data,
-          meta: []
+          meta: subgroup.meta
         })
       })
     }
   }
 
-  pushTags(category: string, value: string, tags?: DataTag[]): DataTag {
+  getTag(category: string, value: string): DataTag {
     const tag = {
       category: category,
       value: value
     }
-    if(tags) {
-      tags.push(tag)
-    }
     return tag
   }
 
-  parseTags(tags: DataTag[], info: string[]): void {
-    const config = this.config
-      info.forEach((value:string, i:number) => {
-      if(i === 0) {
-        this.pushTags('country', value.replace(config.separator, '').trim(), tags)
-        return;
-      }
-
-      if(value.indexOf(config.variablePrefix) > -1) {
-        this.pushTags('variable', config.renderVariable(value), tags)
-        return;
-      }
-
-      if(value.indexOf(config.varTitlePrefix) > -1) {
-        this.pushTags('vartitle', value.replace(config.varTitlePrefix, '').trim(), tags)
-        return;
-      }
-
-      this.pushTags('level', value, tags)
-    })
-  }
-
-  parseColumnSlices(header: CsvRow): RawColumnSlice[] {
+  parseColumnSlices(header: RawRow[]): RawColumnSlice[] {
     const slices = <any> []
+    const countHeaderLevels = header.length
+    const bottomLevel = countHeaderLevels - 1
+    const lastValues = <any> {}
+    const sliceKeys = <any> {}
 
-    for(const c in header) {
-      const cell = header[c].trim()
-      if(cell.length > 0) {
-        slices.push({
-          label: cell,
-          start: Number(c)
-        })
+    header[bottomLevel].forEach((value: ResultCell, colId: number) => {
+      const upperValues = []
+      for(let level = 0; level < bottomLevel; level++) {
+        if(typeof(header[level][colId]) !== 'undefined'
+          && String(header[level][colId]).trim().length > 0) {
+          const upperValue = String(header[level][colId])
+          upperValues.push(upperValue)
+          lastValues[level] = upperValue
+        } else if(lastValues[level]) {
+          upperValues.push(lastValues[level])
+        } else {
+          upperValues.push(value)
+        }
       }
-    }
 
-    slices.forEach((slice: any, i:number) => {
-      if(slices[i+1]) {
-        slice.end = slices[i+1].start
-      } else {
-        slice.end = Object.keys(header).length
+      const uniqueUpperValues = [...new Set(upperValues)]
+      const sliceKey = uniqueUpperValues.join('|')
+      if(!sliceKeys[sliceKey]) {
+        sliceKeys[sliceKey] = <any> []
       }
-      slice.length = slice.end - slice.start
+
+      sliceKeys[sliceKey].push(colId)
     })
+
+    for(const sliceKey in sliceKeys) {
+      slices.push({
+        label: sliceKey,
+        start: sliceKeys[sliceKey][0],
+        end: sliceKeys[sliceKey][0] + sliceKeys[sliceKey].length
+      })
+    }
 
     return slices
   }
 
-  sliceColumns(body: CsvRow[], subgroupHeader: CsvRow, slices: RawColumnSlice[]) {
+  sliceColumns(table: RawResultData, subgroupHeaders: RawRow[], slices: RawColumnSlice[]) {
+    const bottomLevel = subgroupHeaders.length - 1
+    const subgroupHeader = subgroupHeaders[bottomLevel]
+    const body = table.body
+    const meta = table.meta
+
     const subgroups = <RawTable[]> []
     slices.forEach(slice => {
       const subgroup = <RawTable> {
         label: slice.label,
         rows: [],
         columns: [],
-        data: []
+        data: [],
+        meta: [],
       }
 
       body.forEach(row => {
         const rowArr = Object.values(row)
-        const sliced = rowArr.slice(slice.start, slice.end)
-        subgroup.rows.push(rowArr[0])
+        const rowLabel = String(rowArr[0])
+        const sliced = rowArr.slice(slice.start + 1, slice.end + 1)
+        subgroup.rows.push(rowLabel)
         subgroup.data.push(this.config.renderRow(sliced))
       })
 
+      meta.forEach(meta => {
+        subgroup.meta.push({
+          key: meta.key,
+          label: meta.label,
+          data: meta.data.slice(slice.start + 1, slice.end + 1)
+        })
+      })
+
       const colArr = Object.values(subgroupHeader)
-      subgroup.columns = colArr.slice(slice.start, slice.end)
+      subgroup.columns = colArr.slice(slice.start, slice.end).map(col => String(col))
 
       subgroups.push(subgroup)
     })

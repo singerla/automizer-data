@@ -1,4 +1,24 @@
-import { Sheet, Tag } from "@prisma/client"
+import {PrismaClient, Sheet, Tag } from "@prisma/client"
+
+
+export type StoreOptions = {
+  replaceExisting?: boolean,
+  runBefore?: (prisma: PrismaClient) => Promise<void>
+}
+
+export type ParserOptions = {
+  separator: string
+  renderRow: (cells: ResultCell[]) => ResultCell[]
+  renderTags: (info: RawResultInfo[], pushCb: Tagger) => void
+  metaMap: MetaMap
+  skipRows: string[]
+}
+
+
+export type StoreSummary = {
+  ids: number[],
+  deleted: number[],
+}
 
 
 export type DataTag = {
@@ -85,31 +105,33 @@ export type Result = {
   body: ResultRow[]
 }
 
-export type ParserConfig = {
-  separator: string
-  variablePrefix: string
-  varTitlePrefix: string
-  renderVariable: (info: string) => string
-  renderRow: (cells: string[]) => (string|number|null)[]
-  renderTags: (tags: DataTag[]) => DataTag[]
-  basePrefix: string
-  skipRows: string[]
+export type Tagger = {
+  tags: DataTag[],
+  push: (cat:string, val:string) => void
 }
 
-export type CsvRow = {
-  [key: string] : string
+export type MetaMap = {
+  [key: string]: string[]
 }
+
+export type RawRow = ResultCell[]
 
 export type RawResultMeta = {
-  significance: (string|number|null)[][]
-  base: CsvRow[]
+  key: string,
+  label: string
+  data: RawRow|RawRow[],
+}
+
+export type RawResultInfo = {
+  key: string
+  value: string,
 }
 
 export type RawResultData = {
-  info: string[],
-  header: CsvRow[],
-  body: CsvRow[],
-  meta: RawResultMeta
+  info: RawResultInfo[],
+  header: RawRow[],
+  body: RawRow[],
+  meta: RawResultMeta[]
 }
 
 export type RawColumnSlice = {
@@ -123,14 +145,6 @@ export type RawTable = {
   label: string,
   rows: string[],
   columns: string[],
-  data: (string|number|null)[][]
-}
-
-export type StoreOptions = {
-  replace?: boolean
-}
-
-export type StoreSummary = {
-  ids: number[],
-  deleted: number
+  data: ResultCell[][],
+  meta: RawResultMeta[]
 }
