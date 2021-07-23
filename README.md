@@ -4,8 +4,8 @@ Stored data can be browsed and transformed into a desired two-dimensional result
 
 Its primary purpose is to deliver data for [pptx-automizer](https://github.com/singerla/pptx-automizer).
 This project is *Work in progress*.
-Nevertheless, you might already use to handle table files coming from statistical analytics software.
-The example-xlsx in `__test__`-folder is based on [GESStabs](https://gessgroup.de/software/gesstabs/).
+Nevertheless, you might already use `automizer-data` to handle table files coming from statistical analytics software.
+The [example-xlsx](https://github.com/singerla/automizer-data/blob/main/__test__/data/test-data.xlsx) in `__test__/data`-folder is based on [GESStabs](https://gessgroup.de/software/gesstabs/).
 
 Storage and querying is done with [Prisma](https://github.com/prisma/prisma) ORM tools.
 
