@@ -1,5 +1,5 @@
-# Basics
-This package is able to parse structured tabular data from CSV or XLSX.
+# Parse, tag and query xlsx-data
+This package is used to parse structured tabular data from CSV or XLSX.
 Stored data can be browsed and transformed into a desired two-dimensional result table.
 
 Its primary purpose is to deliver data for [pptx-automizer](https://github.com/singerla/pptx-automizer).
@@ -117,6 +117,49 @@ const config = <ParserOptions> {
 const parser = new Parser(config)
 const summary = await parser.storeXlsxFile(file, store)
 ```
+
+# Intermediate JSON
+Xlsx-Parser will tranform tabular data into an intermediate JSON object. The closer your input data comes to this format, the easier it will be to implement a new parser type. 
+```json
+  "tags": [
+    {
+      "category": "country",
+      "value": "Norway"
+    },
+    {
+      "category": "variable",
+      "value": "Q12"
+    },
+    {
+      "category": "category",
+      "value": "Bar soap"
+    },
+    {
+      "category": "subgroup",
+      "value": "Age"
+    },
+    {
+      "category": "measure",
+      "value": "nominal"
+    }
+  ],
+  "columns": ["Total", "19-29", "30-39", "40-69"],
+  "rows": ["answer 1", "answer 2", "answer 3"],
+  "data": [
+    [29,18,36,12],
+    [39,19,24,11],
+    [19,28,46,10]
+  ],
+  "meta": {
+    "significance": [
+      [null,null,"h",null],
+      [null,"h","l",null],
+      [null,null,"h","l"]
+    ]
+  }
+}
+```
+
 # Query Data
 As all the Sheets are tagged, our queries will use tags to find the desired datasets.
 
