@@ -10,10 +10,22 @@ The [example-xlsx](https://github.com/singerla/automizer-data/blob/main/__test__
 Storage and querying is done with [Prisma](https://github.com/prisma/prisma) ORM tools.
 
 ## Installation
+### As a package
+If you are working on an existing project, you can add *automizer-data* to it using npm or yarn. Run
+```
+$ yarn add automizer-data
+```
+or
+```
+$ npm install automizer-data
+```
+in the root folder of your project. This will download and install the most recent version into your existing project.
+
+### As a cloned repository
 If you want to see how it works and you like to run own tests, you should clone this repository and install the dependencies:
 ```
-$ git clone git@github.com:singerla/automizer-data.git
-$ cd pptx-automizer
+$ git clone git@github.com:singerla/automizer-data.git my-project
+$ cd my-project
 $ yarn install
 $ yarn prisma generate
 ```
@@ -29,14 +41,14 @@ A lot of good stuff can be found at [prisma.io](https://www.prisma.io/).
 According to parser's configuration, parsed data will sliced, tagged and separated into two-dimensional tables.
 
 The Database contains:
-- __Categories:__ Generic nouns to describe the basic contents of your project 
+- __Categories:__ Generic nouns to describe the basic structure of your project 
 - __Tags:__ Values of a certain category
 - __Sheets:__ Two-dimensional tables and their additional info
 
 Each __Sheet__ will contain:
 - a collection of rows
 - a collection of columns
-- the two-dimenstional table body
+- the two-dimensional table body
 - a collection of tags
 - a collection of metadata that came along with the sheet
 
@@ -106,7 +118,7 @@ const parser = new Parser(config)
 const summary = await parser.storeXlsxFile(file, store)
 ```
 # Query Data
-As all the Sheets are tagged, our queries will use tags as well to find the desired datasets.
+As all the Sheets are tagged, our queries will use tags to find the desired datasets.
 
 ```ts
 import { getData, Store } from '../src';
@@ -135,7 +147,7 @@ const grid = {
 
 const result = await getData(selector, grid)
 
-// automizer-data will convert the data directly into
+// automizer-data will convert the result directly into
 // a pptx-automizer-object. 
 const chartData = result.toSeriesCategories()
 ```
