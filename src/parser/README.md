@@ -40,10 +40,10 @@ A resulting datasheet can have different sections:
 
 Matching content is done row-by-row as follows:
 - If first cell matches `config.separator`, a new dataTable is created and added to results.
-- If first cell is empty or whitespace-only, the row will be skipped.
+- If both, first cell and second cell, are empty or whitespace-only, the row will be skipped.
 - If first cell matches a record from `config.skipRows`, the row will be skipped.
 - If the first cell is non-empty and there is no second cell, the contents of the first cell will be added to `info`
-- If first an second cell are filled, and first cell does not match a record from `config.metaMap`, the current row will be added to `body`.
+- If first and second cell is filled, and if first cell does not match a record from `config.metaMap`, the current row will be added to `body`.
 - If first cell matches a record from `config.metaMap`, the row will be added to `meta`.
 
 ### GESStabs configuration
@@ -55,7 +55,7 @@ This is done by GESStabs `zerodashchar` option. A blank should be set as default
 
 ``zerodashchar = " ";``
 
-- It is also important that the first subgroup column (mostly named "Total") is filled with non-empty cells "above", when there is more than a single level of header rows (e.g. B7-B8 in [test-data.xlsx](https://github.com/singerla/automizer-data/blob/main/__test__/data/test-data.xlsx/)).
+- It is also important that the first subgroup column (commonly named "Total") is filled with non-empty cells "above", when there is more than a single level of header rows (e.g. B7-B8 in [test-data.xlsx](https://github.com/singerla/automizer-data/blob/main/__test__/data/test-data.xlsx/)).
 This can be done by setting a blank as `title`:
 ```
 groups k0 =
