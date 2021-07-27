@@ -46,9 +46,9 @@ Matching content is done row-by-row as follows:
 - If first and second cell is filled, and if first cell does not match a record from `config.metaMap`, the current row will be added to `body`.
 - If first cell matches a record from `config.metaMap`, the row will be added to `meta`.
 
-### GESStabs configuration
-
 Unfortunately, it came to the blank character (" ") to be protagonist in content type detection, which makes it hard to find errors as you will have to be aware of "invisible" information within your output files.
+
+### GESStabs configuration
 
 - You should define a value for _null_ or empty results in a result row. 
 This is done by GESStabs `zerodashchar` option. A blank should be set as default:
