@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client'
 
 import { Query } from './query'
 import { Store } from './store'
-import { Parser } from './parser'
+import { Parser } from './parser/parser'
 import { DataTag } from './types'
 import { all, filterByDataTag, filterBy } from './filter';
 import { value, valueMeta, difference, dump } from './cell';

@@ -1,13 +1,14 @@
 import { PrismaClient } from '@prisma/client'
-import { Parser, Store } from '../src/index';
+import { Store } from '../src/index';
 import { ParserOptions, Tagger, RawResultInfo } from "../src/types";
+import { Gesstabs } from "../src/parser/gesstabs";
 
-test('store demo xlsx-data with prisma client', async () => {
+test('store demo xlsx-data from Gesstabs with prisma client', async () => {
   const store = new Store(
     new PrismaClient()
   )
 
-  const file = `${__dirname}/data/test-data.xlsx`
+  const filename = `${__dirname}/data/test-data.xlsx`
   const config = <ParserOptions> {
     // This string separates tables if found in Column A
     separator: 'Table Separator',
@@ -59,8 +60,9 @@ test('store demo xlsx-data with prisma client', async () => {
     },
   }
 
-  const parser = new Parser(config)
-  const summary = await parser.storeXlsxFile(file, store)
+  const parse = new Gesstabs(config)
+  const datasheets = await parse.fromXlsx(filename)
+  const summary = await store.run(datasheets)
 
   expect(summary.ids.length).toBe(19);
 });

@@ -14,6 +14,7 @@ export type ParserOptions = {
   skipRows: string[]
 }
 
+export type ResultCell = number|string|null
 
 export type StoreSummary = {
   ids: number[],
@@ -32,8 +33,8 @@ export type DataPoint = {
   tags: DataTag[]
   row: string
   column: string
-  value: number|string|null
-  meta: number|string|null
+  value: ResultCell
+  meta: ResultCell
 }
 
 export type Datasheet = {
@@ -41,8 +42,8 @@ export type Datasheet = {
   tags: DataTag[]
   columns: string[]
   rows: string[]
-  data: (null[]|string[]|number[])[]
-  meta: null|string[][]
+  data: ResultCell[][]
+  meta: RawResultMeta[]
 }
 
 export type TagWhereBySomeId = {
@@ -88,8 +89,6 @@ export type CellKey = {
 export type CellKeys = {
   [key: string]: CellKey
 }
-
-export type ResultCell = number|string|null
 
 export type ResultColumn = {
   key: string,

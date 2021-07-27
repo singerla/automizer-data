@@ -62,7 +62,6 @@ const store = new Store(
   new PrismaClient()
 )
 
-const file = `${__dirname}/data/test-data.xlsx`
 const config = <ParserOptions> {
   // This string separates tables if found in Column A
   separator: 'Table Separator',
@@ -114,13 +113,16 @@ const config = <ParserOptions> {
   },
 }
 
-const parser = new Parser(config)
-const summary = await parser.storeXlsxFile(file, store)
+const parse = new Gesstabs(config)
+const file = `${__dirname}/data/test-data.xlsx`
+const datasheets = await parse.fromXlsx(filename)
+const summary = await store.run(datasheets)
 ```
 
 # Intermediate JSON
 Xlsx-Parser will tranform tabular data into an intermediate JSON object. The closer your input data comes to this format, the easier it will be to implement a new parser type. 
 ```json
+{
   "tags": [
     {
       "category": "country",
