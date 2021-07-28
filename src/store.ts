@@ -9,6 +9,7 @@ export class Store {
   query: Query
   categories: Category[]
   tags: Tag[]
+  importId: number
 
   constructor(prisma: PrismaClient, options?: StoreOptions) {
     this.prisma = prisma
@@ -26,6 +27,7 @@ export class Store {
       this.options = Object.assign(this.options, options)
     }
 
+    this.importId = 0
     this.categories = []
     this.tags = []
   }
@@ -35,6 +37,7 @@ export class Store {
       await this.options?.runBefore(this.prisma)
     }
 
+    await this.getImport()
     await this.getCategories()
     await this.getTags()
 
@@ -45,6 +48,18 @@ export class Store {
     await this.prisma.$disconnect()
 
     return this.summary
+  }
+
+  async getImport() {
+    const newImport = await this.prisma.import.create({
+      data: {
+        file: 'Test',
+        user: {
+          connect: { id: 1}
+        }
+      }
+    })
+    this.importId = newImport.id
   }
 
   async getCategories(): Promise<void> {
@@ -129,6 +144,9 @@ export class Store {
           connect: datasheet.tags.map(tag => {
             return { id: tag.id }
           })
+        },
+        import: {
+          connect: { id: this.importId }
         }
       }
     })

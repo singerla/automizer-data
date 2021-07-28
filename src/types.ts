@@ -34,7 +34,7 @@ export type DataPoint = {
   row: string
   column: string
   value: ResultCell
-  meta: ResultCell
+  meta?: ResultCell
 }
 
 export type Datasheet = {

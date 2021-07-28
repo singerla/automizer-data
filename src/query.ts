@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { getNestedClause } from './helper'
 
 import {
   Datasheet,
@@ -50,18 +51,38 @@ export class Query {
     return this
   }
 
+  async getByIds(allTagIds: number[][]): Promise<Query> {
+    for(const tagIds of allTagIds) {
+      const sheets = await this.getSheetsById(tagIds)
+      this.parseSheets(sheets)
+      this.setDataPoints()
+    }
+
+    return this
+  }
+
   async getSheets(tags: DataTag[]): Promise<Sheets> {
     const ids = await this.getTagIds(tags)
 
-    let clause = this.clauseCallback(ids[0])
-    for(let i in ids) {
-      if(Number(i) > 0) {
-        this.setNestedClause(clause, ids[i])
-      }
-    }
+    let clause = getNestedClause(ids)
 
     let sheets = await this.prisma.sheet.findMany({
       where: clause,
+      include: {
+        tags: true
+      }
+    })
+
+    return sheets
+  }
+
+  async getSheetsById(ids: number[]): Promise<Sheets> {
+    let sheets = await this.prisma.sheet.findMany({
+      where: {
+        id: {
+          in: ids
+        }
+      },
       include: {
         tags: true
       }
@@ -104,7 +125,7 @@ export class Query {
             row: sheet.rows[r],
             column: sheet.columns[c],
             value: point,
-            meta: (sheet.meta && sheet.meta[r] && sheet.meta[r][c]) ? sheet.meta[r][c] : null,
+            //meta: (sheet.meta && sheet.meta[r] && sheet.meta[r][c]) ? sheet.meta[r][c] : null,
           })
 
           this.addKey('row', sheet.rows[r])
@@ -153,24 +174,6 @@ export class Query {
     return (typeof cb === 'function')
       ? cb(keys)
       : cb
-  }
-
-  clauseCallback(id: number): TagWhereBySomeId {
-    return {
-      tags: {
-        some: {
-          id: id
-        }
-      }
-    }
-  }
-
-  setNestedClause(clause:any, id:number): void {
-    if(!clause.AND) {
-      clause.AND = this.clauseCallback(id)
-    } else {
-      this.setNestedClause(clause.AND, id)
-    }
   }
 
   async getTagIds(tags: DataTag[]): Promise<number[]> {

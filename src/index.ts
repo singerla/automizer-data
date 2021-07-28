@@ -24,6 +24,13 @@ const getData = async(selector: DataTag[] | DataTag[][], grid: any, prisma?: Pri
   return result
 }
 
+const getDataObject = async(selector: number[][], grid: any, prisma: any) => {
+  const query = new Query(prisma)
+  await query.getByIds(selector)
+  const result = query.merge(grid)
+  return result
+}
+
 const cell = {
   value, valueMeta, difference, dump
 }
@@ -34,4 +41,4 @@ const sort = {
   byColId
 }
 
-export { Parser, Store, filter, cell, sort, getData }
+export { Parser, Store, filter, cell, sort, getData, getDataObject }
