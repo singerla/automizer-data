@@ -51,15 +51,17 @@ export class Store {
   }
 
   async getImport() {
-    const newImport = await this.prisma.import.create({
-      data: {
-        file: 'Test',
-        user: {
-          connect: { id: 1}
+    if(this.prisma.import) {
+      const newImport = await this.prisma.import.create({
+        data: {
+          file: 'Test',
+          user: {
+            connect: { id: 1}
+          }
         }
-      }
-    })
-    this.importId = newImport.id
+      })
+      this.importId = newImport.id
+    }
   }
 
   async getCategories(): Promise<void> {
