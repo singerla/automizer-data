@@ -271,6 +271,24 @@ export class Query {
     }
   }
 
+  toVerticalLines(): ChartData {
+    const series = this.result.body[0].cols.map(col => { return { label: col.key } } )
+    const categories = <ChartCategory[]> []
+
+    this.result.body.forEach((row, r) => {
+      categories.push({
+        label: row.key,
+        y: r,
+        values: row.cols.map(cell => { return <number> cell.value })
+      })
+    })
+
+    return {
+      series: series,
+      categories: categories
+    }
+  }
+
   toLabels(): TableData {
     return {
       body: this.result.body.map(row => {
