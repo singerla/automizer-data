@@ -299,6 +299,21 @@ export class Query {
     }
   }
 
+  toRowLabels(): TableData {
+    return this.toLabels()
+  }
+
+  toColumnLabels(): TableData {
+    const series = this.result.body[0].cols.map(col => col.key)
+    return {
+      body: [
+        {
+          values: series
+        }
+      ]
+    }
+  }
+
   toTable(): TableData {
     return {
       body: this.result.body.map(row => {
