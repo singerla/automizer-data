@@ -63,31 +63,21 @@ export class Query {
 
   async getSheets(tags: DataTag[]): Promise<Sheets> {
     const ids = await this.getTagIds(tags)
+    return this.findSheets(ids)
+  }
 
+  async getSheetsById(ids: number[]): Promise<Sheets> {
+    return this.findSheets(ids)
+  }
+
+  async findSheets(ids: number[]): Promise<Sheets> {
     let clause = getNestedClause(ids)
-
     let sheets = await this.prisma.sheet.findMany({
       where: clause,
       include: {
         tags: true
       }
     })
-
-    return sheets
-  }
-
-  async getSheetsById(ids: number[]): Promise<Sheets> {
-    let sheets = await this.prisma.sheet.findMany({
-      where: {
-        id: {
-          in: ids
-        }
-      },
-      include: {
-        tags: true
-      }
-    })
-
     return sheets
   }
 
