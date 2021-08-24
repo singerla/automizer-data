@@ -2,13 +2,13 @@ import {getData, Store} from '../src';
 import { DataGrid } from '../src/types';
 import { all } from '../src/filter';
 import { value } from '../src/cell';
-import {PrismaClient} from "@prisma/client";
+import {PrismaClient} from '../src/client';
 
 test('get demo data and convert to SeriesCategories', async () => {
   const data = require('./data/test-data.json')
-  const store = new Store(
-    new PrismaClient()
-  )
+  const client = new PrismaClient()
+  const store = new Store(client)
+
   await store.run(data)
 
   const selector = [

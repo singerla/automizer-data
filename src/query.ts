@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from './client'
 import { getNestedClause } from './helper'
 
 import {
@@ -22,10 +22,12 @@ export class Query {
   prisma: PrismaClient
   clause: any
   sheets: Datasheet[]
+  allSheets: Datasheet[]
   keys: CellKeys
   points: DataPoint[]
   grid: DataGrid
   result: Result
+  tags: any[]
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma
@@ -36,6 +38,8 @@ export class Query {
     }
     this.points = <DataPoint[]> []
     this.grid = <DataGrid> {}
+    this.allSheets = <Datasheet[]> []
+    this.tags = <any>[]
   }
 
   async get(tags: DataTag[] | DataTag[][]): Promise<Query> {
@@ -53,9 +57,19 @@ export class Query {
 
   async getByIds(allTagIds: number[][]): Promise<Query> {
     for(const tagIds of allTagIds) {
+      this.tags.push(await this.prisma.tag.findMany({
+        where: {
+          id: {
+            in: tagIds
+          }
+        }
+      }))
+
       const sheets = await this.getSheetsById(tagIds)
-      this.parseSheets(sheets)
-      this.setDataPoints()
+      if(sheets.length > 0) {
+        this.parseSheets(sheets)
+        this.setDataPoints()
+      }
     }
 
     return this
@@ -67,17 +81,20 @@ export class Query {
   }
 
   async getSheetsById(ids: number[]): Promise<Sheets> {
-    return this.findSheets(ids)
+    const sheets = await this.findSheets(ids)
+    return sheets
   }
 
   async findSheets(ids: number[]): Promise<Sheets> {
     let clause = getNestedClause(ids)
+
     let sheets = await this.prisma.sheet.findMany({
       where: clause,
       include: {
         tags: true
       }
     })
+
     return sheets
   }
 
@@ -98,6 +115,8 @@ export class Query {
         meta: JSON.parse(sheet.meta),
       }
     })
+
+    this.allSheets.push(...this.sheets)
   }
 
   setDataPoints() {

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import {PrismaClient} from '../src/client';
 import { Store } from '../src/store'
 
 test('store demo data with prisma client', async () => {

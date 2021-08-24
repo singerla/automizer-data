@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import {PrismaClient} from '../src/client';
 import { Store } from '../src/index';
 import { ParserOptions, Tagger, RawResultInfo } from "../src/types";
 import { Gesstabs } from "../src/parser/gesstabs";

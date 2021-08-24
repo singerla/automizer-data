@@ -1,5 +1,4 @@
-
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from './client'
 
 import { Query } from './query'
 import { Store } from './store'
@@ -15,20 +14,22 @@ const getData = async(selector: DataTag[] | DataTag[][], grid: any, prisma?: Pri
   }
 
   const query = new Query(prisma)
-
   await query.get(selector)
-
   const result = query.merge(grid)
-
   await query.prisma.$disconnect()
+
   return result
 }
 
 const getDataObject = async(selector: number[][], grid: any, prisma: any) => {
   const query = new Query(prisma)
   await query.getByIds(selector)
-  const result = query.merge(grid)
-  return result
+
+  if(query.points.length > 0) {
+    await query.merge(grid)
+  }
+
+  return query
 }
 
 const cell = {

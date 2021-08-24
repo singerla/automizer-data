@@ -1,4 +1,4 @@
-import {Category, PrismaClient, Sheet, Tag } from '@prisma/client'
+import {Category, PrismaClient, Sheet, Tag } from './client';
 import { Query } from './query'
 import { Datasheet, DataTag, StoreOptions, StoreSummary } from './types'
 
@@ -51,17 +51,15 @@ export class Store {
   }
 
   async getImport() {
-    if(this.prisma.import) {
-      const newImport = await this.prisma.import.create({
-        data: {
-          file: 'Test',
-          user: {
-            connect: { id: 1}
-          }
+    const newImport = await this.prisma.import.create({
+      data: {
+        file: 'Test',
+        user: {
+          connect: { id: 1}
         }
-      })
-      this.importId = newImport.id
-    }
+      }
+    })
+    this.importId = newImport.id
   }
 
   async getCategories(): Promise<void> {
@@ -72,6 +70,8 @@ export class Store {
     const newCat = await this.prisma.category.create({
       data: {
         name: name,
+        color: 'grey',
+        icon: 'settings'
       }
     })
     this.categories.push(newCat)

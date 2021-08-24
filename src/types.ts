@@ -1,5 +1,4 @@
-import {PrismaClient, Sheet, Tag } from "@prisma/client"
-
+import {PrismaClient, Sheet, Tag } from "./client"
 
 export type StoreOptions = {
   replaceExisting?: boolean,

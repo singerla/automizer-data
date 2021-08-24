@@ -11,13 +11,19 @@ const userData: Prisma.UserCreateInput[] = [
 
 const categoryData: Prisma.CategoryCreateInput[] = [
   {
-    name: 'country'
+    name: 'country',
+    color: 'primary',
+    icon: 'flag'
   },
   {
-    name: 'variable'
+    name: 'variable',
+    color: 'secondary',
+    icon: 'psychology'
   },
   {
-    name: 'subgroup'
+    name: 'subgroup',
+    color: 'dark',
+    icon: 'donut_small'
   },
 ]
 
@@ -35,7 +41,25 @@ const tagData: Prisma.TagCreateInput[] = [
     }
   },
   {
+    name: 'Q13',
+    category: {
+      connect: { id: 2 }
+    }
+  },
+  {
     name: 'Age',
+    category: {
+      connect: { id: 3 }
+    }
+  },
+  {
+    name: 'Sweden',
+    category: {
+      connect: { id: 1 }
+    }
+  },
+  {
+    name: 'Gender',
     category: {
       connect: { id: 3 }
     }
@@ -62,10 +86,157 @@ const sheetData: Prisma.SheetCreateInput[] = [
     meta: "[]",
     tags: {
       connect: [
-        { id: 1 }, { id: 2 }, { id: 3 },
+        { id: 1 }, { id: 2 }, { id: 4 },
       ]
     }
   },
+  {
+    import: {
+      connect: { id:1 }
+    },
+    columns: "[\"Total\", \"19-29\", \"30-39\", \"40-69\"]",
+    rows: "[\"answer 4\", \"answer 5\", \"answer 6\"]",
+    data: "[[24,28,46,2],[19,39,54,1],[29,22,16,3]]",
+    meta: "[]",
+    tags: {
+      connect: [
+        { id: 1 }, { id: 3 }, { id: 4 },
+      ]
+    }
+  },
+  {
+    import: {
+      connect: { id:1 }
+    },
+    columns: "[\"Total\", \"19-29\", \"30-39\", \"40-69\"]",
+    rows: "[\"answer 11\", \"answer 12\", \"answer 13\"]",
+    data: "[[44,18,36,12],[39,19,24,11],[19,28,46,10]]",
+    meta: "[]",
+    tags: {
+      connect: [
+        { id: 5 }, { id: 2 }, { id: 4 },
+      ]
+    }
+  },
+  {
+    import: {
+      connect: { id:1 }
+    },
+    columns: "[\"Total\", \"19-29\", \"30-39\", \"40-69\"]",
+    rows: "[\"answer 14\", \"answer 15\", \"answer 16\"]",
+    data: "[[24,28,46,2],[19,39,54,1],[29,22,16,3]]",
+    meta: "[]",
+    tags: {
+      connect: [
+        { id: 5 }, { id: 3 }, { id: 4 },
+      ]
+    }
+  },
+  {
+    import: {
+      connect: { id:1 }
+    },
+    columns: "[\"Total\", \"male\", \"female\", \"diverse\"]",
+    rows: "[\"answer 11\", \"answer 12\", \"answer 13\"]",
+    data: "[[44,18,36,12],[39,19,24,11],[19,28,46,10]]",
+    meta: "[]",
+    tags: {
+      connect: [
+        { id: 5 }, { id: 2 }, { id: 6 },
+      ]
+    }
+  },
+  {
+    import: {
+      connect: { id:1 }
+    },
+    columns: "[\"Total\", \"male\", \"female\", \"diverse\"]",
+    rows: "[\"answer 14\", \"answer 15\", \"answer 16\"]",
+    data: "[[24,28,46,2],[19,39,54,1],[29,22,16,3]]",
+    meta: "[]",
+    tags: {
+      connect: [
+        { id: 5 }, { id: 3 }, { id: 6 },
+      ]
+    }
+  },
+]
+
+const selectionData: Prisma.SelectionCreateInput[] = [
+  {
+    tags: {
+      connect: [{ id: 1 },{ id: 2 },{ id: 4 }]
+    },
+  },
+  {
+    tags: {
+      connect: [{ id: 1 },{ id: 3 },{ id: 4 }]
+    },
+  },
+  {
+    tags: {
+      connect: [{ id: 2 }]
+    },
+  },
+  {
+    tags: {
+      connect: [{ id: 3 }]
+    },
+  },
+  {
+    tags: {
+      connect: [{ id: 1 }]
+    },
+  },
+  {
+    tags: {
+      connect: [{ id: 5 }]
+    },
+  },
+  {
+    tags: {
+      connect: [{ id: 1 }, { id: 5 }]
+    },
+  }
+]
+
+const dataObjectData: Prisma.DataObjectCreateInput[] = [
+  {
+    selections: {
+      connect: [{id: 1}]
+    },
+    grid: {
+      create: {
+        rows: 'all',
+        columns: 'all',
+        cell: 'value'
+      }
+    },
+  },
+  {
+    selections: {
+      connect: [{id: 2}]
+    },
+    grid: {
+      create: {
+        rows: 'all',
+        columns: 'all',
+        cell: 'value'
+      }
+    },
+  },
+  {
+    selections: {
+      connect: [{id: 2}, {id: 4}]
+    },
+    grid: {
+      create: {
+        rows: 'all',
+        columns: 'all',
+        cell: 'value'
+      }
+    },
+  }
 ]
 
 async function main() {
@@ -106,6 +277,19 @@ async function main() {
     console.log(`Created sheet with id: ${sheet.id}`)
   }
 
+  for (const s of selectionData) {
+    const selection = await prisma.selection.create({
+      data: s,
+    })
+    console.log(`Created selection with id: ${selection.id}`)
+  }
+
+  for (const o of dataObjectData) {
+    const object = await prisma.dataObject.create({
+      data: o,
+    })
+    console.log(`Created dataObject with id: ${object.id}`)
+  }
   console.log(`Seeding finished.`)
 }
 

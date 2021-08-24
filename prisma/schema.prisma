@@ -9,10 +9,10 @@ generator client {
 }
 
 model User {
-  id      Int      @id @default(autoincrement())
-  email   String   @unique
-  name    String?
-  imports Import[]
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  name          String?
+  imports       Import[]
 }
 
 model Import {
@@ -25,17 +25,20 @@ model Import {
 }
 
 model Category {
-  id   Int    @id @default(autoincrement())
-  name String
-  tags Tag[]
+  id    Int    @id @default(autoincrement())
+  name  String
+  color String
+  icon  String
+  tags  Tag[]
 }
 
 model Tag {
-  id         Int      @id @default(autoincrement())
+  id         Int         @id @default(autoincrement())
   name       String
-  category   Category @relation(fields: [categoryId], references: [id])
+  category   Category    @relation(fields: [categoryId], references: [id])
   categoryId Int
   sheets     Sheet[]
+  selection  Selection[]
 
   // @@unique([name, categoryId], name: "sqlite_autoindex_Tag")
 }
@@ -49,4 +52,25 @@ model Sheet {
   rows     String
   data     String
   meta     String
+}
+
+model Selection {
+  id                   Int                    @id @default(autoincrement())
+  tags                 Tag[]
+  dataObjects          DataObject[]
+}
+
+model DataObject {
+  id         Int                 @id @default(autoincrement())
+  selections Selection[]
+  grid       Grid                @relation(fields: [gridId], references: [id])
+  gridId     Int
+}
+
+model Grid {
+  id          Int          @id @default(autoincrement())
+  rows        String
+  columns     String
+  cell        String
+  dataObjects DataObject[]
 }

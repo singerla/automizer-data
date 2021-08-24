@@ -2,7 +2,7 @@ import {getData, Store} from '../src';
 import { DataGrid } from '../src/types';
 import { all, filterByDataTag, filterBy } from '../src/filter';
 import { value, difference } from '../src/cell'
-import {PrismaClient} from "@prisma/client";
+import {PrismaClient} from '../src/client';
 
 test('get demo data and convert to SeriesCategories', async () => {
   const data = require('./data/test-data.json')
