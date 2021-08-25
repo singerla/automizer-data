@@ -13,7 +13,11 @@ export const valueMeta = (points: DataPoint[]): ResultCell => {
 }
 
 export const value = (points: DataPoint[]): ResultCell => {
-  return points[0].value
+  if(points && points[0] && points[0].value) {
+    return points[0].value
+  } else {
+    return ''
+  }
 }
 
 export const dump = (points: DataPoint[]): ResultCell => {
