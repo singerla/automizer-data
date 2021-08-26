@@ -5,7 +5,7 @@ import { Store } from './store'
 import { Parser } from './parser/parser'
 import { DataTag } from './types'
 import { all, filterByDataTag, filterBy } from './filter';
-import { value, valueMeta, difference, dump } from './cell';
+import { value, valueMeta, difference, points, dump } from './cell';
 import { byColId } from './sort';
 
 const getData = async(selector: DataTag[] | DataTag[][], grid: any, prisma?: PrismaClient) => {
@@ -33,7 +33,7 @@ const getDataObject = async(selector: number[][], grid: any, prisma: any) => {
 }
 
 const cell = {
-  value, valueMeta, difference, dump
+  value, valueMeta, difference, points, dump
 }
 const filter = {
   all, filterByDataTag, filterBy

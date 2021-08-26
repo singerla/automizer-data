@@ -14,11 +14,28 @@ export const valueMeta = (points: DataPoint[]): ResultCell => {
 
 export const value = (points: DataPoint[]): ResultCell => {
   if(points && points[0] && points[0].value) {
-    return points[0].value
+    const suffix = (points[1]) ? '*' : ''
+    return points[0].value + suffix
   } else {
     return ''
   }
 }
+
+export const points = (points: DataPoint[]): ResultCell => {
+  // console.dir(points, {depth:10})
+  if(points.length) {
+    return points.map(point => {
+      if(point.value) {
+        return point.value
+      } else {
+        return '-'
+      }
+    }).join('/')
+  }
+
+  return 'n/a'
+}
+
 
 export const dump = (points: DataPoint[]): ResultCell => {
   console.dir(points, { depth: 10 })

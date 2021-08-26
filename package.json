@@ -33,7 +33,7 @@
     "typescript": "4.3.3"
   },
   "scripts": {
-    "dev": "ts-node src/index.ts",
+    "dev": "nodemon -e ts --exec 'ts-node' src/dev.ts",
     "store": "ts-node store.ts",
     "dev-store": "nodemon -e ts --exec 'ts-node' store.ts",
     "test": "npx jest",

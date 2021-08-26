@@ -5,39 +5,48 @@ import { value, difference } from '../src/cell'
 import {PrismaClient} from '../src/client';
 
 test('get demo data and convert to SeriesCategories', async () => {
-  const data = require('./data/test-data.json')
-  const store = new Store(
-    new PrismaClient()
-  )
-  await store.run(data)
+  // const data = require('./data/test-data.json')
+  // const store = new Store(
+  //   new PrismaClient()
+  // )
+  // await store.run(data)
 
   const selector = [
     {
       category: "variable",
-      value: "Q12"
+      value: "Q13"
+    },
+    {
+      category: "subgroup",
+      value: "Gender"
     }
   ]
 
   const grid = <DataGrid> {
-    rows: [
-      filterBy('row', 'answer 1'),
-      filterBy('row', 'answer 2')
-    ],
-    columns: [
-      filterBy('column', '19-29'),
-      filterBy('column', '30-39'),
+    rows: all('row'),
+    //   [
+    //   filterBy('row', 'answer 1'),
+    //   filterBy('row', 'answer 2')
+    // ],
+    columns: all('column')
+      // [
+
+      // filterBy('column', '19-29'),
+      // filterBy('column', '30-39'),
       // filterByDataTag( {
       //   value: 'Bar soap',
       //   category: '2'
       // }, 'Test')
-    ],
+    // ]
+    ,
     cell: difference
   }
 
   const result = await getData(selector, grid)
 
   const chartData = result.toSeriesCategories()
-  // console.dir(result, {depth: 10})
+  //
+  // console.log(result.result.body[0].cols)
 
   expect(chartData.series.length).toBe(2);
   expect(chartData.categories.length).toBe(2);

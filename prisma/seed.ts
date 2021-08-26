@@ -123,8 +123,8 @@ const sheetData: Prisma.SheetCreateInput[] = [
       connect: { id:1 }
     },
     columns: "[\"Total\", \"19-29\", \"30-39\", \"40-69\"]",
-    rows: "[\"answer 14\", \"answer 15\", \"answer 16\"]",
-    data: "[[24,28,46,2],[19,39,54,1],[29,22,16,3]]",
+    rows: "[\"answer 4\", \"answer 5\", \"answer 6\"]",
+    data: "[[21,32,26,12],[15,36,51,10],[17,22,16,13]]",
     meta: "[]",
     tags: {
       connect: [

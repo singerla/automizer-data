@@ -9,10 +9,10 @@ generator client {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique
-  name          String?
-  imports       Import[]
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  imports Import[]
 }
 
 model Import {
@@ -55,15 +55,15 @@ model Sheet {
 }
 
 model Selection {
-  id                   Int                    @id @default(autoincrement())
-  tags                 Tag[]
-  dataObjects          DataObject[]
+  id          Int          @id @default(autoincrement())
+  tags        Tag[]
+  dataObjects DataObject[]
 }
 
 model DataObject {
-  id         Int                 @id @default(autoincrement())
+  id         Int         @id @default(autoincrement())
   selections Selection[]
-  grid       Grid                @relation(fields: [gridId], references: [id])
+  grid       Grid        @relation(fields: [gridId], references: [id])
   gridId     Int
 }
 
