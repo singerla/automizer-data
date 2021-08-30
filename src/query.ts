@@ -253,9 +253,11 @@ export class Query {
     targetColumns = (typeof (columns) !== 'object') ? [ columns ] : columns
 
     this.result.body.forEach((row, r) => {
-      this.result.body[r].cols = row.cols.filter((col,c) => {
-        return targetColumns.indexOf(c) >= 0
-      })
+      if(row.cols) {
+        this.result.body[r].cols = row.cols.filter((col,c) => {
+          return targetColumns.indexOf(c) >= 0
+        })
+      }
     })
 
     return this
@@ -267,19 +269,26 @@ export class Query {
   }
 
   toSeriesCategories(): ChartData {
-    const series = this.result.body[0].cols.map(col => { return { label: col.key } } )
-    const categories = <ChartCategory[]> []
+    if(this.result.body[0]) {
+      const series = this.result.body[0].cols.map(col => { return { label: col.key } } )
+      const categories = <ChartCategory[]> []
 
-    this.result.body.forEach(row => {
-      categories.push({
-        label: row.key,
-        values: row.cols.map(cell => { return <number> cell.value })
+      this.result.body.forEach(row => {
+        categories.push({
+          label: row.key,
+          values: row.cols.map(cell => { return <number> cell.value })
+        })
       })
-    })
+
+      return {
+        series: series,
+        categories: categories
+      }
+    }
 
     return {
-      series: series,
-      categories: categories
+      series: [],
+      categories: []
     }
   }
 

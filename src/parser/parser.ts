@@ -8,11 +8,7 @@ import {
   RawRow,
   StoreSummary, ResultCell
 } from "../types";
-import {Store} from "../store";
 
-import xlsx from 'node-xlsx';
-const csv = require('csv-parser')
-const fs = require('fs')
 
 export class Parser {
   results: RawResultData[];
