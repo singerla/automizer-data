@@ -1,4 +1,4 @@
-import { PrismaClient, Category, Sheet, Tag } from '../prisma/client';
+import { PrismaClient, Category, Sheet, Tag } from './../prisma/client';
 
 export {
   PrismaClient,
