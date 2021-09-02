@@ -7,13 +7,7 @@ import {PrismaClient} from "../prisma/client";
 
 test('get error due to insufficient selection', async () => {
   const client = new PrismaClient()
-  // const selector = [
-  //   [1,2,3]
-  // ]
-
-  // const selector = [[3,5,4],[3,5,6]]
-
-  const selector = [[3,5]]
+  const selector =[[1,2,3,5]]
 
   const grid = {
     rows: all('row'),
@@ -22,6 +16,15 @@ test('get error due to insufficient selection', async () => {
   }
 
   const dataObject = await getDataObject(selector, grid, client)
-
+    .then(summary => {
+      return summary
+    })
+    .catch(e => {
+      throw e
+    })
+    .finally(async () => {
+      await client.$disconnect()
+    })
+    
   expect(dataObject.sheets.length).toBe(0);
 });

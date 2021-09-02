@@ -200,44 +200,6 @@ const selectionData: Prisma.SelectionCreateInput[] = [
   }
 ]
 
-const dataObjectData: Prisma.DataObjectCreateInput[] = [
-  {
-    selections: {
-      connect: [{id: 1}]
-    },
-    grid: {
-      create: {
-        rows: 'all',
-        columns: 'all',
-        cell: 'value'
-      }
-    },
-  },
-  {
-    selections: {
-      connect: [{id: 2}]
-    },
-    grid: {
-      create: {
-        rows: 'all',
-        columns: 'all',
-        cell: 'value'
-      }
-    },
-  },
-  {
-    selections: {
-      connect: [{id: 2}, {id: 4}]
-    },
-    grid: {
-      create: {
-        rows: 'all',
-        columns: 'all',
-        cell: 'value'
-      }
-    },
-  }
-]
 
 async function main() {
   console.log(`Start seeding ...`)
@@ -283,14 +245,6 @@ async function main() {
     })
     console.log(`Created selection with id: ${selection.id}`)
   }
-
-  for (const o of dataObjectData) {
-    const object = await prisma.dataObject.create({
-      data: o,
-    })
-    console.log(`Created dataObject with id: ${object.id}`)
-  }
-  console.log(`Seeding finished.`)
 }
 
 main()

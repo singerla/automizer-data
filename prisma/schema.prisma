@@ -1,6 +1,6 @@
 datasource db {
   provider = "sqlite"
-  url      = "file:./project.db"
+  url      = "file:./dev.db"
 }
 
 generator client {
@@ -14,8 +14,6 @@ model User {
   email         String         @unique
   name          String?
   imports       Import[]
-  presentations Presentation[]
-  templates     Template[]
 }
 
 model Import {
@@ -24,7 +22,7 @@ model Import {
   date   DateTime @default(now())
   user   User     @relation(fields: [userId], references: [id])
   userId Int
-  sheets Sheet[]
+  sheets    Sheet[]
 }
 
 model Category {
@@ -42,8 +40,6 @@ model Tag {
   categoryId Int
   sheets     Sheet[]
   selection  Selection[]
-
-  // @@unique([name, categoryId], name: "sqlite_autoindex_Tag")
 }
 
 model Sheet {
@@ -60,135 +56,5 @@ model Sheet {
 model Selection {
   id                   Int                    @id @default(autoincrement())
   tags                 Tag[]
-  dataObjects          DataObject[]
-  presentationItemLoop PresentationItemLoop[]
-}
-
-model DataObject {
-  id         Int                 @id @default(autoincrement())
-  selections Selection[]
-  grid       Grid                @relation(fields: [gridId], references: [id])
-  gridId     Int
-  shapes     PresentationShape[]
-}
-
-model Grid {
-  id          Int          @id @default(autoincrement())
-  rows        String
-  columns     String
-  cell        String
-  dataObjects DataObject[]
-}
-
-model Template {
-  id             Int             @id @default(autoincrement())
-  user           User            @relation(fields: [userId], references: [id])
-  userId         Int
-  file           String          @unique
-  templateSlides TemplateSlide[]
-  presentations  Presentation[]
-}
-
-model TemplateSlide {
-  id                Int                 @id @default(autoincrement())
-  templateId        Int
-  template          Template            @relation(fields: [templateId], references: [id])
-  creationId        Int
-  key               String              @unique
-  slideNumber       Int
-  shapes            TemplateShape[]
-  PresentationSlide PresentationSlide[]
-}
-
-model TemplateShape {
-  id              Int                 @id @default(autoincrement())
-  templateSlide   TemplateSlide       @relation(fields: [templateSlideId], references: [id])
-  templateSlideId Int
-  creationId      String
-  name            String
-  key             String              @unique
-  shapeType       String
-  shapes          PresentationShape[]
-}
-
-model Presentation {
-  id                Int                 @id @default(autoincrement())
-  name              String
-  user              User                @relation(fields: [userId], references: [id])
-  userId            Int
-  root              Template            @relation(fields: [rootId], references: [id])
-  rootId            Int
-  rootItem          PresentationItem    @relation(fields: [rootItemId], references: [id])
-  rootItemId        Int
-  PresentationSlide PresentationSlide[]
-}
-
-model PresentationItem {
-  id           Int                   @id @default(autoincrement())
-  sortId       Int
-  name         String?
-  loop         PresentationItemLoop? @relation(fields: [loopId], references: [id])
-  loopId       Int?
-  slide        PresentationSlide?
-  items        PresentationItem[]    @relation("PresentationItemToPresentationItem")
-  parentItem   PresentationItem?     @relation("PresentationItemToPresentationItem", fields: [parentItemId], references: [id])
-  parentItemId Int?
-  Presentation Presentation[]
-}
-
-model PresentationItemLoop {
-  id               Int                @id @default(autoincrement())
-  selections       Selection[]
-  PresentationItem PresentationItem[]
-}
-
-model PresentationSlide {
-  id                 Int               @id @default(autoincrement())
-  name               String?
-  templateSlide      TemplateSlide     @relation(fields: [templateSlideId], references: [id])
-  templateSlideId    Int
-  slideItems         SlideItem[]
-  presentation       Presentation?     @relation(fields: [presentationId], references: [id])
-  presentationId     Int?
-  presentationItem   PresentationItem? @relation(fields: [presentationItemId], references: [id])
-  presentationItemId Int?
-}
-
-model SlideItem {
-  id                  Int                @id @default(autoincrement())
-  mode                String
-  sortId              Int
-  shape               PresentationShape?
-  presentationSlide   PresentationSlide  @relation(fields: [presentationSlideId], references: [id])
-  presentationSlideId Int
-}
-
-model PresentationShape {
-  id                   Int             @id @default(autoincrement())
-  templateShape        TemplateShape   @relation(fields: [templateShapeShapeId], references: [id])
-  templateShapeShapeId Int
-  slideItem            SlideItem?      @relation(fields: [slideItemId], references: [id])
-  slideItemId          Int?
-  dataObject           DataObject?     @relation(fields: [dataObjectId], references: [id])
-  dataObjectId         Int?
-  modifiers            ShapeModifier[]
-}
-
-model ShapeModifier {
-  id             Int               @id @default(autoincrement())
-  shape          PresentationShape @relation(fields: [shapeId], references: [id])
-  shapeId        Int
-  modifierType   ShapeModifierType @relation(fields: [modifierTypeId], references: [id])
-  modifierTypeId Int
-  params         String
-}
-
-model ShapeModifierType {
-  id           Int             @id @default(autoincrement())
-  name         String
-  function     String
-  params       String
-  applicableTo String
-  modifiers    ShapeModifier[]
 }
 

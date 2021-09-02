@@ -44,10 +44,11 @@ test('get demo data and convert to SeriesCategories', async () => {
 
   const result = await getData(selector, grid)
 
+    
   const chartData = result.toSeriesCategories()
   //
   // console.log(result.result.body[0].cols)
 
-  expect(chartData.series.length).toBe(2);
-  expect(chartData.categories.length).toBe(2);
+  expect(chartData.series.length).toBe(4);
+  expect(chartData.categories.length).toBe(3);
 });

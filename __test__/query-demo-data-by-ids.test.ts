@@ -7,7 +7,7 @@ import {PrismaClient} from '../src/client';
 test('get demo data by tag IDs and convert to SeriesCategories', async () => {
   const client = new PrismaClient()
   const selector = [
-    [1,2,3]
+    [3,5]
   ]
 
   const grid = {
@@ -17,10 +17,20 @@ test('get demo data by tag IDs and convert to SeriesCategories', async () => {
   }
 
   const result = await getDataObject(selector, grid, client)
+     .then(summary => {
+      return summary
+    })
+    .catch(e => {
+      throw e
+    })
+    .finally(async () => {
+      await client.$disconnect()
+    })
+    
   const chartData = result.toSeriesCategories()
 
   // console.dir(chartData, {depth: 10})
 
-  expect(chartData.series.length).toBe(4);
-  expect(chartData.categories.length).toBe(3);
+  expect(chartData.series.length).toBe(7);
+  expect(chartData.categories.length).toBe(6);
 });

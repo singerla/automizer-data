@@ -63,6 +63,15 @@ test('store demo xlsx-data from Gesstabs with prisma client', async () => {
   const parse = new Gesstabs(config)
   const datasheets = await parse.fromXlsx(filename)
   const summary = await store.run(datasheets)
+    .then(summary => {
+      return summary
+    })
+    .catch(e => {
+      throw e
+    })
+    .finally(async () => {
+      await store.prisma.$disconnect()
+    })
 
   expect(summary.ids.length).toBe(19);
 });
