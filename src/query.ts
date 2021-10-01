@@ -1,4 +1,4 @@
-import { PrismaClient } from './client'
+import {PrismaClient, Tag} from './client'
 import { getNestedClause } from './helper'
 
 import {
@@ -57,15 +57,17 @@ export class Query {
 
   async getByIds(allTagIds: number[][]): Promise<Query> {
     for(const tagIds of allTagIds) {
-      this.tags.push(await this.prisma.tag.findMany({
+      const selectionTags = await this.prisma.tag.findMany({
         where: {
           id: {
             in: tagIds
           }
         }
-      }))
+      })
 
-      const sheets = await this.getSheetsById(tagIds)
+      this.tags.push(selectionTags)
+
+      const sheets = await this.getSheetsByTags(selectionTags)
       if(sheets.length > 0) {
         this.parseSheets(sheets)
         this.setDataPoints()
@@ -75,18 +77,39 @@ export class Query {
     return this
   }
 
-  async getSheets(tags: DataTag[]): Promise<Sheets> {
-    const ids = await this.getTagIds(tags)
-    return this.findSheets(ids)
+  async getSheets(tagStrings: DataTag[]): Promise<Sheets> {
+    const dataTags = await this.getTags(tagStrings)
+    const tags = <Tag[]> []
+    dataTags.forEach(dataTag => {
+      const tag = <Tag> {
+        id: dataTag.id,
+        name: dataTag.value,
+        categoryId: dataTag.categoryId
+      }
+      tags.push(tag)
+    })
+    return this.findSheets(tags)
   }
 
-  async getSheetsById(ids: number[]): Promise<Sheets> {
-    const sheets = await this.findSheets(ids)
+  async getSheetsByTags(tags:Tag[]): Promise<Sheets> {
+    const sheets = await this.findSheets(tags)
     return sheets
   }
 
-  async findSheets(ids: number[]): Promise<Sheets> {
-    let clause = getNestedClause(ids)
+  async getSheetsById(ids:number[]): Promise<Sheets> {
+    const selectionTags = await this.prisma.tag.findMany({
+      where: {
+        id: {
+          in: ids
+        }
+      }
+    })
+    const sheets = await this.findSheets(selectionTags)
+    return sheets
+  }
+
+  async findSheets(tags:Tag[]): Promise<Sheets> {
+    let clause = getNestedClause(tags)
 
     let sheets = await this.prisma.sheet.findMany({
       where: clause,
@@ -196,6 +219,16 @@ export class Query {
     }
 
     return tags.map(tag => <number> tag.id)
+  }
+
+  async getTags(tags: DataTag[]): Promise<DataTag[]> {
+    for(let i in tags) {
+      let tag = tags[i]
+      await this.setCategoryId(tag)
+      await this.setTagId(tag)
+    }
+
+    return tags
   }
 
   async setCategoryId(tag: DataTag): Promise<void> {
