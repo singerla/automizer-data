@@ -57,13 +57,7 @@ export class Query {
 
   async getByIds(allTagIds: number[][]): Promise<Query> {
     for(const tagIds of allTagIds) {
-      const selectionTags = await this.prisma.tag.findMany({
-        where: {
-          id: {
-            in: tagIds
-          }
-        }
-      })
+      const selectionTags = await this.getSelectionTags(tagIds)
 
       this.tags.push(selectionTags)
 
@@ -75,6 +69,16 @@ export class Query {
     }
 
     return this
+  }
+
+  async getSelectionTags(tagIds: number[]): Promise<Tag[]> {
+    return await this.prisma.tag.findMany({
+      where: {
+        id: {
+          in: tagIds
+        }
+      }
+    })
   }
 
   async getSheets(tagStrings: DataTag[]): Promise<Sheets> {

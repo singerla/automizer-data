@@ -9,7 +9,7 @@ import { all, filterByDataTag, filterBy } from './filter';
 import { value, valueMeta, difference, points, dump } from './cell';
 import { byColId } from './sort';
 import { ParserOptions, RawResultInfo, StoreOptions, Tagger } from './types';
-import { getNestedClause } from './helper'
+import { getNestedClause, getTagGroupsByCategory } from './helper'
 
 const getData = async(selector: DataTag[] | DataTag[][], grid: any, prisma?: PrismaClient) => {
   if(!prisma) {
@@ -48,4 +48,4 @@ const sort = {
 export type { ParserOptions, RawResultInfo, StoreOptions, Tagger }
 export type {DataGrid, DataGridCategories, DataPointFilter}
 export { Query, Parser, Gesstabs, Store, filter, cell, sort, getData, getDataObject }
-export { getNestedClause }
+export { getNestedClause, getTagGroupsByCategory }
