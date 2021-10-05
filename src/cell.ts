@@ -12,12 +12,35 @@ export const valueMeta = (points: DataPoint[]): ResultCell => {
   return points.map(point => point.value + ' ' + point.meta).join('|')
 }
 
-export const value = (points: DataPoint[]): ResultCell => {
-  if(points && points[0] && points[0].value) {
-    const suffix = (points[1]) ? '*' : ''
-    return points[0].value + suffix
-  } else {
-    return ''
+export const value = (params: any) => {
+  return (points: DataPoint[]): ResultCell => {
+    if(!points) {
+      return '-'
+    }
+
+    if(points && points.length === 1) {
+      return points[0].value
+    }
+
+    const args = params.args
+    const from = args[0]
+    const targetItems = args[1]
+    const targetPoints = points.filter((point:any) => {
+      if(from === 'row' || from === 'column') {
+        return targetItems.indexOf(point[from]) > -1
+      } else {
+        return (point.tags.find((tag: any) =>
+          tag.categoryId === Number(from)
+          && targetItems.indexOf(tag.value) > -1)
+        )
+      }
+    })
+
+    if(targetPoints) {
+      return targetPoints.map((targetPoint:any) => targetPoint.value).join('|')
+    } else {
+      return ''
+    }
   }
 }
 

@@ -72,13 +72,13 @@ export class Query {
   }
 
   async getSelectionTags(tagIds: number[]): Promise<Tag[]> {
-    return await this.prisma.tag.findMany({
+    return this.prisma.tag.findMany({
       where: {
         id: {
           in: tagIds
         }
       }
-    })
+    });
   }
 
   async getSheets(tagStrings: DataTag[]): Promise<Sheets> {
