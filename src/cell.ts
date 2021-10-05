@@ -14,15 +14,16 @@ export const valueMeta = (points: DataPoint[]): ResultCell => {
 
 export const value = (params: any) => {
   return (points: DataPoint[]): ResultCell => {
+    const args = params.args
+    
     if(!points) {
       return '-'
     }
-
-    if(points && points.length === 1) {
-      return points[0].value
+    
+    if(!args || !args[0]) {
+      return points.map(point => point.value).join('|')
     }
 
-    const args = params.args
     const from = args[0]
     const targetItems = args[1]
     const targetPoints = points.filter((point:any) => {

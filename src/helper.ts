@@ -2,7 +2,10 @@ import {Tag} from '../prisma/client';
 
 export const getNestedClause = (selectionTags:Tag[]): any => {
   const tagGroups = getTagGroupsByCategory(selectionTags)
-  // console.log(tagGroups)
+  
+  if(!tagGroups || !tagGroups[0]) {
+    return false
+  }
 
   let clause = clauseCallback(tagGroups[0])
   for(let i in tagGroups) {
@@ -10,8 +13,6 @@ export const getNestedClause = (selectionTags:Tag[]): any => {
       setNestedClause(clause, tagGroups[i])
     }
   }
-
-  // console.dir(clause, {depth:10})
 
   return clause
 }

@@ -114,7 +114,8 @@ export class Query {
 
   async findSheets(tags:Tag[]): Promise<Sheets> {
     let clause = getNestedClause(tags)
-
+    if(!clause) return []
+    
     let sheets = await this.prisma.sheet.findMany({
       where: clause,
       include: {
