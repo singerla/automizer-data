@@ -2,7 +2,7 @@ import {Tag} from '../prisma/client';
 
 export const getNestedClause = (selectionTags:Tag[]): any => {
   const tagGroups = getTagGroupsByCategory(selectionTags)
-  
+
   if(!tagGroups || !tagGroups[0]) {
     return false
   }
@@ -46,4 +46,8 @@ export const setNestedClause = (clause:any, ids:number[]): void => {
   } else {
     setNestedClause(clause.AND, ids)
   }
+}
+
+export const vd = (v:any): void => {
+  console.dir(v, {depth:10})
 }

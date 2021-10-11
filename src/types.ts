@@ -33,7 +33,12 @@ export type DataPoint = {
   row: string
   column: string
   value: ResultCell
-  meta?: ResultCell
+  meta?: DataPointMeta[]
+}
+
+export type DataPointMeta = {
+  key: string
+  value: ResultCell
 }
 
 export type Datasheet = {
@@ -78,7 +83,17 @@ export type DataGridCategories = {
 export type DataGrid = {
   rows: DataPointFilter[] | DataGridCategories,
   columns: DataPointFilter[] | DataGridCategories,
-  cell(points: DataPoint[]): ResultCell
+  cell: DataResultCellFilter,
+  modify?: DataPointModifier[]
+}
+
+export type DataResultCellFilter = {
+  (points: DataPoint[]): ResultCell
+}
+
+export type DataPointModifier = {
+  applyToLevel?: number[],
+  cb: any
 }
 
 export type CellKey = {
@@ -145,4 +160,14 @@ export type RawTable = {
   columns: string[],
   data: ResultCell[][],
   meta: RawResultMeta[]
+}
+
+export type DataPointTarget = 'row' | 'column'
+
+export type RenameLabel = {
+  target?: DataPointTarget
+  targets?: DataPointTarget[]
+  replace?: string
+  by?: string
+  cb?: (label:string) => string
 }

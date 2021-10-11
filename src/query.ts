@@ -1,5 +1,5 @@
 import {PrismaClient, Tag} from './client'
-import { getNestedClause } from './helper'
+import { getNestedClause, vd } from './helper'
 
 import {
   Datasheet,
@@ -11,8 +11,10 @@ import {
   Result,
   ResultRow,
   CellKeys,
-  DataPointFilter
+  DataPointFilter, DataPointModifier
 } from './types';
+
+import Points from './points'
 
 import { ChartData, ChartCategory } from 'pptx-automizer/dist/types/chart-types';
 import { TableData } from 'pptx-automizer/dist/types/table-types';
@@ -40,38 +42,54 @@ export class Query {
     this.grid = <DataGrid> {}
     this.allSheets = <Datasheet[]> []
     this.tags = <any>[]
+
+    return this
+  }
+
+  setGrid(grid:DataGrid) {
+    this.grid = grid
+    return this
   }
 
   async get(tags: DataTag[] | DataTag[][]): Promise<Query> {
-    const allTags = (tags[0].hasOwnProperty('category'))
+    const allTagIds = (tags[0].hasOwnProperty('category'))
       ? [ tags ] : tags
 
-    for(const i in allTags) {
-      const sheets = await this.getSheets(<DataTag[]> allTags[i])
-      this.parseSheets(sheets)
-      this.setDataPoints()
+    for(const level in allTagIds) {
+      const tagIds = allTagIds[level]
+      const sheets = await this.getSheets(<DataTag[]> tagIds)
+      this.processSheets(sheets, Number(level))
     }
 
+    this.setDataPointKeys()
     return this
   }
 
   async getByIds(allTagIds: number[][]): Promise<Query> {
-    for(const tagIds of allTagIds) {
-      const selectionTags = await this.getSelectionTags(tagIds)
-
+    for(const level in allTagIds) {
+      const tagIds = allTagIds[level]
+      const selectionTags = await this.getTagInfo(tagIds)
       this.tags.push(selectionTags)
 
       const sheets = await this.getSheetsByTags(selectionTags)
-      if(sheets.length > 0) {
-        this.parseSheets(sheets)
-        this.setDataPoints()
-      }
+      this.processSheets(sheets, Number(level))
     }
 
+    this.setDataPointKeys()
     return this
   }
 
-  async getSelectionTags(tagIds: number[]): Promise<Tag[]> {
+  processSheets(sheets: Sheets, level: number) {
+    const dataPoints = <DataPoint[]>[]
+    if(sheets.length > 0) {
+      this.parseSheets(sheets)
+      this.setDataPoints(dataPoints)
+      this.modifyDataPoints(dataPoints, level)
+    }
+    this.pushDataPoints(dataPoints)
+  }
+
+  async getTagInfo(tagIds: number[]): Promise<Tag[]> {
     return this.prisma.tag.findMany({
       where: {
         id: {
@@ -115,7 +133,7 @@ export class Query {
   async findSheets(tags:Tag[]): Promise<Sheets> {
     let clause = getNestedClause(tags)
     if(!clause) return []
-    
+
     let sheets = await this.prisma.sheet.findMany({
       where: clause,
       include: {
@@ -147,27 +165,83 @@ export class Query {
     this.allSheets.push(...this.sheets)
   }
 
-  setDataPoints() {
+  setDataPoints(dataPoints:DataPoint[]): DataPoint[] {
     this.sheets.forEach(sheet => {
-      sheet.tags.forEach(tag => {
-        if(tag.categoryId) {
-          this.addKey(String(tag.categoryId), tag.value)
-        }
-      })
-
       sheet.data.forEach((points, r) => {
         points.forEach((point: any, c: number) => {
-          this.points.push({
+          dataPoints.push({
             tags: sheet.tags,
             row: sheet.rows[r],
             column: sheet.columns[c],
             value: point,
-            //meta: (sheet.meta && sheet.meta[r] && sheet.meta[r][c]) ? sheet.meta[r][c] : null,
+            meta: this.getDataPointMeta(sheet.meta, r, c)
           })
-
-          this.addKey('row', sheet.rows[r])
-          this.addKey('column', sheet.columns[c])
         })
+      })
+    })
+    return dataPoints
+  }
+
+  getDataPointMeta(meta:any, r:number, c:number) {
+    const pointMeta = <any>[]
+
+    meta.forEach((metaContent:any) => {
+      if(metaContent?.data) {
+        if(this.metaHasRows(metaContent?.data)) {
+          this.pushPointMeta(pointMeta, metaContent.key, metaContent.data[r][c])
+        } else {
+          this.pushPointMeta(pointMeta, metaContent.key, metaContent.data[c])
+        }
+      }
+    })
+    return pointMeta
+  }
+
+  metaHasRows(metaData:any) {
+    return (metaData[0] && Array.isArray(metaData[0]))
+  }
+
+  pushPointMeta(pointMeta:any, key:string, value:any) {
+    pointMeta.push({
+      key: key,
+      value: value
+    })
+  }
+
+  modifyDataPoints(dataPoints:DataPoint[], level: number): void {
+    const modifiers = this.getDatapointModifiersByLevel(level)
+    const pointer = new Points(dataPoints)
+
+    modifiers.forEach(modifier => {
+      modifier.cb(pointer)
+    })
+  }
+
+  getDatapointModifiersByLevel(level:number): DataPointModifier[] {
+    const modifiers = <DataPointModifier[]> []
+
+    this.grid?.modify?.forEach(modifier => {
+      if(modifier.applyToLevel && modifier.applyToLevel.indexOf(level) > -1) {
+        modifiers.push(modifier)
+      } else if(!modifier.applyToLevel) {
+        modifiers.push(modifier)
+      }
+    })
+    return modifiers
+  }
+
+  pushDataPoints(dataPoints:DataPoint[]): void {
+    this.points.push(...dataPoints)
+  }
+
+  setDataPointKeys() {
+    this.points.forEach((point: any, c: number) => {
+      this.addKey('row', point.row)
+      this.addKey('column', point.column)
+      point.tags.forEach((tag:DataTag) => {
+        if(tag.categoryId) {
+          this.addKey(String(tag.categoryId), tag.value)
+        }
       })
     })
   }
@@ -180,9 +254,9 @@ export class Query {
     this.keys[category][value] = true
   }
 
-  merge(grid: DataGrid) {
-    let rows = this.checkForCallback(grid.rows, this.keys)
-    let columns = this.checkForCallback(grid.columns, this.keys)
+  merge() {
+    let rows = this.checkForCallback(this.grid.rows, this.keys)
+    let columns = this.checkForCallback(this.grid.columns, this.keys)
 
     let points = <any> []
     let result = <any> {}
@@ -197,7 +271,7 @@ export class Query {
         let cellPoints = columnCb(points[r])
 
         let colKey = cellPoints.label
-        result[rowKey][colKey] = grid.cell(cellPoints.points)
+        result[rowKey][colKey] = this.grid.cell(cellPoints.points)
       })
     })
 
