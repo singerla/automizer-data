@@ -210,10 +210,20 @@ export class Query {
 
   modifyDataPoints(dataPoints:DataPoint[], level: number): void {
     const modifiers = this.getDatapointModifiersByLevel(level)
-    const pointer = new Points(dataPoints)
+    const points = new Points(dataPoints)
 
     modifiers.forEach(modifier => {
-      modifier.cb(pointer)
+      if(modifier.cb) {
+        modifier.cb(points)
+      }
+
+      if(modifier.callbacks) {
+        modifier.callbacks.forEach(callback => {
+          if(typeof callback === 'function') {
+            callback(points)
+          }
+        })
+      }
     })
   }
 

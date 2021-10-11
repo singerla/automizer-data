@@ -1,5 +1,16 @@
 import { vd } from './helper';
 import {DataPoint, DataPointTarget, RenameLabel} from './types';
+import {
+  ModArgsFilter,
+  ModArgsStringTolabel,
+  ModArgsTagTolabel,
+  ModArgsAddToOthers,
+  ModArgsAddMeta,
+  ModArgsMap,
+  ModArgsRename
+} from './types';
+
+
 
 export default class Points {
   points: DataPoint[];
@@ -15,7 +26,8 @@ export default class Points {
     return this.points
   }
 
-  filter(key:string, value:string, replace?:boolean): DataPoint[] {
+  filter(args: ModArgsFilter): DataPoint[] {
+    const {key, value, replace} = args
     if(key === 'row' || key === 'column') {
       const points = this.points.filter(point => point[key] === value)
       if(replace === true) {
@@ -26,14 +38,17 @@ export default class Points {
     return this.points
   }
 
-  addStringTolabel(value: string, target:'row'|'column', points?:DataPoint[]): void {
+  addStringToLabel(args: ModArgsStringTolabel, points?:DataPoint[]): void {
+    const {value, target} = args
     this.targetPoints(points).forEach(point => {
       point[target] += value
     })
   }
 
-  addTagTolabel(categoryId: number, target:'row'|'column', glue?:string, points?:DataPoint[]): void {
-    glue = (!glue) ? ' ' : glue
+  addTagToLabel(args: ModArgsTagTolabel, points?:DataPoint[]): void {
+    const {categoryId, target} = args
+    const glue = (!args.glue) ? ' ' : args.glue
+
     this.targetPoints(points).forEach(point => {
       const tag = point.tags.find(tag => tag.categoryId === categoryId)
       const value = (tag?.value) ? tag?.value : 'n/a'
@@ -41,11 +56,12 @@ export default class Points {
     })
   }
 
-  addToOthers(match:'row'|'column', points?:DataPoint[], push?:boolean): DataPoint[] {
-    push = (!push) ? true : push
+  addToOthers(args: ModArgsAddToOthers, points:DataPoint[]): DataPoint[] {
+    const {match} = args
+
     const insert = (match==='row') ? 'column' : 'row'
     const addTo = <DataPoint[]>[]
-    this.targetPoints(points).forEach(addPoint => {
+    points.forEach(addPoint => {
       this.points.forEach(point => {
         if(addPoint[match] === point[match] && addPoint[insert] !== point[insert]) {
           const addToPoints = <DataPoint> {...addPoint}
@@ -55,15 +71,14 @@ export default class Points {
       })
     })
 
-    if(push === true) {
-      this.push(addTo)
-    }
-
+    this.push(addTo)
     return addTo
   }
 
-  addMeta(key:string, points?:DataPoint[], glue?:string): void {
-    glue = (!glue) ? ' ' : glue
+  addMeta(args: ModArgsAddMeta, points?:DataPoint[]): void {
+    const {key} = args
+    const glue = (!args.glue) ? ' ' : args.glue
+
     this.targetPoints(points).forEach(point => {
       const targetMeta = point.meta?.find(meta => meta.key === key)
       if(targetMeta && targetMeta.value) {
@@ -72,14 +87,16 @@ export default class Points {
     })
   }
 
-  map(categoryId: number, target:'row'|'column', points?:DataPoint[]): void {
+  map(args: ModArgsMap, points?:DataPoint[]): void {
+    const {categoryId, target} = args
     this.targetPoints(points).forEach(point => {
       const tag = point.tags.find(tag => tag.categoryId === categoryId)
       point[target] = (tag?.value) ? tag?.value : 'n/a'
     })
   }
 
-  rename(renameStack: RenameLabel[], points?:DataPoint[]): void {
+  rename(args: ModArgsRename, points?:DataPoint[]): void {
+    const {renameStack} = args
     this.targetPoints(points).forEach(point => {
       renameStack.forEach(rename => {
         let targets = this.getRenameTargets(rename)

@@ -93,7 +93,8 @@ export type DataResultCellFilter = {
 
 export type DataPointModifier = {
   applyToLevel?: number[],
-  cb: any
+  cb?: any
+  callbacks?: any[]
 }
 
 export type CellKey = {
@@ -170,4 +171,51 @@ export type RenameLabel = {
   replace?: string
   by?: string
   cb?: (label:string) => string
+}
+
+type NewType = ModArgsFilter
+
+export type ModifierCommandArgument = 
+    ModArgsFilter
+  | ModArgsStringTolabel
+  | ModArgsTagTolabel
+  | ModArgsAddToOthers
+  | ModArgsAddMeta
+  | ModArgsMap
+  | ModArgsRename
+
+export type ModArgsFilter = {
+  key: string
+  value:string
+  replace?:boolean
+}
+
+export type ModArgsStringTolabel = {
+  value: string
+  target:'row'|'column'
+}
+
+export type ModArgsTagTolabel = {
+  categoryId: number
+  target:'row'|'column'
+  glue?: string
+}
+
+export type ModArgsAddToOthers = {
+  push?: number
+  match:'row'|'column'
+}
+
+export type ModArgsAddMeta = {
+  key: string
+  glue?: number
+}
+
+export type ModArgsMap = {
+  categoryId: number
+  target: 'row'|'column'
+}
+
+export type ModArgsRename = {
+  renameStack: RenameLabel[]
 }

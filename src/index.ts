@@ -9,6 +9,7 @@ import { all, filterByDataTag, filterBy } from './filter';
 import { value, valueMeta, difference, points, dump } from './cell';
 import { byColId } from './sort';
 import { ParserOptions, RawResultInfo, StoreOptions, Tagger } from './types';
+import { ModifierCommandArgument } from './types';
 import { getNestedClause, getTagGroupsByCategory } from './helper'
 import Points from './points'
 
@@ -49,6 +50,7 @@ const sort = {
 
 export type { ParserOptions, RawResultInfo, StoreOptions, Tagger }
 export type {DataPoint, DataGrid, DataGridCategories, DataPointFilter, DataPointModifier, DataResultCellFilter}
+export type { ModifierCommandArgument }
 export { Query, Parser, Gesstabs, Store, filter, cell, sort, getData, getDataObject }
 export { Points }
 export { getNestedClause, getTagGroupsByCategory }
