@@ -174,9 +174,10 @@ export type DataPointTarget = 'row' | 'column'
 export type RenameLabel = {
   target?: DataPointTarget
   targets?: DataPointTarget[]
-  replace?: string
-  by?: string
+  replace: string
+  by: string
   cb?: (label:string) => string
+  isPattern: boolean
 }
 
 type NewType = ModArgsFilter

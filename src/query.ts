@@ -395,7 +395,7 @@ export class Query {
     try {
       sortation.forEach(sort => {
         if(sort.cb && typeof sort.cb === 'function') {
-          sort.cb(this.result.body, this.points)
+          sort.cb(this.result, this.points)
         }
       })
     } catch (e) {

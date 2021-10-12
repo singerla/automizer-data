@@ -99,9 +99,14 @@ export default class Points {
     const {renameStack} = args
     this.targetPoints(points).forEach(point => {
       renameStack.forEach(rename => {
+        if(rename.isPattern && rename.isPattern === true) {
+          rename.cb = (label: string): string => {
+            const regExp = new RegExp(rename.replace)
+            return label.replace(regExp, rename.by)
+          }
+        }
         let targets = this.getRenameTargets(rename)
         this.applyRenameLabel(targets, rename, point)
-
       })
     })
   }
@@ -119,14 +124,12 @@ export default class Points {
 
   applyRenameLabel(targets: DataPointTarget[], rename: RenameLabel, point: DataPoint) {
     targets.forEach(target => {
-      if(rename.replace && rename.by) {
+      if(rename.cb) {
+        point[target] = rename.cb(point[target])
+      } else if(rename.replace && rename.by) {
         if(point[target] && point[target] === rename.replace) {
           point[target] = rename.by
         }
-      }
-
-      if(rename.cb) {
-        point[target] = rename.cb(point[target])
       }
     })
   }
