@@ -73,7 +73,7 @@ export type DataPointFilter = {
 }
 
 export type DataGridFunction = {
-  (tag: DataTag|string, key?:string): DataPointFilter
+  (tag: DataTag|string, key?:string|string[]): DataPointFilter
 }
 
 export type DataGridCategories = {
@@ -85,6 +85,7 @@ export type DataGrid = {
   columns: DataPointFilter[] | DataGridCategories,
   cell: DataResultCellFilter,
   modify?: DataPointModifier[]
+  sort?: DataPointSortation[]
 }
 
 export type DataResultCellFilter = {
@@ -95,6 +96,11 @@ export type DataPointModifier = {
   applyToLevel?: number[],
   cb?: any
   callbacks?: any[]
+}
+
+export type DataPointSortation = {
+  cb?: any
+  section: 'row'|'column'
 }
 
 export type CellKey = {
@@ -175,7 +181,7 @@ export type RenameLabel = {
 
 type NewType = ModArgsFilter
 
-export type ModifierCommandArgument = 
+export type ModifierCommandArgument =
     ModArgsFilter
   | ModArgsStringTolabel
   | ModArgsTagTolabel

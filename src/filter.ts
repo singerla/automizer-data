@@ -28,7 +28,6 @@ export const filterBy = <DataGridFunction> function(section: string, key: string
         } else {
           return (point.tags.find((tag: any) => tag.categoryId === Number(section) && tag.value === key))
         }
-        return false
       }),
       label: key
     }

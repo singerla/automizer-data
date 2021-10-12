@@ -11,7 +11,7 @@ import {
   Result,
   ResultRow,
   CellKeys,
-  DataPointFilter, DataPointModifier
+  DataPointFilter, DataPointModifier, DataPointSortation
 } from './types';
 
 import Points from './points'
@@ -287,6 +287,10 @@ export class Query {
 
     this.setResult(result)
 
+    if(this.grid.sort) {
+      this.sortResult(this.grid.sort)
+    }
+
     return this
   }
 
@@ -295,9 +299,11 @@ export class Query {
   }
 
   checkForCallback(cb: any, keys: CellKeys): DataPointFilter[] {
-    return (typeof cb === 'function')
+    const cbResult = (typeof cb === 'function')
       ? cb(keys)
       : cb
+
+    return cbResult
   }
 
   async getTagIds(tags: DataTag[]): Promise<number[]> {
@@ -383,6 +389,18 @@ export class Query {
     })
 
     return this
+  }
+
+  sortResult(sortation:DataPointSortation[]) {
+    try {
+      sortation.forEach(sort => {
+        if(sort.cb && typeof sort.cb === 'function') {
+          sort.cb(this.result.body, this.points)
+        }
+      })
+    } catch (e) {
+      throw e
+    }
   }
 
   sort(cb: any): Query {

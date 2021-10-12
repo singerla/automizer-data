@@ -5,11 +5,11 @@ import { Store } from './store'
 import { Parser } from './parser/parser'
 import { Gesstabs } from './parser/gesstabs'
 import {DataPoint, DataGrid, DataGridCategories, DataPointFilter, DataPointModifier, DataResultCellFilter, DataTag } from './types'
-import { all, filterByDataTag, filterBy } from './filter';
+import {all, filterByDataTag, filterBy} from './filter';
 import { value, valueMeta, difference, points, dump } from './cell';
 import { byColId } from './sort';
 import { ParserOptions, RawResultInfo, StoreOptions, Tagger } from './types';
-import { ModifierCommandArgument } from './types';
+import { ModifierCommandArgument, DataPointSortation } from './types';
 import { getNestedClause, getTagGroupsByCategory } from './helper'
 import Points from './points'
 
@@ -50,7 +50,7 @@ const sort = {
 
 export type { ParserOptions, RawResultInfo, StoreOptions, Tagger }
 export type {DataPoint, DataGrid, DataGridCategories, DataPointFilter, DataPointModifier, DataResultCellFilter}
-export type { ModifierCommandArgument }
+export type { ModifierCommandArgument, DataPointSortation }
 export { Query, Parser, Gesstabs, Store, filter, cell, sort, getData, getDataObject }
 export { Points }
 export { getNestedClause, getTagGroupsByCategory }
