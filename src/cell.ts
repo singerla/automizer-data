@@ -10,8 +10,8 @@ export const difference = (params: any) => {
       return points[0].value
     }
 
-    if(params.args && params.args[0]) {
-      switch(params.args[0]) {
+    if(params.args && params.args.mode) {
+      switch(params.args.mode) {
         case 'reverted':
           return Number(points[1].value) - Number(points[0].value)
       }
@@ -22,8 +22,8 @@ export const difference = (params: any) => {
 }
 
 export const valueMeta =  (params: any) => {
-  const targetMetaTag = (params.args && params.args[0])
-    ? params.args[0] : 'base'
+  const targetMetaTag = (params.args && params.args.mode)
+    ? params.args.mode : 'base'
   return (points: DataPoint[]): ResultCell => {
     return points.map(point => point
       .meta?.filter(meta => meta.key === targetMetaTag)
@@ -39,12 +39,12 @@ export const value = (params: any) => {
     }
 
     const args = params.args
-    if(!args || !args[0]) {
+    if(!args || !args.mode) {
       return points.map(point => point.value).join('|')
     }
 
-    const from = args[0]
-    const targetItems = args[1]
+    const from = args.mode
+    const targetItems = (args.targetItems) ? args.targetItems : []
     const targetPoints = points.filter((point:any) => targetItems.indexOf(point[from]) > -1)
 
     if(targetPoints) {
