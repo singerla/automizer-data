@@ -10,10 +10,10 @@ generator client {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique
-  name          String?
-  imports       Import[]
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  imports Import[]
 }
 
 model Import {
@@ -22,7 +22,7 @@ model Import {
   date   DateTime @default(now())
   user   User     @relation(fields: [userId], references: [id])
   userId Int
-  sheets    Sheet[]
+  sheets Sheet[]
 }
 
 model Category {
@@ -43,18 +43,20 @@ model Tag {
 }
 
 model Sheet {
-  id       Int    @id @default(autoincrement())
-  import   Import @relation(fields: [importId], references: [id])
-  importId Int
-  tags     Tag[]
-  columns  String
-  rows     String
-  data     String
-  meta     String
+  id        Int    @id @default(autoincrement())
+  import    Import @relation(fields: [importId], references: [id])
+  importId  Int
+  tags      Tag[]
+  columns   String
+  rows      String
+  data      String
+  meta      String
+  rowKey    String
+  columnKey String
+  tagKey    String
 }
 
 model Selection {
-  id                   Int                    @id @default(autoincrement())
-  tags                 Tag[]
+  id   Int   @id @default(autoincrement())
+  tags Tag[]
 }
-

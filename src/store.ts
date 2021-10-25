@@ -1,6 +1,7 @@
 import {Category, PrismaClient, Sheet, Tag } from './client';
 import { Query } from './query'
 import { Datasheet, DataTag, StoreOptions, StoreSummary } from './types'
+import crypto from 'crypto'
 
 export class Store {
   prisma: PrismaClient
@@ -98,7 +99,7 @@ export class Store {
     await this.addTagIdsToTags(datasheet.tags)
 
     if(this.options?.replaceExisting) {
-      await this.deleteExistingDatasheets(datasheet.tags)
+      await this.deleteExistingDatasheets(datasheet)
     }
 
     await this.createSheet(datasheet)
@@ -136,6 +137,9 @@ export class Store {
   }
 
   async createSheet(datasheet: Datasheet): Promise<Sheet> {
+    const tagIds = datasheet.tags.map(tag => {
+      return { id: tag.id }
+    })
     const newSheet = await this.prisma.sheet.create({
       data: {
         columns: JSON.stringify(datasheet.columns),
@@ -143,13 +147,12 @@ export class Store {
         data: JSON.stringify(datasheet.data),
         meta: JSON.stringify(datasheet.meta),
         tags: {
-          connect: datasheet.tags.map(tag => {
-            return { id: tag.id }
-          })
+          connect: tagIds
         },
         import: {
           connect: { id: this.importId }
-        }
+        },
+        ...this.getSheetKeys(datasheet)
       }
     })
 
@@ -164,18 +167,28 @@ export class Store {
     return newSheet
   }
 
-  async deleteExistingDatasheets(tags: DataTag[]) {
-    const existingSheets = await this.query.getSheets(tags)
-    if(existingSheets.length) {
-      const ids = existingSheets.map(sheet => sheet.id)
-      await this.prisma.sheet.deleteMany({
-        where: {
-          id: {
-            in: ids
-          }
-        }
-      })
-      this.summary.deleted.push(...ids)
+  getSheetKeys(datasheet: Datasheet) {
+    return {
+      rowKey: this.createHash(datasheet.rows),
+      columnKey: this.createHash(datasheet.columns),
+      tagKey: this.createHash(datasheet.tags.map((tag: any) => tag.id))
     }
+  }
+
+  createHash(arr: string[]): string {
+    const str = arr.join('|')
+    const sha256Hasher = crypto.createHmac("sha256", "123");
+    const hash = sha256Hasher.update(str).digest("hex");
+    return hash
+  }
+
+  async deleteExistingDatasheets(datasheet: Datasheet) {
+    const keys = this.getSheetKeys(datasheet)
+    const ids = await this.prisma.sheet.deleteMany({
+      where: {
+        tagKey: keys.tagKey
+      }
+    })
+    this.summary.deleted.push(ids.count)
   }
 }

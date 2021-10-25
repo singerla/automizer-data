@@ -88,7 +88,10 @@ const sheetData: Prisma.SheetCreateInput[] = [
       connect: [
         { id: 1 }, { id: 2 }, { id: 4 },
       ]
-    }
+    },
+    rowKey: "",
+    columnKey: "",
+    tagKey: ""
   },
   {
     import: {
@@ -102,7 +105,10 @@ const sheetData: Prisma.SheetCreateInput[] = [
       connect: [
         { id: 1 }, { id: 3 }, { id: 4 },
       ]
-    }
+    },
+    rowKey: "",
+    columnKey: "",
+    tagKey: ""
   },
   {
     import: {
@@ -116,7 +122,10 @@ const sheetData: Prisma.SheetCreateInput[] = [
       connect: [
         { id: 5 }, { id: 2 }, { id: 4 },
       ]
-    }
+    },
+    rowKey: "",
+    columnKey: "",
+    tagKey: ""
   },
   {
     import: {
@@ -130,7 +139,10 @@ const sheetData: Prisma.SheetCreateInput[] = [
       connect: [
         { id: 5 }, { id: 3 }, { id: 4 },
       ]
-    }
+    },
+    rowKey: "",
+    columnKey: "",
+    tagKey: ""
   },
   {
     import: {
@@ -144,7 +156,10 @@ const sheetData: Prisma.SheetCreateInput[] = [
       connect: [
         { id: 5 }, { id: 2 }, { id: 6 },
       ]
-    }
+    },
+    rowKey: "",
+    columnKey: "",
+    tagKey: ""
   },
   {
     import: {
@@ -158,7 +173,10 @@ const sheetData: Prisma.SheetCreateInput[] = [
       connect: [
         { id: 5 }, { id: 3 }, { id: 6 },
       ]
-    }
+    },
+    rowKey: "",
+    columnKey: "",
+    tagKey: ""
   },
 ]
 
