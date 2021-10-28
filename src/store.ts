@@ -161,7 +161,7 @@ export class Store {
       this.summary.ids.push(datasheet.id)
     } else {
       console.error(datasheet)
-      throw new Error('Could not store datasheet.')
+      throw 'Could not store datasheet.'
     }
 
     return newSheet

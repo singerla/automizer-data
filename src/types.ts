@@ -81,8 +81,8 @@ export type DataGridCategories = {
 }
 
 export type DataGrid = {
-  rows: DataPointFilter[] | DataGridCategories,
-  columns: DataPointFilter[] | DataGridCategories,
+  row: DataPointFilter[] | DataGridCategories,
+  column: DataPointFilter[] | DataGridCategories,
   cell: DataResultCellFilter,
   modify?: DataPointModifier[]
   sort?: DataPointSortation[]

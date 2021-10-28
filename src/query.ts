@@ -26,6 +26,10 @@ export class Query {
   sheets: Datasheet[]
   allSheets: Datasheet[]
   keys: CellKeys
+  visibleKeys: {
+    row: string[],
+    column: string[]
+  }
   points: DataPoint[]
   grid: DataGrid
   result: Result
@@ -35,6 +39,10 @@ export class Query {
     this.prisma = prisma
     this.sheets = []
     this.keys = <CellKeys> {}
+    this.visibleKeys = {
+      row: [],
+      column: []
+    }
     this.result = <Result> {
       body: <ResultRow[]> []
     }
@@ -265,8 +273,8 @@ export class Query {
   }
 
   merge() {
-    let rows = this.checkForCallback(this.grid.rows, this.keys)
-    let columns = this.checkForCallback(this.grid.columns, this.keys)
+    let rows = this.checkForCallback(this.grid.row, this.keys)
+    let columns = this.checkForCallback(this.grid.column, this.keys)
 
     let points = <any> []
     let result = <any> {}
@@ -362,7 +370,11 @@ export class Query {
   setResult(result: any): void {
     for(const r in result) {
       const cols = []
+      this.visibleKeys.row.push(r)
+
       for(const c in result[r]) {
+        this.visibleKeys.column.push(c)
+
         cols.push({
           key: c,
           value: result[r][c]
@@ -374,6 +386,8 @@ export class Query {
         cols: cols
       })
     }
+
+    this.visibleKeys.column = [...new Set(this.visibleKeys.column)]
   }
 
   filterColumns(columns: number|number[]): Query {
