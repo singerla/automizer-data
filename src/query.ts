@@ -241,7 +241,7 @@ export class Query {
     this.grid?.modify?.forEach(modifier => {
       if(modifier.applyToLevel && modifier.applyToLevel.indexOf(level) > -1) {
         modifiers.push(modifier)
-      } else if(!modifier.applyToLevel) {
+      } else if(!modifier.applyToLevel || modifier.applyToLevel.length === 0) {
         modifiers.push(modifier)
       }
     })
