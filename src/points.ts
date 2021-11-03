@@ -27,9 +27,10 @@ export default class Points {
   }
 
   filter(args: ModArgsFilter): DataPoint[] {
-    const {key, value, replace} = args
+    const {key, values, replace} = args
     if(key === 'row' || key === 'column') {
-      const points = this.points.filter(point => point[key] === value)
+      const points = this.points.filter(point => values.includes(point[key]))
+
       if(replace === true) {
         this.replace(points)
       }

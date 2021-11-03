@@ -3,7 +3,6 @@ import { getNestedClause, vd } from './helper'
 
 import {
   Datasheet,
-  TagWhereBySomeId,
   DataTag,
   Sheets,
   DataGrid,
@@ -11,7 +10,7 @@ import {
   Result,
   ResultRow,
   CellKeys,
-  DataPointFilter, DataPointModifier, DataPointSortation
+  DataPointFilter, DataPointModifier, DataPointSortation, QueryResultKeys, QueryResult
 } from './types';
 
 import Points from './points'
@@ -25,6 +24,7 @@ export class Query {
   clause: any
   sheets: Datasheet[]
   allSheets: Datasheet[]
+  inputKeys: CellKeys
   keys: CellKeys
   visibleKeys: {
     row: string[],
@@ -38,6 +38,7 @@ export class Query {
   constructor(prisma: PrismaClient) {
     this.prisma = prisma
     this.sheets = []
+    this.inputKeys = <CellKeys> {}
     this.keys = <CellKeys> {}
     this.visibleKeys = {
       row: [],
@@ -69,7 +70,7 @@ export class Query {
       this.processSheets(sheets, Number(level))
     }
 
-    this.setDataPointKeys()
+    this.setDataPointKeys(this.points, 'keys')
     return this
   }
 
@@ -83,8 +84,20 @@ export class Query {
       this.processSheets(sheets, Number(level))
     }
 
-    this.setDataPointKeys()
+    this.setDataPointKeys(this.points, 'keys')
+
     return this
+  }
+
+  toResult(): QueryResult {
+    return {
+      result: JSON.stringify(this.result),
+      sheets: JSON.stringify(this.allSheets),
+      tags: JSON.stringify(this.tags),
+      keys: JSON.stringify(this.keys),
+      visibleKeys: JSON.stringify(this.formatPointKeys(this.visibleKeys)),
+      inputKeys: JSON.stringify(this.formatPointKeys(this.inputKeys)),
+    }
   }
 
   processSheets(sheets: Sheets, level: number) {
@@ -92,6 +105,7 @@ export class Query {
     if(sheets.length > 0) {
       this.parseSheets(sheets)
       this.setDataPoints(dataPoints)
+      this.setDataPointKeys(dataPoints, 'inputKeys')
       this.modifyDataPoints(dataPoints, level)
     }
     this.pushDataPoints(dataPoints)
@@ -252,24 +266,44 @@ export class Query {
     this.points.push(...dataPoints)
   }
 
-  setDataPointKeys() {
-    this.points.forEach((point: any, c: number) => {
-      this.addKey('row', point.row)
-      this.addKey('column', point.column)
+  setDataPointKeys(dataPoints:DataPoint[], mode: 'keys'|'inputKeys') {
+    dataPoints.forEach((point: any, c: number) => {
+      this.addKey('row', point.row, mode)
+      this.addKey('column', point.column, mode)
       point.tags.forEach((tag:DataTag) => {
         if(tag.categoryId) {
-          this.addKey(String(tag.categoryId), tag.value)
+          this.addKey(String(tag.categoryId), tag.value, mode)
         }
       })
     })
   }
 
-  addKey(category: string, value: string) {
-    if(!this.keys[category]) {
-      this.keys[category] = {}
+  addKey(category: string, value: string, mode: 'keys'|'inputKeys') {
+    if(!this[mode][category]) {
+      this[mode][category] = {}
     }
 
-    this.keys[category][value] = true
+    this[mode][category][value] = true
+  }
+
+  formatPointKeys(keys:any) {
+    const rowOrColumn = ['row', 'column']
+    const queryResult = <QueryResultKeys> {
+      row: Object.keys(keys.row),
+      column: Object.keys(keys.column),
+      category: []
+    }
+
+    for(const key in keys) {
+      if(!rowOrColumn.includes(key)) {
+        queryResult.category.push({
+          categoryId: Number(key),
+          keys: Object.keys(keys[key])
+        })
+      }
+    }
+
+    return queryResult
   }
 
   merge() {

@@ -1,4 +1,4 @@
-import {getData, getDataObject, Store} from './index';
+import {getData, getResult, Store} from './index';
 import { DataGrid } from './types';
 import { all, filterByDataTag, filterBy } from './filter';
 import { value, difference } from './cell'
@@ -19,8 +19,8 @@ const run = async() => {
     cell: value
   }
 
-  const result = await getDataObject(selector, grid, client)
-  console.log(result.points.length)
+  const result = await getResult(selector, grid, client)
+  // console.log(result.points.length)
 
   return result
 }

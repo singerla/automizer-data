@@ -20,7 +20,6 @@ export type StoreSummary = {
   deleted: number[],
 }
 
-
 export type DataTag = {
   id?: number
   category: string
@@ -50,18 +49,29 @@ export type Datasheet = {
   meta: RawResultMeta[]
 }
 
-export type TagWhereBySomeId = {
-  tags: {
-    some: {
-      id: number;
-    };
-    AND?: TagWhereBySomeId
-  };
-}
-
 export type Sheets = (Sheet & {
   tags: Tag[];
 })[]
+
+export type QueryResult = {
+  result: string;
+  sheets: string;
+  tags: string;
+  keys: string;
+  inputKeys: string;
+  visibleKeys: string;
+}
+
+export type QueryResultKeys = {
+  row: string[];
+  column: string[];
+  category: QueryResultCategoryKeys[];
+}
+
+export type QueryResultCategoryKeys = {
+  categoryId: number;
+  keys: string[];
+}
 
 export type DataPointFilterResult = {
   points: DataPoint[]
@@ -100,7 +110,7 @@ export type DataPointModifier = {
 
 export type DataPointSortation = {
   cb?: any
-  section: 'row'|'column'
+  section: DataPointTarget
 }
 
 export type CellKey = {
@@ -180,8 +190,6 @@ export type RenameLabel = {
   isPattern: boolean
 }
 
-type NewType = ModArgsFilter
-
 export type ModifierCommandArgument =
     ModArgsFilter
   | ModArgsStringTolabel
@@ -193,24 +201,24 @@ export type ModifierCommandArgument =
 
 export type ModArgsFilter = {
   key: string
-  value:string
-  replace?:boolean
+  values: string[]
+  replace?: boolean
 }
 
 export type ModArgsStringTolabel = {
   value: string
-  target:'row'|'column'
+  target: DataPointTarget
 }
 
 export type ModArgsTagTolabel = {
   categoryId: number
-  target:'row'|'column'
+  target: DataPointTarget
   glue?: string
 }
 
 export type ModArgsAddToOthers = {
   push?: number
-  match:'row'|'column'
+  match: DataPointTarget
 }
 
 export type ModArgsAddMeta = {
@@ -220,7 +228,7 @@ export type ModArgsAddMeta = {
 
 export type ModArgsMap = {
   categoryId: number
-  target: 'row'|'column'
+  target: DataPointTarget
 }
 
 export type ModArgsRename = {

@@ -27,7 +27,7 @@ const getData = async(selector: DataTag[] | DataTag[][], grid: any, prisma?: Pri
   return result
 }
 
-const getDataObject = async(selector: number[][], grid: any, prisma: any) => {
+const getResult = async(selector: number[][], grid: any, prisma: any) => {
   const query = new Query(prisma).setGrid(grid)
   await query.getByIds(selector)
 
@@ -35,7 +35,7 @@ const getDataObject = async(selector: number[][], grid: any, prisma: any) => {
     await query.merge()
   }
 
-  return query
+  return query.toResult()
 }
 
 const cell = {
@@ -51,6 +51,6 @@ const sort = {
 export type { ParserOptions, RawResultInfo, StoreOptions, Tagger }
 export type {DataPoint, DataGrid, DataGridCategories, DataPointFilter, DataPointModifier, DataResultCellFilter}
 export type { ModifierCommandArgument, DataPointSortation }
-export { Query, Parser, Gesstabs, Store, filter, cell, sort, getData, getDataObject }
+export { Query, Parser, Gesstabs, Store, filter, cell, sort, getData, getResult }
 export { Points }
 export { getNestedClause, getTagGroupsByCategory }
