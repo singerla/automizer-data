@@ -10,8 +10,6 @@ import {
   ModArgsRename
 } from './types';
 
-
-
 export default class Points {
   points: DataPoint[];
 

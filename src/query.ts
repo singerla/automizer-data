@@ -278,8 +278,8 @@ export class Query {
   formatPointKeys(keys:any) {
     const rowOrColumn = ['row', 'column']
     const queryResult = <QueryResultKeys> {
-      row: Object.keys(keys.row),
-      column: Object.keys(keys.column),
+      row: (keys.row) ? Object.keys(keys.row): [],
+      column: (keys.column) ? Object.keys(keys.column): [],
       category: []
     }
 
