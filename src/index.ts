@@ -35,7 +35,7 @@ const getResult = async(selector: number[][], grid: any, prisma: any) => {
     await query.merge()
   }
 
-  return query.toResult()
+  return query
 }
 
 const cell = {

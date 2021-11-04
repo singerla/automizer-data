@@ -89,17 +89,6 @@ export class Query {
     return this
   }
 
-  toResult(): QueryResult {
-    return {
-      result: JSON.stringify(this.result),
-      sheets: JSON.stringify(this.allSheets),
-      tags: JSON.stringify(this.tags),
-      keys: JSON.stringify(this.keys),
-      visibleKeys: JSON.stringify(this.formatPointKeys(this.visibleKeys)),
-      inputKeys: JSON.stringify(this.formatPointKeys(this.inputKeys)),
-    }
-  }
-
   processSheets(sheets: Sheets, level: number) {
     const dataPoints = <DataPoint[]>[]
     if(sheets.length > 0) {
