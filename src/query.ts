@@ -502,7 +502,11 @@ export class Query {
   }
 
   toColumnLabels(): TableData {
-    const series = this.result.body[0].cols.map(col => col.key)
+    let series = <string[]>[]
+    if(this.result.body && this.result.body.length) {
+      series = this.result.body[0].cols.map(col => col.key)
+    }
+
     return {
       body: [
         {

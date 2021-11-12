@@ -26,9 +26,15 @@ export default class Points {
 
   filter(args: ModArgsFilter): DataPoint[] {
     const {key, values, replace} = args
-    if((key === 'row' || key === 'column')
-      && Array.isArray(values) && values.length) {
-      const points = this.points.filter(point => values.includes(point[key]))
+    if(Array.isArray(values) && values.length) {
+      let points
+      if(key === 'row' || key === 'column') {
+        points = this.points.filter(point => values.includes(point[key]))
+      } else {
+        points = this.points.filter(point => point.tags.find(
+          tag => tag.categoryId === Number(key) && values.includes(tag.value)
+        ))
+      }
 
       if(replace === true) {
         this.replace(points)

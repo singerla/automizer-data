@@ -6,7 +6,7 @@ export type StoreOptions = {
 }
 
 export type ParserOptions = {
-  separator: string
+  separator?: string
   renderRow: (cells: ResultCell[]) => ResultCell[]
   renderTags: (info: RawResultInfo[], pushCb: Tagger) => void
   metaMap: MetaMap

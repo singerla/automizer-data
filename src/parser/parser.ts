@@ -16,6 +16,7 @@ export class Parser {
   currentSection: string;
   count: number;
   datasheets: Datasheet[];
+  tableSeparator: string;
 
   constructor(config: ParserOptions) {
     this.results = <RawResultData[]> []
@@ -23,6 +24,7 @@ export class Parser {
     this.config = config
     this.currentSection = ''
     this.count = -1
+    this.tableSeparator = ''
   }
 
   setDatasheets() {

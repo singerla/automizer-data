@@ -40,11 +40,20 @@ export class Gesstabs extends Parser {
   async fromXlsx(file: string): Promise<Datasheet[]> {
     const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file));
     const data = workSheetsFromBuffer[0].data
+    console.log('File rows count: ' + String(data.length))
+    this.autoDetectConfig(data)
+    console.log('Table separator: ' + this.tableSeparator)
     data.forEach(row => {
       this.parseSections(<RawRow> row)
     })
     this.setDatasheets()
     return this.datasheets
+  }
+
+  autoDetectConfig(data: any) {
+    this.tableSeparator = (!this.config.separator)
+      ? this.config.separator = data[0][0]
+      : this.config.separator
   }
 
   parseSections(data: RawRow): void  {
@@ -54,7 +63,7 @@ export class Gesstabs extends Parser {
     const hasFirstCell = (data[0] && String(data[0]).length > 0)
     const hasSecondCell = (typeof (secondCell) !== 'undefined' && String(data[1]).length > 0)
 
-    if(firstCell.indexOf(this.config.separator) !== -1) {
+    if(firstCell.indexOf(this.tableSeparator) !== -1) {
       this.count++
       this.currentSection = 'info'
       this.results[this.count] = <RawResultData> {
