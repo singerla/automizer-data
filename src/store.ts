@@ -46,7 +46,7 @@ export class Store {
       await this.storeData(datasheets[i])
     }
 
-    await this.prisma.$disconnect()
+    // await this.prisma.$disconnect()
 
     return this.summary
   }
