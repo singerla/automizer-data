@@ -33,6 +33,7 @@ export type DataPoint = {
   column: string
   value: ResultCell
   meta?: DataPointMeta[]
+  origin?: DataPoint[]
 }
 
 export type DataPointMeta = {
@@ -98,12 +99,18 @@ export type DataGrid = {
   sort?: DataPointSortation[]
 }
 
+export type ResultCellInfo = {
+  value: ResultCell,
+  tags: Tag[]
+}
+
 export type DataResultCellFilter = {
-  (points: DataPoint[]): ResultCell
+  (points: DataPoint[]): ResultCell|ResultCellInfo[]
 }
 
 export type DataPointModifier = {
   applyToLevel?: number[],
+  executionOrder?: number,
   cb?: any
   callbacks?: any[]
 }
@@ -234,3 +241,5 @@ export type ModArgsMap = {
 export type ModArgsRename = {
   renameStack: RenameLabel[]
 }
+
+export type ModArgsTranspose = {}

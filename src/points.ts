@@ -7,7 +7,8 @@ import {
   ModArgsAddToOthers,
   ModArgsAddMeta,
   ModArgsMap,
-  ModArgsRename
+  ModArgsRename,
+  ModArgsTranspose
 } from './types';
 
 export default class Points {
@@ -47,6 +48,7 @@ export default class Points {
   addStringToLabel(args: ModArgsStringTolabel, points?:DataPoint[]): void {
     const {value, target} = args
     this.targetPoints(points).forEach(point => {
+      this.pushPointOrigin(point)
       point[target] += value
     })
   }
@@ -56,6 +58,7 @@ export default class Points {
     const glue = (!args.glue) ? ' ' : args.glue
 
     this.targetPoints(points).forEach(point => {
+      this.pushPointOrigin(point)
       const tag = point.tags.find(tag => tag.categoryId === categoryId)
       const value = (tag?.value) ? tag?.value : 'n/a'
       point[target] += glue + value
@@ -86,6 +89,7 @@ export default class Points {
     const glue = (!args.glue) ? ' ' : args.glue
 
     this.targetPoints(points).forEach(point => {
+      this.pushPointOrigin(point)
       const targetMeta = point.meta?.find(meta => meta.key === key)
       if(targetMeta && targetMeta.value) {
         point.value += String(glue) + targetMeta.value
@@ -96,14 +100,25 @@ export default class Points {
   map(args: ModArgsMap, points?:DataPoint[]): void {
     const {categoryId, target} = args
     this.targetPoints(points).forEach(point => {
+      this.pushPointOrigin(point)
       const tag = point.tags.find(tag => tag.categoryId === categoryId)
       point[target] = (tag?.value) ? tag?.value : 'n/a'
+    })
+  }
+
+  transpose(args: ModArgsTranspose, points?:DataPoint[]): void {
+    this.targetPoints(points).forEach(point => {
+      this.pushPointOrigin(point)
+      const row = point.row
+      point.row = point.column
+      point.column = row
     })
   }
 
   rename(args: ModArgsRename, points?:DataPoint[]): void {
     const {renameStack} = args
     this.targetPoints(points).forEach(point => {
+      this.pushPointOrigin(point)
       renameStack.forEach(rename => {
         if(rename.isPattern && rename.isPattern === true) {
           rename.cb = (label: string): string => {
@@ -147,6 +162,11 @@ export default class Points {
 
   push(addPoints:DataPoint[]) {
     this.points.push(...addPoints)
+  }
+
+  pushPointOrigin(point:DataPoint) {
+    point.origin = (!point.origin)
+      ? [{...point}] : [...point.origin, {...point}]
   }
 
   dump(points?:DataPoint[]) {

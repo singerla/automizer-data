@@ -1,4 +1,5 @@
-import { DataPoint, ResultCell } from './types';
+import { vd } from './helper';
+import {DataPoint, DataTag, ResultCell, ResultCellInfo} from './types';
 
 export const difference = (params: any) => {
   return (points: DataPoint[]): ResultCell => {
@@ -33,24 +34,26 @@ export const valueMeta =  (params: any) => {
 }
 
 export const value = (params: any) => {
-  return (points: DataPoint[]): ResultCell => {
+  return (points: DataPoint[]): ResultCell|ResultCellInfo[] => {
     if(!points) {
       return '-'
     }
 
     const args = params.args
     if(!args || !args.mode) {
-      return points.map(point => point.value).join('|')
+      return renderPointInfoDiff(points)
     }
 
     const from = args.mode
     const targetItems = (args.targetItems) ? args.targetItems : []
     const targetPoints = points.filter((point:any) => targetItems.indexOf(point[from]) > -1)
 
-    if(targetPoints) {
-      return targetPoints.map((targetPoint:any) => targetPoint.value).join('|')
+    if(targetPoints && targetPoints.length === 1) {
+      return targetPoints[0].value
+    } else if(targetPoints) {
+      return renderPointInfoDiff(targetPoints)
     } else {
-      return ''
+      return null
     }
   }
 }
@@ -74,4 +77,8 @@ export const points = (points: DataPoint[]): ResultCell => {
 export const dump = (points: DataPoint[]): ResultCell => {
   console.dir(points, { depth: 10 })
   return points[0].value
+}
+
+export const renderPointInfoDiff = (points: DataPoint[]): ResultCell => {
+  return points.map(point => point.value).join('|')
 }
