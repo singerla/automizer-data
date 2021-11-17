@@ -98,11 +98,15 @@ export default class Points {
   }
 
   map(args: ModArgsMap, points?:DataPoint[]): void {
-    const {categoryId, target} = args
+    const {source, target} = args
     this.targetPoints(points).forEach(point => {
       this.pushPointOrigin(point)
-      const tag = point.tags.find(tag => tag.categoryId === categoryId)
-      point[target] = (tag?.value) ? tag?.value : 'n/a'
+      if(source === 'row' || source === 'column') {
+        point[target] = point[source]
+      } else {
+        const tag = point.tags.find(tag => tag.categoryId === source)
+        point[target] = (tag?.value) ? tag?.value : 'n/a'
+      }
     })
   }
 

@@ -234,7 +234,7 @@ export type ModArgsAddMeta = {
 }
 
 export type ModArgsMap = {
-  categoryId: number
+  source: number|DataPointTarget
   target: DataPointTarget
 }
 
