@@ -230,7 +230,7 @@ export type ModArgsAddToOthers = {
 
 export type ModArgsAddMeta = {
   key: string
-  glue?: number
+  glue?: string
 }
 
 export type ModArgsMap = {

@@ -86,13 +86,16 @@ export default class Points {
 
   addMeta(args: ModArgsAddMeta, points?:DataPoint[]): void {
     const {key} = args
-    const glue = (!args.glue) ? ' ' : args.glue
 
     this.targetPoints(points).forEach(point => {
       this.pushPointOrigin(point)
       const targetMeta = point.meta?.find(meta => meta.key === key)
       if(targetMeta && targetMeta.value) {
-        point.value += String(glue) + targetMeta.value
+        if(args.glue) {
+          point.value += String(args.glue) + targetMeta.value
+        } else {
+          point.value = targetMeta.value
+        }
       }
     })
   }
