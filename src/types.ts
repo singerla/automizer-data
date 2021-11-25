@@ -20,6 +20,8 @@ export type StoreSummary = {
   deleted: number[],
 }
 
+export type Selector = number[][]
+
 export type DataTag = {
   id?: number
   category: string

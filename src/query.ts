@@ -14,7 +14,8 @@ import {
   DataPointModifier,
   DataPointSortation,
   QueryResultKeys,
-  DataGridTransformation
+  DataGridTransformation,
+  Selector
 } from './types';
 
 import Points from './points'
@@ -78,7 +79,7 @@ export class Query {
     return this
   }
 
-  async getByIds(allTagIds: number[][]): Promise<Query> {
+  async getByIds(allTagIds: Selector): Promise<Query> {
     for(const level in allTagIds) {
       const tagIds = allTagIds[level]
       const selectionTags = await this.getTagInfo(tagIds)
