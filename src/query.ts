@@ -10,13 +10,17 @@ import {
   Result,
   ResultRow,
   CellKeys,
-  DataPointFilter, DataPointModifier, DataPointSortation, QueryResultKeys, QueryResult
+  DataPointFilter,
+  DataPointModifier,
+  DataPointSortation,
+  QueryResultKeys,
+  DataGridTransformation
 } from './types';
 
 import Points from './points'
 
 import { ChartData, ChartCategory } from 'pptx-automizer/dist/types/chart-types';
-import { TableData } from 'pptx-automizer/dist/types/table-types';
+import {TableData, TableRow} from 'pptx-automizer/dist/types/table-types';
 import _ from "lodash";
 
 export class Query {
@@ -322,6 +326,10 @@ export class Query {
       this.sortResult(this.grid.sort)
     }
 
+    if(this.grid.transform) {
+      this.transformResult(this.grid.transform)
+    }
+
     return this
   }
 
@@ -445,6 +453,18 @@ export class Query {
     return this
   }
 
+  transformResult(transformations:DataGridTransformation[]) {
+    try {
+      transformations.forEach(transform => {
+        if(transform.cb && typeof transform.cb === 'function') {
+          transform.cb(this.result, this.points)
+        }
+      })
+    } catch (e) {
+      throw e
+    }
+  }
+
   toSeriesCategories(): ChartData {
     if(this.result.body[0]) {
       const series = this.result.body[0].cols.map(col => { return { label: col.key } } )
@@ -516,13 +536,41 @@ export class Query {
     }
   }
 
-  toTable(): TableData {
+  toTableBody(): TableData {
     return {
       body: this.result.body.map(row => {
         return {
           values: row.cols.map(cell => { return <number> cell.value } )
         }
       }),
+    }
+  }
+
+  toTable(params?:any): TableData {
+    const body = <TableRow[]>[]
+    if(params?.showColumnLabels) {
+      body.push({
+        values: [
+          '',
+          ...this.result.body[0].cols.map(col => col.key)
+        ]
+      })
+    }
+
+    this.result.body.forEach(row => {
+      const tableRow = []
+      if(params?.showRowLabels) {
+        tableRow.push(String(row.key))
+      }
+      row.cols.forEach(cell => {
+        tableRow.push(String(cell.value))
+      })
+      body.push({
+        values: tableRow
+      })
+    })
+    return {
+      body: body
     }
   }
 }

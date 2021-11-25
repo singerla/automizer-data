@@ -5,6 +5,7 @@ import {
   ModArgsStringTolabel,
   ModArgsTagTolabel,
   ModArgsAddToOthers,
+  ModArgsAggregate,
   ModArgsAddMeta,
   ModArgsMap,
   ModArgsRename,
@@ -66,7 +67,7 @@ export default class Points {
   }
 
   addToOthers(args: ModArgsAddToOthers, points:DataPoint[]): DataPoint[] {
-    const {match} = args
+    const {match, mode} = args
 
     const insert = (match==='row') ? 'column' : 'row'
     const addTo = <DataPoint[]>[]
@@ -75,6 +76,7 @@ export default class Points {
         if(addPoint[match] === point[match] && addPoint[insert] !== point[insert]) {
           const addToPoints = <DataPoint> {...addPoint}
           addToPoints[insert] = point[insert]
+          addToPoints.mode = mode
           addTo.push(addToPoints)
         }
       })
@@ -82,6 +84,18 @@ export default class Points {
 
     this.push(addTo)
     return addTo
+  }
+
+  addToNew(args: ModArgsAggregate, points:DataPoint[]): void {
+    const {key, values, alias, mode} = args
+
+    points.forEach((point, index) => {
+      this.pushPointOrigin(point)
+      const newPoint = {...point}
+      newPoint[key] = alias
+      newPoint.mode = mode
+      this.points.push(newPoint)
+    })
   }
 
   addMeta(args: ModArgsAddMeta, points?:DataPoint[]): void {

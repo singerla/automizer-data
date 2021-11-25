@@ -27,6 +27,10 @@ export type DataTag = {
   categoryId?: number
 }
 
+export type DataPointModified = {
+  mode: string
+}
+
 export type DataPoint = {
   tags: DataTag[]
   row: string
@@ -34,6 +38,7 @@ export type DataPoint = {
   value: ResultCell
   meta?: DataPointMeta[]
   origin?: DataPoint[]
+  mode?: string
 }
 
 export type DataPointMeta = {
@@ -97,6 +102,7 @@ export type DataGrid = {
   cell: DataResultCellFilter,
   modify?: DataPointModifier[]
   sort?: DataPointSortation[]
+  transform?: DataGridTransformation[]
 }
 
 export type ResultCellInfo = {
@@ -116,6 +122,11 @@ export type DataPointModifier = {
 }
 
 export type DataPointSortation = {
+  cb?: any
+  section: DataPointTarget
+}
+
+export type DataGridTransformation = {
   cb?: any
   section: DataPointTarget
 }
@@ -226,6 +237,14 @@ export type ModArgsTagTolabel = {
 export type ModArgsAddToOthers = {
   push?: number
   match: DataPointTarget
+  mode: string
+}
+
+export type ModArgsAggregate = {
+  key: DataPointTarget
+  values: string[]
+  alias: string
+  mode: string
 }
 
 export type ModArgsAddMeta = {

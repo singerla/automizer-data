@@ -3,6 +3,8 @@ import {DataPoint, DataTag, ResultCell, ResultCellInfo} from './types';
 
 export const difference = (params: any) => {
   return (points: DataPoint[]): ResultCell => {
+    points = processSumPoints(points)
+
     if (!points[0] && !points[1]) {
       return 'n/a'
     }
@@ -81,4 +83,17 @@ export const dump = (points: DataPoint[]): ResultCell => {
 
 export const renderPointInfoDiff = (points: DataPoint[]): ResultCell => {
   return points.map(point => point.value).join('|')
+}
+
+const processSumPoints = (points: DataPoint[]): DataPoint[] => {
+  const sumPoints = points.filter(point => point.mode && point.mode === 'sum')
+  if(sumPoints.length > 0) {
+    sumPoints.reduce((previousValue, currentValue) => {
+      previousValue.value = Number(previousValue.value) + Number(currentValue.value)
+      return previousValue
+    })
+    points = points.filter(point => point.mode && point.mode !== 'sum')
+    points.push(sumPoints[0])
+  }
+  return points
 }
