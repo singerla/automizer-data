@@ -36,27 +36,17 @@ export const valueMeta =  (params: any) => {
 }
 
 export const value = (params: any) => {
-  return (points: DataPoint[]): ResultCell|ResultCellInfo[] => {
-    if(!points) {
-      return '-'
-    }
-
+  return (points: DataPoint[]): ResultCell|DataPoint[] => {
     const args = params.args
     if(!args || !args.mode) {
-      return renderPointInfoDiff(points)
+      return points
     }
 
     const from = args.mode
     const targetItems = (args.targetItems) ? args.targetItems : []
     const targetPoints = points.filter((point:any) => targetItems.indexOf(point[from]) > -1)
 
-    if(targetPoints && targetPoints.length === 1) {
-      return targetPoints[0].value
-    } else if(targetPoints) {
-      return renderPointInfoDiff(targetPoints)
-    } else {
-      return null
-    }
+    return targetPoints
   }
 }
 
@@ -81,7 +71,7 @@ export const dump = (points: DataPoint[]): ResultCell => {
   return points[0].value
 }
 
-export const renderPointInfoDiff = (points: DataPoint[]): ResultCell => {
+export const renderPoints = (points: DataPoint[]): ResultCell => {
   return points.map(point => point.value).join('|')
 }
 

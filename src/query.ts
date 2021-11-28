@@ -15,7 +15,9 @@ import {
   DataPointSortation,
   QueryResultKeys,
   DataGridTransformation,
-  Selector
+  Selector,
+  ResultCell,
+  ResultColumn
 } from './types';
 
 import Points from './points'
@@ -466,6 +468,18 @@ export class Query {
     }
   }
 
+  renderCellValue(cell: ResultColumn): number {
+    if(Array.isArray(cell.value)) {
+      if(cell.value.length === 1) {
+        return Number(cell.value[0].value)
+      } else {
+        return 0
+      }
+    }
+    
+    return Number(cell.value)
+  }
+
   toSeriesCategories(): ChartData {
     if(this.result.body[0]) {
       const series = this.result.body[0].cols.map(col => { return { label: col.key } } )
@@ -474,7 +488,7 @@ export class Query {
       this.result.body.forEach(row => {
         categories.push({
           label: row.key,
-          values: row.cols.map(cell => { return <number> cell.value })
+          values: row.cols.map(cell => this.renderCellValue(cell))
         })
       })
 
@@ -498,7 +512,7 @@ export class Query {
       categories.push({
         label: row.key,
         y: r,
-        values: row.cols.map(cell => { return <number> cell.value })
+        values: row.cols.map(cell => this.renderCellValue(cell))
       })
     })
 
@@ -541,7 +555,7 @@ export class Query {
     return {
       body: this.result.body.map(row => {
         return {
-          values: row.cols.map(cell => { return <number> cell.value } )
+          values: row.cols.map(cell => this.renderCellValue(cell) )
         }
       }),
     }
@@ -564,7 +578,7 @@ export class Query {
         tableRow.push(String(row.key))
       }
       row.cols.forEach(cell => {
-        tableRow.push(String(cell.value))
+        tableRow.push(this.renderCellValue(cell))
       })
       body.push({
         values: tableRow

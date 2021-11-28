@@ -113,7 +113,7 @@ export type ResultCellInfo = {
 }
 
 export type DataResultCellFilter = {
-  (points: DataPoint[]): ResultCell|ResultCellInfo[]
+  (points: DataPoint[]): ResultCell|DataPoint[]
 }
 
 export type DataPointModifier = {
@@ -143,7 +143,7 @@ export type CellKeys = {
 
 export type ResultColumn = {
   key: string,
-  value: ResultCell
+  value: ResultCell | DataPoint[]
 }
 
 export type ResultRow = {
