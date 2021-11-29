@@ -242,11 +242,30 @@ export type ModArgsAddToOthers = {
   mode: string
 }
 
-export type ModArgsAggregate = {
+export type ModArgsAddToNew = {
   key: DataPointTarget
   values: string[]
   alias: string
   mode: string
+}
+
+export type ModArgsCalcDifference = {
+  match: DataPointTarget
+  item: string
+  mode: string
+}
+
+export type ModArgsCalcSum = {
+  match: DataPointTarget
+  items: string[]
+  mode: string
+  alias: string
+}
+
+export type AggregatePoints = {
+  alias: string
+  key: string
+  points: DataPoint[]
 }
 
 export type ModArgsAddMeta = {

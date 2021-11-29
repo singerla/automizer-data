@@ -1,11 +1,18 @@
 import { vd } from './helper';
-import {DataPoint, DataPointTarget, RenameLabel} from './types';
+import {
+  AggregatePoints,
+  DataPoint,
+  DataPointTarget,
+  ModArgsAddToNew,
+  ModArgsCalcDifference,
+  ModArgsCalcSum,
+  RenameLabel
+} from './types';
 import {
   ModArgsFilter,
   ModArgsStringTolabel,
   ModArgsTagTolabel,
   ModArgsAddToOthers,
-  ModArgsAggregate,
   ModArgsAddMeta,
   ModArgsMap,
   ModArgsRename,
@@ -86,7 +93,7 @@ export default class Points {
     return addTo
   }
 
-  addToNew(args: ModArgsAggregate, points:DataPoint[]): void {
+  addToNew(args: ModArgsAddToNew, points:DataPoint[]): void {
     const {key, values, alias, mode} = args
 
     points.forEach((point, index) => {
@@ -133,6 +140,60 @@ export default class Points {
       const row = point.row
       point.row = point.column
       point.column = row
+    })
+  }
+
+  calcDifference(args: ModArgsCalcDifference): void {
+    const {match, item} = args
+
+    const oppoMatch = (match === 'row') ? 'column' : 'row'
+
+    this.points.forEach(point => {
+      const vsPoint = this.points.find(vsPoint =>
+        point !== vsPoint
+        && point[oppoMatch] === vsPoint[oppoMatch]
+        && vsPoint[match] === item
+      )
+
+      if(vsPoint) {
+        point.value = Number(point.value) - Number(vsPoint.value)
+      }
+    })
+  }
+
+  calcSum(args: ModArgsCalcSum): void {
+    const {match, items, alias} = args
+
+    const oppoMatch = (match === 'row') ? 'column' : 'row'
+    const sumStacks = <AggregatePoints[]>[]
+
+    items?.forEach(item => {
+      const sumPoints = this.points.filter(vsPoint => vsPoint[match] === item)
+      sumPoints.forEach(sumPoint => {
+        const existing = sumStacks.find(existingSumPoint =>
+          existingSumPoint.alias === alias
+          && existingSumPoint.key === sumPoint[oppoMatch]
+        )
+        if(!existing) {
+          sumStacks.push({
+            alias: alias,
+            key: sumPoint[oppoMatch],
+            points: [ sumPoint ]
+          })
+        } else {
+          existing.points.push(sumPoint)
+        }
+      })
+    })
+
+    sumStacks.forEach(sumStack => {
+      const newItem = {...sumStack.points[0]}
+      newItem[match] = alias
+      newItem.value = 0
+      sumStack.points.forEach((sumPoint) => {
+        newItem.value = Number(newItem.value) + Number(sumPoint.value)
+      })
+      this.points.push(newItem)
     })
   }
 

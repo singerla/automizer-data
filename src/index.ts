@@ -6,11 +6,11 @@ import { Parser } from './parser/parser'
 import { Gesstabs } from './parser/gesstabs'
 import {DataPoint, DataGrid, DataGridCategories, DataPointFilter, DataPointModifier, DataResultCellFilter, DataTag } from './types'
 import {all, filterByDataTag, filterBy} from './filter';
-import { value, valueMeta, difference, points, dump } from './cell';
+import { value, valueMeta, dump } from './cell';
 import { byColId } from './sort';
 import { ParserOptions, RawResultInfo, StoreOptions, Tagger } from './types';
-import { 
-  ModifierCommandArgument, 
+import {
+  ModifierCommandArgument,
   DataPointSortation,
   ModArgsFilter,
   Selector
@@ -44,7 +44,7 @@ const getResult = async(selector: number[][], grid: any, prisma: any) => {
 }
 
 const cell = {
-  value, valueMeta, difference, points, dump
+  value, valueMeta, dump
 }
 const filter = {
   all, filterByDataTag, filterBy
@@ -55,8 +55,8 @@ const sort = {
 
 export type { ParserOptions, RawResultInfo, StoreOptions, Tagger }
 export type { DataPoint, DataGrid, DataGridCategories, DataPointFilter, DataPointModifier, DataResultCellFilter}
-export type { 
-  ModifierCommandArgument, 
+export type {
+  ModifierCommandArgument,
   DataPointSortation,
   ModArgsFilter,
   Selector
