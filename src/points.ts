@@ -108,17 +108,36 @@ export default class Points {
   addMeta(args: ModArgsAddMeta, points?:DataPoint[]): void {
     const {key} = args
 
+    const replacePoints = <DataPoint[]>[]
     this.targetPoints(points).forEach(point => {
       this.pushPointOrigin(point)
       const targetMeta = point.meta?.find(meta => meta.key === key)
       if(targetMeta && targetMeta.value) {
         if(args.glue) {
           point.value += String(args.glue) + targetMeta.value
+        } else if(args.replace) {
+          point.value = targetMeta.value
+          point.row = targetMeta.key
+          this.pushUnique(replacePoints, point)
         } else {
           point.value = targetMeta.value
         }
       }
     })
+
+    if(replacePoints.length) {
+      this.replace(replacePoints)
+    }
+  }
+
+  pushUnique(points:DataPoint[], point:DataPoint) {
+    const existing = points.find(existingPoint => 
+      existingPoint.row === point.row
+      && existingPoint.column === point.column)
+    
+    if(!existing) {
+      points.push(point)
+    }
   }
 
   map(args: ModArgsMap, points?:DataPoint[]): void {
@@ -143,12 +162,12 @@ export default class Points {
     })
   }
 
-  calcDifference(args: ModArgsCalcDifference): void {
+  calcDifference(args: ModArgsCalcDifference, points?:DataPoint[]): void {
     const {match, item} = args
 
     const oppoMatch = (match === 'row') ? 'column' : 'row'
 
-    this.points.forEach(point => {
+    this.targetPoints(points).forEach(point => {
       const vsPoint = this.points.find(vsPoint =>
         point !== vsPoint
         && point[oppoMatch] === vsPoint[oppoMatch]
@@ -161,7 +180,7 @@ export default class Points {
     })
   }
 
-  calcSum(args: ModArgsCalcSum): void {
+  calcSum(args: ModArgsCalcSum, points?:DataPoint[]): void {
     const {match, items, alias} = args
 
     const oppoMatch = (match === 'row') ? 'column' : 'row'
@@ -174,27 +193,42 @@ export default class Points {
           existingSumPoint.alias === alias
           && existingSumPoint.key === sumPoint[oppoMatch]
         )
-        if(!existing) {
-          sumStacks.push({
-            alias: alias,
-            key: sumPoint[oppoMatch],
-            points: [ sumPoint ]
-          })
-        } else {
-          existing.points.push(sumPoint)
-        }
+        this.pushToStack(existing, sumPoint, sumStacks, alias, sumPoint[oppoMatch])
       })
     })
 
     sumStacks.forEach(sumStack => {
-      const newItem = {...sumStack.points[0]}
-      newItem[match] = alias
-      newItem.value = 0
-      sumStack.points.forEach((sumPoint) => {
-        newItem.value = Number(newItem.value) + Number(sumPoint.value)
-      })
-      this.points.push(newItem)
+      this.pushToPoints(sumStack, match, alias, this.targetPoints(points))
     })
+  }
+
+  pushToStack(existing:AggregatePoints | undefined, 
+    sumPoint: DataPoint, 
+    sumStacks: AggregatePoints[],
+    alias: string,
+    key: string): void {
+    if(!existing) {
+      sumStacks.push({
+        alias: alias,
+        key: key,
+        points: [ sumPoint ]
+      })
+    } else {
+      existing.points.push(sumPoint)
+    }
+  }
+
+  pushToPoints(sumStack:AggregatePoints, 
+    match:DataPointTarget, 
+    alias: string,
+    points: DataPoint[]): void {
+    const newItem = {...sumStack.points[0]}
+    newItem[match] = alias
+    newItem.value = 0
+    sumStack.points.forEach((sumPoint) => {
+      newItem.value = Number(newItem.value) + Number(sumPoint.value)
+    })
+    points.push(newItem)
   }
 
   rename(args: ModArgsRename, points?:DataPoint[]): void {

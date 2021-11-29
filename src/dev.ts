@@ -1,7 +1,7 @@
 import {getData, getResult, Store} from './index';
 import { DataGrid } from './types';
 import { all, filterByDataTag, filterBy } from './filter';
-import { value, difference } from './cell'
+import { value } from './cell'
 import {PrismaClient} from '../prisma/client';
 
 const run = async() => {

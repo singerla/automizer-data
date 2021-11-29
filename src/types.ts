@@ -271,6 +271,7 @@ export type AggregatePoints = {
 export type ModArgsAddMeta = {
   key: string
   glue?: string
+  replace?: boolean
 }
 
 export type ModArgsMap = {
