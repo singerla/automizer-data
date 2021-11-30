@@ -16,14 +16,10 @@ import {
   QueryResultKeys,
   DataGridTransformation,
   Selector,
-  ResultCell,
-  ResultColumn
 } from './types';
 
 import Points from './points'
 
-import { ChartData, ChartCategory } from 'pptx-automizer/dist/types/chart-types';
-import {TableData, TableRow} from 'pptx-automizer/dist/types/table-types';
 import _ from "lodash";
 
 export class Query {
@@ -78,6 +74,7 @@ export class Query {
     }
 
     this.setDataPointKeys(this.points, 'keys')
+
     return this
   }
 
@@ -282,26 +279,6 @@ export class Query {
     this[mode][category][value] = true
   }
 
-  formatPointKeys(keys:any) {
-    const rowOrColumn = ['row', 'column']
-    const queryResult = <QueryResultKeys> {
-      row: (keys.row) ? Object.keys(keys.row): [],
-      column: (keys.column) ? Object.keys(keys.column): [],
-      category: []
-    }
-
-    for(const key in keys) {
-      if(!rowOrColumn.includes(key)) {
-        queryResult.category.push({
-          categoryId: Number(key),
-          keys: Object.keys(keys[key])
-        })
-      }
-    }
-
-    return queryResult
-  }
-
   merge() {
     let rows = this.checkForCallback(this.grid.row, this.keys)
     let columns = this.checkForCallback(this.grid.column, this.keys)
@@ -439,6 +416,11 @@ export class Query {
     return this
   }
 
+  sort(cb: any): Query {
+    this.result.body.sort((a, b) => cb(a, b))
+    return this
+  }
+
   sortResult(sortation:DataPointSortation[]) {
     try {
       sortation.forEach(sort => {
@@ -451,11 +433,6 @@ export class Query {
     }
   }
 
-  sort(cb: any): Query {
-    this.result.body.sort((a, b) => cb(a, b))
-    return this
-  }
-
   transformResult(transformations:DataGridTransformation[]) {
     try {
       transformations.forEach(transform => {
@@ -465,127 +442,6 @@ export class Query {
       })
     } catch (e) {
       throw e
-    }
-  }
-
-  renderCellValue(cell: ResultColumn): number {
-    if(Array.isArray(cell.value)) {
-      if(cell.value.length === 1) {
-        return Number(cell.value[0].value)
-      } else {
-        return 0
-      }
-    }
-    
-    return Number(cell.value)
-  }
-
-  toSeriesCategories(): ChartData {
-    if(this.result.body[0]) {
-      const series = this.result.body[0].cols.map(col => { return { label: col.key } } )
-      const categories = <ChartCategory[]> []
-
-      this.result.body.forEach(row => {
-        categories.push({
-          label: row.key,
-          values: row.cols.map(cell => this.renderCellValue(cell))
-        })
-      })
-
-      return {
-        series: series,
-        categories: categories
-      }
-    }
-
-    return {
-      series: [],
-      categories: []
-    }
-  }
-
-  toVerticalLines(): ChartData {
-    const series = this.result.body[0].cols.map(col => { return { label: col.key } } )
-    const categories = <ChartCategory[]> []
-
-    this.result.body.forEach((row, r) => {
-      categories.push({
-        label: row.key,
-        y: r,
-        values: row.cols.map(cell => this.renderCellValue(cell))
-      })
-    })
-
-    return {
-      series: series,
-      categories: categories
-    }
-  }
-
-  toLabels(): TableData {
-    return {
-      body: this.result.body.map(row => {
-        return {
-          values: [ row.key ]
-        }
-      })
-    }
-  }
-
-  toRowLabels(): TableData {
-    return this.toLabels()
-  }
-
-  toColumnLabels(): TableData {
-    let series = <string[]>[]
-    if(this.result.body && this.result.body.length) {
-      series = this.result.body[0].cols.map(col => col.key)
-    }
-
-    return {
-      body: [
-        {
-          values: series
-        }
-      ]
-    }
-  }
-
-  toTableBody(): TableData {
-    return {
-      body: this.result.body.map(row => {
-        return {
-          values: row.cols.map(cell => this.renderCellValue(cell) )
-        }
-      }),
-    }
-  }
-
-  toTable(params?:any): TableData {
-    const body = <TableRow[]>[]
-    if(params?.showColumnLabels) {
-      body.push({
-        values: [
-          '',
-          ...this.result.body[0].cols.map(col => col.key)
-        ]
-      })
-    }
-
-    this.result.body.forEach(row => {
-      const tableRow = []
-      if(params?.showRowLabels) {
-        tableRow.push(String(row.key))
-      }
-      row.cols.forEach(cell => {
-        tableRow.push(this.renderCellValue(cell))
-      })
-      body.push({
-        values: tableRow
-      })
-    })
-    return {
-      body: body
     }
   }
 }
