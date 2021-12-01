@@ -48,6 +48,13 @@ export const setNestedClause = (clause:any, ids:number[]): void => {
   }
 }
 
-export const vd = (v:any): void => {
+export const vd = (v:any, keys?: boolean): void => {
+  if(keys && typeof v === 'object') {
+    v = Object.keys(v)
+  }
+  console.log('--------- [automizer-data] ---------')
+  // @ts-ignore
+  console.log((new Error()).stack.split("\n")[2].trim())
   console.dir(v, {depth:10})
+  console.log()
 }

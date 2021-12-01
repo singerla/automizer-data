@@ -1,25 +1,41 @@
 import { PrismaClient } from './client'
 
-import { Query } from './query'
+import Query from './query'
 import Points from './points'
 import Result from './result';
 
 import { Store } from './store'
 import { Parser } from './parser/parser'
 import { Gesstabs } from './parser/gesstabs'
-import {DataPoint, DataGrid, DataGridCategories, DataPointFilter, DataPointModifier, DataResultCellFilter, DataTag } from './types'
+
 import {all, filterByDataTag, filterBy} from './filter';
 import { value, valueMeta, dump } from './cell';
 import { byColId } from './sort';
-import { ParserOptions, RawResultInfo, StoreOptions, Tagger } from './types';
+import { getNestedClause, getTagGroupsByCategory, vd } from './helper'
+
+import {
+  DataPoint,
+  DataGrid,
+  DataGridCategories,
+  DataPointFilter,
+  DataPointModifier,
+  DataResultCellFilter,
+  DataTag,
+  DataGridTransformation
+} from './types'
+import {
+  ParserOptions,
+  RawResultInfo,
+  StoreOptions,
+  Tagger
+} from './types';
 import {
   ModifierCommandArgument,
   DataPointSortation,
   ModArgsFilter,
   Selector,
-  Result as ResultType
 } from './types';
-import { getNestedClause, getTagGroupsByCategory, vd } from './helper'
+
 
 const getData = async(selector: DataTag[] | DataTag[][], grid: any, prisma?: PrismaClient) => {
   if(!prisma) {
@@ -46,6 +62,7 @@ const getResult = async(selector: number[][], grid: any, prisma: any): Promise<R
   return new Result(query)
 }
 
+
 const cell = {
   value, valueMeta, dump
 }
@@ -63,7 +80,8 @@ export type {
   DataGridCategories,
   DataPointFilter,
   DataPointModifier,
-  DataResultCellFilter
+  DataResultCellFilter,
+  DataGridTransformation
 }
 export type {
   ModifierCommandArgument,

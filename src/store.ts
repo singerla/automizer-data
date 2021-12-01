@@ -1,5 +1,5 @@
 import {Category, PrismaClient, Sheet, Tag } from './client';
-import { Query } from './query'
+import Query from './query'
 import { Datasheet, DataTag, StoreOptions, StoreSummary } from './types'
 import crypto from 'crypto'
 

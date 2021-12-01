@@ -22,7 +22,7 @@ import Points from './points'
 
 import _ from "lodash";
 
-export class Query {
+export default class Query {
   prisma: PrismaClient
   clause: any
   sheets: Datasheet[]

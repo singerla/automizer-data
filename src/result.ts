@@ -2,7 +2,7 @@ import {CellKeys, Datasheet, QueryResultKeys, Result as ResultType, ResultCell, 
 import {ChartData} from 'pptx-automizer/dist';
 import {ChartCategory} from 'pptx-automizer/dist/types/chart-types';
 import {TableData, TableRow} from 'pptx-automizer/dist/types/table-types';
-import {Query} from './query';
+import Query from './query';
 
 export default class Result {
   result: ResultType
