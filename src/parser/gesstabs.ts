@@ -52,7 +52,7 @@ export class Gesstabs extends Parser {
 
   autoDetectConfig(data: any) {
     this.tableSeparator = (!this.config.separator)
-      ? this.config.separator = data[0][0]
+      ? data[0][0]
       : this.config.separator
   }
 

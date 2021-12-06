@@ -20,7 +20,7 @@ export default class Result {
     this.inputKeys = query.inputKeys
     this.keys = query.keys
     this.visibleKeys = query.visibleKeys
-    this.allSheets = <Datasheet[]> []
+    this.allSheets = query.allSheets
     this.tags = <any>[]
   }
 
