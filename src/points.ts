@@ -55,13 +55,15 @@ export default class Points {
   }
 
   exclude(args: ModArgsExclude): void {
-    const {key, values} = args
+    const {key, values, excludeAll} = args
 
-    let points
+    let points = <DataPoint[]>[]
     if(key === 'row' || key === 'column') {
-      points = this.points.filter(point => !values.includes(point[key]))
-    } else {
       if(values.length) {
+        points = this.points.filter(point => !values.includes(point[key]))
+      }
+    } else {
+      if(excludeAll !== true) {
         points = this.points.filter(point => point.tags.find(
           tag => tag.categoryId === Number(key) && !values.includes(tag.value)
         ))

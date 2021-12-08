@@ -228,6 +228,7 @@ export type ModArgsFilter = {
 export type ModArgsExclude = {
   key: string
   values: string[]
+  excludeAll: boolean
 }
 
 export type ModArgsStringTolabel = {
