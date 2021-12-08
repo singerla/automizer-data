@@ -14,14 +14,26 @@ import { byColId } from './sort';
 import { getNestedClause, getTagGroupsByCategory, vd } from './helper'
 
 import {
-  DataPoint,
   DataGrid,
   DataGridCategories,
   DataPointFilter,
-  DataPointModifier,
   DataResultCellFilter,
+  DataGridTransformation,
+  DataPoint,
+  DataPointModifier,
   DataTag,
-  DataGridTransformation
+  ModArgsAddMeta,
+  ModArgsAddToOthers,
+  ModArgsFilter,
+  ModArgsExclude,
+  ModArgsMap,
+  ModArgsRename,
+  ModArgsStringTolabel,
+  ModArgsTagTolabel,
+  ModArgsTranspose,
+  ModArgsAddToNew,
+  ModArgsCalcDifference,
+  ModArgsCalcSum
 } from './types'
 import {
   ParserOptions,
@@ -32,7 +44,6 @@ import {
 import {
   ModifierCommandArgument,
   DataPointSortation,
-  ModArgsFilter,
   Selector,
 } from './types';
 
@@ -75,18 +86,29 @@ const sort = {
 
 export type { ParserOptions, RawResultInfo, StoreOptions, Tagger }
 export type {
-  DataPoint,
   DataGrid,
   DataGridCategories,
   DataPointFilter,
-  DataPointModifier,
   DataResultCellFilter,
   DataGridTransformation
 }
 export type {
   ModifierCommandArgument,
   DataPointSortation,
+  DataPoint,
+  DataPointModifier,
+  ModArgsAddMeta,
+  ModArgsAddToOthers,
   ModArgsFilter,
+  ModArgsExclude,
+  ModArgsMap,
+  ModArgsRename,
+  ModArgsStringTolabel,
+  ModArgsTagTolabel,
+  ModArgsTranspose,
+  ModArgsAddToNew,
+  ModArgsCalcDifference,
+  ModArgsCalcSum,
   Selector
 }
 export { Query, Parser, Gesstabs, Store, filter, cell, sort, getData, getResult }

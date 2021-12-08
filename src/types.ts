@@ -225,6 +225,11 @@ export type ModArgsFilter = {
   replace?: boolean
 }
 
+export type ModArgsExclude = {
+  key: string
+  values: string[]
+}
+
 export type ModArgsStringTolabel = {
   value: string
   target: DataPointTarget

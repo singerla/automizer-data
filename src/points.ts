@@ -6,6 +6,7 @@ import {
   ModArgsAddToNew,
   ModArgsCalcDifference,
   ModArgsCalcSum,
+  ModArgsExclude,
   RenameLabel
 } from './types';
 import {
@@ -51,6 +52,29 @@ export default class Points {
       return points
     }
     return this.points
+  }
+
+  exclude(args: ModArgsExclude): void {
+    const {key, values} = args
+
+    let points
+    if(key === 'row' || key === 'column') {
+      points = this.points.filter(point => !values.includes(point[key]))
+    } else {
+      if(values.length) {
+        points = this.points.filter(point => point.tags.find(
+          tag => tag.categoryId === Number(key) && !values.includes(tag.value)
+        ))
+      } else {
+        points = this.points.filter(point => {
+          return !point.tags.find(
+            tag => tag.categoryId === Number(key)
+          )
+        })
+      }
+    }
+
+    this.replace(points)
   }
 
   addStringToLabel(args: ModArgsStringTolabel, points?:DataPoint[]): void {
@@ -131,10 +155,10 @@ export default class Points {
   }
 
   pushUnique(points:DataPoint[], point:DataPoint) {
-    const existing = points.find(existingPoint => 
+    const existing = points.find(existingPoint =>
       existingPoint.row === point.row
       && existingPoint.column === point.column)
-    
+
     if(!existing) {
       points.push(point)
     }
@@ -202,8 +226,8 @@ export default class Points {
     })
   }
 
-  pushToStack(existing:AggregatePoints | undefined, 
-    sumPoint: DataPoint, 
+  pushToStack(existing:AggregatePoints | undefined,
+    sumPoint: DataPoint,
     sumStacks: AggregatePoints[],
     alias: string,
     key: string): void {
@@ -218,8 +242,8 @@ export default class Points {
     }
   }
 
-  pushToPoints(sumStack:AggregatePoints, 
-    match:DataPointTarget, 
+  pushToPoints(sumStack:AggregatePoints,
+    match:DataPointTarget,
     alias: string,
     points: DataPoint[]): void {
     const newItem = {...sumStack.points[0]}
