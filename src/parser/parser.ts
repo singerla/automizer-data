@@ -6,12 +6,13 @@ import {
   RawTable,
   Datasheet,
   RawRow,
-  StoreSummary, ResultCell
-} from "../types";
+  StoreSummary, ResultCell, RawResultMeta, RawResultNestedParent
+} from '../types';
 
 
 export class Parser {
   results: RawResultData[];
+  nested: RawResultNestedParent[];
   config: ParserOptions;
   currentSection: string;
   count: number;
@@ -20,6 +21,7 @@ export class Parser {
 
   constructor(config: ParserOptions) {
     this.results = <RawResultData[]> []
+    this.nested = <RawResultNestedParent[]> []
     this.datasheets = <Datasheet[]> []
     this.config = config
     this.currentSection = ''
@@ -118,6 +120,7 @@ export class Parser {
     const subgroupHeader = subgroupHeaders[bottomLevel]
     const body = table.body
     const meta = table.meta
+    const nested = table.nested
 
     const subgroups = <RawTable[]> []
     slices.forEach(slice => {
@@ -147,6 +150,14 @@ export class Parser {
 
       const colArr = Object.values(subgroupHeader)
       subgroup.columns = colArr.slice(slice.start, slice.end).map(col => String(col))
+
+      nested.forEach(nestedItem => {
+        subgroup.meta.push({
+          key: 'nested',
+          label: nestedItem.label,
+          data: nestedItem.parents.map(parent => parent.label)
+        })
+      })
 
       subgroups.push(subgroup)
     })

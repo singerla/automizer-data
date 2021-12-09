@@ -6,12 +6,13 @@ import {
   RawTable,
   Datasheet,
   RawRow,
-  StoreSummary, ResultCell
-} from "./../types";
+  StoreSummary, ResultCell, RawResultMeta, RawResultNestedItem, RawResultNestedParent,
+} from './../types';
 import {Store} from "./../store";
 
 import xlsx from 'node-xlsx';
 import {Parser} from "./parser";
+import { vd } from '../helper';
 
 const csv = require('csv-parser')
 const fs = require('fs')
@@ -70,8 +71,11 @@ export class Gesstabs extends Parser {
         info: [],
         header: [],
         body: [],
-        meta: []
+        meta: [],
+        nested: [],
       }
+
+      this.nested = <RawResultNestedParent[]>[]
     }
 
     if(firstCell.length === 0 && !hasSecondCell
@@ -97,6 +101,12 @@ export class Gesstabs extends Parser {
       const isMeta = this.parseMeta(data, firstCell)
       if(!isMeta) {
         this.results[this.count].body.push(data)
+
+        this.parseNested(data, firstCell)
+        this.results[this.count].nested.push({
+          parents: this.nested,
+          label: firstCell
+        })
       }
     }
   }
@@ -108,7 +118,7 @@ export class Gesstabs extends Parser {
       )
 
       if(isMeta) {
-        this.results[this.count].meta.push({
+        this.results[this.count].meta.push(<RawResultMeta> {
           key: metaKey,
           label: firstCell,
           data: data
@@ -116,6 +126,28 @@ export class Gesstabs extends Parser {
         return true
       }
     }
+    return false
+  }
+
+  parseNested(data: RawRow, firstCell: string): boolean {
+    if(!this.config.overcodes) return false
+
+    for(const overcodeLevel in this.config.overcodes) {
+      const overcode = this.config.overcodes[overcodeLevel]
+      const isOvercode = (firstCell.indexOf(overcode.prefix) === 0)
+
+      if(isOvercode) {
+        this.nested = this.nested.filter(nested => nested.level < Number(overcodeLevel))
+        const parent = {
+          level: Number(overcodeLevel),
+          label: firstCell,
+          key: overcode.key,
+        }
+        this.nested.push(parent)
+        return true
+      }
+    }
+
     return false
   }
 }

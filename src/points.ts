@@ -1,12 +1,13 @@
 import { vd } from './helper';
 import {
   AggregatePoints,
-  DataPoint,
+  DataPoint, DataPointMeta,
   DataPointTarget,
   ModArgsAddToNew,
   ModArgsCalcDifference,
   ModArgsCalcSum,
   ModArgsExclude,
+  ModArgsFilterNested, NestedParentValue,
   RenameLabel
 } from './types';
 import {
@@ -52,6 +53,34 @@ export default class Points {
       return points
     }
     return this.points
+  }
+
+  filterNested(args: ModArgsFilterNested): void {
+    const {values, hideParents, hideChildren} = args
+    if(Array.isArray(values) && values.length) {
+      this.filterMetaByNested((metaValues:string[], point:DataPoint) =>
+        metaValues.some(el => values.includes(el))
+      )
+    }
+
+    if(hideParents !== false) {
+      this.filterMetaByNested((metaValues:string[], point:DataPoint) =>
+        !metaValues.includes(point.row)
+      )
+    } else if(hideChildren !== false) {
+      this.filterMetaByNested((metaValues:string[], point:DataPoint) =>
+        metaValues.includes(point.row)
+      )
+    }
+  }
+
+  filterMetaByNested(cb:any): void {
+    let points = this.points.filter(point =>
+      point.meta?.find(meta => meta.key === 'nested'
+        && Array.isArray(meta.value)
+        && cb(meta.value.map((parent: NestedParentValue) => parent.label), point)
+      ))
+    this.replace(points)
   }
 
   exclude(args: ModArgsExclude): void {
@@ -142,11 +171,11 @@ export default class Points {
         if(args.glue) {
           point.value += String(args.glue) + targetMeta.value
         } else if(args.replace) {
-          point.value = targetMeta.value
+          point.value = targetMeta.value as string
           point.row = targetMeta.key
           this.pushUnique(replacePoints, point)
         } else {
-          point.value = targetMeta.value
+          point.value = targetMeta.value as string
         }
       }
     })

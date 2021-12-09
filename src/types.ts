@@ -10,6 +10,7 @@ export type ParserOptions = {
   renderRow: (cells: ResultCell[]) => ResultCell[]
   renderTags: (info: RawResultInfo[], pushCb: Tagger) => void
   metaMap: MetaMap
+  overcodes?: Overcodes[]
   skipRows: string[]
 }
 
@@ -45,7 +46,7 @@ export type DataPoint = {
 
 export type DataPointMeta = {
   key: string
-  value: ResultCell
+  value: ResultCell | NestedParentValue[]
 }
 
 export type Datasheet = {
@@ -164,12 +165,18 @@ export type MetaMap = {
   [key: string]: string[]
 }
 
+export type Overcodes = {
+  prefix: string;
+  key: string;
+  callback?: (label:string) => boolean
+}
+
 export type RawRow = ResultCell[]
 
 export type RawResultMeta = {
-  key: string,
-  label: string
-  data: RawRow|RawRow[],
+  key: string;
+  label: string;
+  data: RawRow|RawRow[];
 }
 
 export type RawResultInfo = {
@@ -177,11 +184,28 @@ export type RawResultInfo = {
   value: string,
 }
 
+export type RawResultNestedParent = {
+  level: number;
+  key: string;
+  label: string;
+}
+
+export type NestedParentValue = {
+  label: string;
+  value: ResultCell;
+}
+
+export type RawResultNestedItem = {
+  label: string;
+  parents: RawResultNestedParent[]
+}
+
 export type RawResultData = {
   info: RawResultInfo[],
   header: RawRow[],
   body: RawRow[],
   meta: RawResultMeta[]
+  nested: RawResultNestedItem[]
 }
 
 export type RawColumnSlice = {
@@ -212,6 +236,8 @@ export type RenameLabel = {
 
 export type ModifierCommandArgument =
     ModArgsFilter
+  | ModArgsFilterNested
+  | ModArgsExclude
   | ModArgsStringTolabel
   | ModArgsTagTolabel
   | ModArgsAddToOthers
@@ -223,6 +249,12 @@ export type ModArgsFilter = {
   key: string
   values: string[]
   replace?: boolean
+}
+
+export type ModArgsFilterNested = {
+  values: string[];
+  hideParents: boolean;
+  hideChildren: boolean;
 }
 
 export type ModArgsExclude = {

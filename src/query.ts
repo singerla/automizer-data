@@ -16,6 +16,7 @@ import {
   QueryResultKeys,
   DataGridTransformation,
   Selector,
+  NestedParentValue,
 } from './types';
 
 import Points from './points'
@@ -189,7 +190,7 @@ export default class Query {
             row: sheet.rows[r],
             column: sheet.columns[c],
             value: point,
-            meta: this.getDataPointMeta(sheet.meta, r, c)
+            meta: this.getDataPointMeta(sheet, r, c)
           })
         })
       })
@@ -197,11 +198,13 @@ export default class Query {
     return dataPoints
   }
 
-  getDataPointMeta(meta:any, r:number, c:number) {
+  getDataPointMeta(sheet:any, r:number, c:number) {
     const pointMeta = <any>[]
 
-    meta.forEach((metaContent:any) => {
-      if(metaContent?.data) {
+    sheet.meta.forEach((metaContent:any) => {
+      if(metaContent?.key === 'nested') {
+        this.pushDataPointNestedMeta(metaContent, pointMeta, sheet, r, c)
+      } else if(metaContent?.data) {
         if(this.metaHasRows(metaContent?.data)) {
           this.pushPointMeta(pointMeta, metaContent.key, metaContent.data[r][c])
         } else {
@@ -209,7 +212,22 @@ export default class Query {
         }
       }
     })
+
     return pointMeta
+  }
+
+  pushDataPointNestedMeta(metaContent:any, pointMeta:any, sheet:any, r:number, c:number) {
+    if(metaContent.label === sheet.rows[r]) {
+      const parentValues = <NestedParentValue[]>[]
+      metaContent.data.forEach((parentLabel: string) => {
+        const parentRow = sheet.rows.indexOf(parentLabel)
+        parentValues.push({
+          label: parentLabel,
+          value: sheet.data[parentRow][c]
+        })
+      })
+      this.pushPointMeta(pointMeta, metaContent.key, parentValues)
+    }
   }
 
   metaHasRows(metaData:any) {
@@ -260,15 +278,25 @@ export default class Query {
   }
 
   setDataPointKeys(dataPoints:DataPoint[], mode: 'keys'|'inputKeys') {
-    dataPoints.forEach((point: any, c: number) => {
+    dataPoints.forEach((point: DataPoint, c: number) => {
       this.addKey('row', point.row, mode)
       this.addKey('column', point.column, mode)
+      this.addNestedKeys(point, mode)
       point.tags.forEach((tag:DataTag) => {
         if(tag.categoryId) {
           this.addKey(String(tag.categoryId), tag.value, mode)
         }
       })
     })
+  }
+
+  addNestedKeys(point: DataPoint, mode: 'keys'|'inputKeys') {
+    const hasNestedMeta = point?.meta?.find((meta: any) => meta.key === 'nested')
+    if(hasNestedMeta && Array.isArray(hasNestedMeta.value)) {
+      hasNestedMeta?.value?.forEach((nested:NestedParentValue) => {
+        this.addKey('nested', nested.label, mode)
+      })
+    }
   }
 
   addKey(category: string, value: string, mode: 'keys'|'inputKeys') {

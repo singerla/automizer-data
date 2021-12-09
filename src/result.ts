@@ -3,6 +3,7 @@ import {ChartData} from 'pptx-automizer/dist';
 import {ChartCategory} from 'pptx-automizer/dist/types/chart-types';
 import {TableData, TableRow} from 'pptx-automizer/dist/types/table-types';
 import Query from './query';
+import { vd } from './helper';
 
 export default class Result {
   result: ResultType
@@ -165,22 +166,24 @@ export default class Result {
   }
 
   formatPointKeys(keys:any) {
-    const rowOrColumn = ['row', 'column']
-    const queryResult = <QueryResultKeys> {
+    const rowOrColumn = ['row', 'column', 'nested']
+
+    const queryResultKeys = <QueryResultKeys> {
       row: (keys.row) ? Object.keys(keys.row): [],
       column: (keys.column) ? Object.keys(keys.column): [],
+      nested: (keys.nested) ? Object.keys(keys.nested): [],
       category: []
     }
 
     for(const key in keys) {
       if(!rowOrColumn.includes(key)) {
-        queryResult.category.push({
+        queryResultKeys.category.push({
           categoryId: Number(key),
           keys: Object.keys(keys[key])
         })
       }
     }
 
-    return queryResult
+    return queryResultKeys
   }
 }
