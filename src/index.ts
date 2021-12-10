@@ -7,6 +7,7 @@ import Result from './result';
 import { Store } from './store'
 import { Parser } from './parser/parser'
 import { Gesstabs } from './parser/gesstabs'
+import { Generic } from './parser/generic'
 
 import {all, filterByDataTag, filterBy} from './filter';
 import { value, valueMeta, dump } from './cell';
@@ -113,6 +114,6 @@ export type {
   ModArgsCalcSum,
   Selector
 }
-export { Query, Parser, Gesstabs, Store, filter, cell, sort, getData, getResult }
+export { Query, Parser, Gesstabs, Generic, Store, filter, cell, sort, getData, getResult }
 export { Points, Result }
 export { getNestedClause, getTagGroupsByCategory }

@@ -18,6 +18,7 @@ export class Parser {
   count: number;
   datasheets: Datasheet[];
   tableSeparator: string;
+  file: string;
 
   constructor(config: ParserOptions) {
     this.results = <RawResultData[]> []
@@ -27,6 +28,7 @@ export class Parser {
     this.currentSection = ''
     this.count = -1
     this.tableSeparator = ''
+    this.file = ''
   }
 
   setDatasheets() {
@@ -50,9 +52,14 @@ export class Parser {
 
       subgroups.forEach(subgroup => {
         const targetTags = [
-          ...tags,
-          this.getTag('subgroup', subgroup.label)
+          ...tags
         ]
+
+        if(subgroup.label.length) {
+          targetTags.push(
+            this.getTag('subgroup', subgroup.label)
+          )
+        }
 
         this.datasheets.push({
           tags: targetTags,
@@ -120,7 +127,7 @@ export class Parser {
     const subgroupHeader = subgroupHeaders[bottomLevel]
     const body = table.body
     const meta = table.meta
-    const nested = table.nested
+    const nested = table.nested || []
 
     const subgroups = <RawTable[]> []
     slices.forEach(slice => {
@@ -134,8 +141,11 @@ export class Parser {
 
       body.forEach(row => {
         const rowArr = Object.values(row)
-        const rowLabel = String(rowArr[0])
+        let rowLabel = String(rowArr[0])
         const sliced = rowArr.slice(slice.start + 1, slice.end + 1)
+        if(this.config.renderLabel) {
+          rowLabel = this.config.renderLabel(rowLabel)
+        }
         subgroup.rows.push(rowLabel)
         subgroup.data.push(this.config.renderRow(sliced))
       })

@@ -9,9 +9,11 @@ export type ParserOptions = {
   separator?: string
   renderRow: (cells: ResultCell[]) => ResultCell[]
   renderTags: (info: RawResultInfo[], pushCb: Tagger) => void
+  renderLabel?: (label: string) => string
   metaMap: MetaMap
   overcodes?: Overcodes[]
   skipRows: string[]
+  worksheetId?: number
 }
 
 export type ResultCell = number|string|null
@@ -205,7 +207,7 @@ export type RawResultData = {
   header: RawRow[],
   body: RawRow[],
   meta: RawResultMeta[]
-  nested: RawResultNestedItem[]
+  nested?: RawResultNestedItem[]
 }
 
 export type RawColumnSlice = {

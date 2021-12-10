@@ -101,9 +101,8 @@ export class Gesstabs extends Parser {
       const isMeta = this.parseMeta(data, firstCell)
       if(!isMeta) {
         this.results[this.count].body.push(data)
-
         this.parseNested(data, firstCell)
-        this.results[this.count].nested.push({
+        this.results[this.count].nested?.push({
           parents: this.nested,
           label: firstCell
         })
