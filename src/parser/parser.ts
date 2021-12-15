@@ -6,8 +6,9 @@ import {
   RawTable,
   Datasheet,
   RawRow,
-  StoreSummary, ResultCell, RawResultMeta, RawResultNestedParent
+  StoreSummary, ResultCell, RawResultMeta, RawResultNestedParent, RawResultNestedItem, RawResultInfo
 } from '../types';
+import {vd} from '../helper';
 
 
 export class Parser {
@@ -19,6 +20,7 @@ export class Parser {
   datasheets: Datasheet[];
   tableSeparator: string;
   file: string;
+
 
   constructor(config: ParserOptions) {
     this.results = <RawResultData[]> []
@@ -129,9 +131,9 @@ export class Parser {
     const meta = table.meta
     const nested = table.nested || []
 
-    const subgroups = <RawTable[]> []
+    const rawTables = <RawTable[]> []
     slices.forEach(slice => {
-      const subgroup = <RawTable> {
+      const rawTable = <RawTable> {
         label: slice.label,
         rows: [],
         columns: [],
@@ -139,38 +141,75 @@ export class Parser {
         meta: [],
       }
 
-      body.forEach(row => {
-        const rowArr = Object.values(row)
-        let rowLabel = String(rowArr[0])
-        const sliced = rowArr.slice(slice.start + 1, slice.end + 1)
-        if(this.config.renderLabel) {
-          rowLabel = this.config.renderLabel(rowLabel)
-        }
-        subgroup.rows.push(rowLabel)
-        subgroup.data.push(this.config.renderRow(sliced))
+      this.renderHeader(subgroupHeader, slice, rawTable)
+      this.renderBody(body, slice, rawTable)
+      this.renderMeta(meta, slice, rawTable)
+      this.renderNested(nested, rawTable)
+
+      rawTables.push(rawTable)
+    })
+    return rawTables
+  }
+
+  renderBody(body: RawRow[], slice: RawColumnSlice, rawTable: RawTable) {
+    body.forEach(row => {
+      const rowArr = Object.values(row)
+      let rowLabel = String(rowArr[0])
+      const sliced = rowArr.slice(slice.start + 1, slice.end + 1)
+      if(this.config.renderLabel) {
+        rowLabel = this.config.renderLabel(rowLabel)
+      }
+      rawTable.rows.push(rowLabel)
+      rawTable.data.push(
+        this.config.renderRow(sliced, rowLabel, rawTable.meta, this)
+      )
+    })
+  }
+
+  renderMeta(meta: RawResultMeta[], slice: RawColumnSlice, rawTable: RawTable) {
+    meta.forEach(meta => {
+      rawTable.meta.push({
+        key: meta.key,
+        label: meta.label,
+        data: meta.data?.slice(slice.start + 1, slice.end + 1)
       })
+    })
+  }
 
-      meta.forEach(meta => {
-        subgroup.meta.push({
-          key: meta.key,
-          label: meta.label,
-          data: meta.data.slice(slice.start + 1, slice.end + 1)
-        })
-      })
+  renderHeader(subgroupHeader: RawRow, slice: RawColumnSlice, rawTable: RawTable) {
+    const colArr = Object.values(subgroupHeader)
+    rawTable.columns = colArr
+      .slice(slice.start, slice.end)
+      .map(col => String(col))
 
-      const colArr = Object.values(subgroupHeader)
-      subgroup.columns = colArr.slice(slice.start, slice.end).map(col => String(col))
+    if (this.config.renderHeader) {
+      rawTable.columns = this.config.renderHeader(rawTable.columns, rawTable.meta, this)
+    }
+  }
 
-      nested.forEach(nestedItem => {
-        subgroup.meta.push({
+  renderNested(nested: RawResultNestedItem[], rawTable: RawTable) {
+    nested.forEach(nestedItem => {
+      const nestedData = nestedItem.parents.map(parent => parent.label)
+      if(nestedData.length) {
+        rawTable.meta.push({
           key: 'nested',
           label: nestedItem.label,
           data: nestedItem.parents.map(parent => parent.label)
         })
-      })
-
-      subgroups.push(subgroup)
+      }
     })
-    return subgroups
+  }
+
+  pushMeta = (label:string, key:string, info:RawResultInfo[], meta: RawResultMeta[]) => {
+    const existing = meta.find(meta => meta.label === label && meta.key === key)
+    if(existing && existing.info) {
+      existing.info.push(...info)
+    } else {
+      meta.push({
+        label: label,
+        key: key,
+        info: info
+      })
+    }
   }
 }

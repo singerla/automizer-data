@@ -185,6 +185,14 @@ export default class Points {
     }
   }
 
+  addPointInfo(args: ModArgsAddMeta): void {
+    this.points.forEach(point => {
+      // vd(point)
+
+
+    })
+  }
+
   pushUnique(points:DataPoint[], point:DataPoint) {
     const existing = points.find(existingPoint =>
       existingPoint.row === point.row

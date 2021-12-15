@@ -1,19 +1,35 @@
+
 import {PrismaClient, Sheet, Tag } from "./client"
+import { Gesstabs } from "./parser/gesstabs";
+import { Generic } from ".";
+import {Parser} from './parser/parser';
 
 export type StoreOptions = {
   replaceExisting?: boolean,
   runBefore?: (prisma: PrismaClient) => Promise<void>
 }
 
+export type ParserType = Parser|Generic|Gesstabs
+
 export type ParserOptions = {
   separator?: string
-  renderRow: (cells: ResultCell[]) => ResultCell[]
   renderTags: (info: RawResultInfo[], pushCb: Tagger) => void
+  renderHeader?: (cells: string[], meta: RawResultMeta[], parser: ParserType) => string[]
+  renderRow: (cells: ResultCell[], label: string, meta: RawResultMeta[], parser: ParserType) => ResultCell[]
   renderLabel?: (label: string) => string
   metaMap: MetaMap
+  significance?: ParserOptionsSignificance
   overcodes?: Overcodes[]
   skipRows: string[]
   worksheetId?: number
+}
+
+export type ParserOptionsSignificance = {
+  cellSeparator: string,
+  headerSeparator: string,
+  headerFilter: string[],
+  lettersKey: string,
+  valueKey: string,
 }
 
 export type ResultCell = number|string|null
@@ -178,12 +194,14 @@ export type RawRow = ResultCell[]
 export type RawResultMeta = {
   key: string;
   label: string;
-  data: RawRow|RawRow[];
+  data?: RawRow|RawRow[];
+  info?: RawResultInfo[];
 }
 
 export type RawResultInfo = {
-  key: string
-  value: string,
+  key: string;
+  value: string;
+  info?: string;
 }
 
 export type RawResultNestedParent = {
@@ -244,6 +262,7 @@ export type ModifierCommandArgument =
   | ModArgsTagTolabel
   | ModArgsAddToOthers
   | ModArgsAddMeta
+  | ModArgsAddPointInfo
   | ModArgsMap
   | ModArgsRename
 
@@ -312,6 +331,10 @@ export type ModArgsAddMeta = {
   key: string
   glue?: string
   replace?: boolean
+}
+
+export type ModArgsAddPointInfo = {
+  key: string
 }
 
 export type ModArgsMap = {

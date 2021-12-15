@@ -17,6 +17,8 @@ import {
   DataGridTransformation,
   Selector,
   NestedParentValue,
+  RawResultMeta,
+  DataPointMeta,
 } from './types';
 
 import Points from './points'
@@ -198,12 +200,12 @@ export default class Query {
     return dataPoints
   }
 
-  getDataPointMeta(sheet:any, r:number, c:number) {
-    const pointMeta = <any>[]
+  getDataPointMeta(sheet:Datasheet, r:number, c:number): DataPointMeta[] {
+    const pointMeta = <DataPointMeta[]>[]
 
     sheet.meta.forEach((metaContent:any) => {
       if(metaContent?.key === 'nested') {
-        this.pushDataPointNestedMeta(metaContent, pointMeta, sheet, r, c)
+        this.pushPointNestedMeta(metaContent, pointMeta, sheet, r, c)
       } else if(metaContent?.data) {
         if(this.metaHasRows(metaContent?.data)) {
           this.pushPointMeta(pointMeta, metaContent.key, metaContent.data[r][c])
@@ -211,12 +213,23 @@ export default class Query {
           this.pushPointMeta(pointMeta, metaContent.key, metaContent.data[c])
         }
       }
+
+      if(metaContent?.info && metaContent.label === sheet.rows[r]) {
+        this.pushPointInfo(metaContent, pointMeta, sheet, r, c)
+      }
     })
 
     return pointMeta
   }
 
-  pushDataPointNestedMeta(metaContent:any, pointMeta:any, sheet:any, r:number, c:number) {
+  pushPointInfo(metaContent:RawResultMeta, pointMeta:DataPointMeta[], sheet:Datasheet, r:number, c:number) {
+    const hasMetaContent = metaContent.info?.find(meta => meta.value === sheet.columns[c])
+    if(hasMetaContent && hasMetaContent.info) {
+      this.pushPointMeta(pointMeta, hasMetaContent.info, hasMetaContent.key)
+    }
+  }
+
+  pushPointNestedMeta(metaContent:any, pointMeta:any, sheet:any, r:number, c:number) {
     if(metaContent.label === sheet.rows[r]) {
       const parentValues = <NestedParentValue[]>[]
       metaContent.data.forEach((parentLabel: string) => {
@@ -230,11 +243,11 @@ export default class Query {
     }
   }
 
-  metaHasRows(metaData:any) {
+  metaHasRows(metaData:any): boolean {
     return (metaData[0] && Array.isArray(metaData[0]))
   }
 
-  pushPointMeta(pointMeta:any, key:string, value:any) {
+  pushPointMeta(pointMeta:DataPointMeta[], key:string, value:any) {
     pointMeta.push({
       key: key,
       value: value

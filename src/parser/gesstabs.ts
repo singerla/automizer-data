@@ -6,7 +6,7 @@ import {
   RawTable,
   Datasheet,
   RawRow,
-  StoreSummary, ResultCell, RawResultMeta, RawResultNestedItem, RawResultNestedParent,
+  StoreSummary, ResultCell, RawResultMeta, RawResultNestedItem, RawResultNestedParent, RawResultInfo,
 } from './../types';
 import {Store} from "./../store";
 
@@ -148,5 +148,78 @@ export class Gesstabs extends Parser {
     }
 
     return false
+  }
+
+  parseSigniHeader = (cells: string[], meta: RawResultMeta[]) => {
+    if(!this.config.significance) return cells
+
+    const headerSeparator = this.config.significance.headerSeparator || '$'
+
+    const signiMeta = <RawResultMeta> {
+      key: this.config.significance.lettersKey,
+      label: this.config.significance.lettersKey,
+      info: [],
+    }
+
+    cells.forEach((cell, c) => {
+      const split = cell.split(headerSeparator)
+      if(split[1]) {
+        signiMeta.info?.push({
+          key: split[0],
+          value: split[1]
+        })
+        cells[c] = split[0]
+      }
+    })
+
+    if(signiMeta.info?.length) {
+      meta.push(signiMeta)
+    }
+  }
+
+  parseSigniValues = (
+    cell: string,
+    colId: number,
+    rowLabel: string,
+    meta: RawResultMeta[],
+    signiHeaderLetters: RawResultInfo[]): string => {
+    if(!this.config.significance) return cell
+
+    const signiCellSeparator = this.config.significance.cellSeparator
+    const split = cell.split(signiCellSeparator)
+    if (split[1]) {
+      const signiMap = this.getSigniMap(split[1], signiHeaderLetters, colId)
+      if(signiMap.length) {
+        const valueKey = this.config.significance.valueKey
+        this.pushMeta(rowLabel, valueKey, signiMap, meta)
+      }
+      cell = split[0]
+    }
+
+    return cell
+  }
+
+  getSigniMap = (signiCellInfo:string, signiHeaderLetters:RawResultInfo[], colId: number): RawResultInfo[] => {
+    const signiHeaderFilter = this.config.significance?.headerFilter || []
+    const signiLetters = signiCellInfo.split('')
+    const signiMap = <RawResultInfo[]>[]
+    signiLetters.forEach((signiLetter: string) => {
+      const thisHeader = signiHeaderLetters.find(singiHeaderLetter => singiHeaderLetter.value === signiLetter)
+      const thisKey = signiHeaderLetters[colId].key
+      const vsKey = thisHeader?.key
+      if(vsKey && (signiHeaderFilter.includes(vsKey) || signiHeaderFilter.includes(thisKey))) {
+        this.pushSigniMap(signiMap, thisKey, 'higherThan', vsKey)
+        this.pushSigniMap(signiMap, vsKey, 'lowerThan', thisKey)
+      }
+    })
+    return signiMap
+  }
+
+  pushSigniMap(signiMap:RawResultInfo[], value:string, info:string, key:string): void {
+    signiMap.push({
+      value: value,
+      info: info,
+      key: key,
+    })
   }
 }
