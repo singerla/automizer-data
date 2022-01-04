@@ -3,6 +3,9 @@ import {PrismaClient, Sheet, Tag } from "./client"
 import { Gesstabs } from "./parser/gesstabs";
 import { Generic } from ".";
 import {Parser} from './parser/parser';
+import ResultClass from './result';
+import {TableRowStyle} from 'pptx-automizer/src/types/table-types';
+import {ChartValueStyle} from 'pptx-automizer/src/types/chart-types';
 
 export type StoreOptions = {
   replaceExisting?: boolean,
@@ -181,6 +184,18 @@ export type Tagger = {
 
 export type MetaMap = {
   [key: string]: string[]
+}
+
+export type MetaParam = {
+  cb: (row: ResultRow, params: MetaParam, result: ResultClass) => TableRowStyle[] | ChartValueStyle[],
+  styles: MetaParamStyle[]
+}
+
+export type MetaParamStyle = {
+  key?: string,
+  value?: string,
+  keys?: string[],
+  style: TableRowStyle|ChartValueStyle
 }
 
 export type Overcodes = {

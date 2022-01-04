@@ -1,6 +1,15 @@
-import {CellKeys, Datasheet, QueryResultKeys, Result as ResultType, ResultCell, ResultColumn} from './types';
+import {
+  CellKeys,
+  Datasheet,
+  MetaParam,
+  QueryResultKeys,
+  Result as ResultType,
+  ResultCell,
+  ResultColumn,
+  ResultRow
+} from './types';
 import {ChartData} from 'pptx-automizer/dist';
-import {ChartCategory} from 'pptx-automizer/dist/types/chart-types';
+import {ChartCategory, ChartValueStyle} from 'pptx-automizer/dist/types/chart-types';
 import {TableData, TableRow, TableRowStyle} from 'pptx-automizer/dist/types/table-types';
 import Query from './query';
 import { vd } from './helper';
@@ -15,7 +24,7 @@ export default class Result {
   }
   allSheets: Datasheet[]
   tags: any[]
-  metaParams: any
+  metaParams: MetaParam
 
   constructor(query: Query) {
     this.result = query.result
@@ -24,11 +33,17 @@ export default class Result {
     this.visibleKeys = query.visibleKeys
     this.allSheets = query.allSheets
     this.tags = <any>[]
-    this.metaParams = <any> undefined
+    this.metaParams = <MetaParam> {}
   }
 
-  setTableMetaParams(params:any) {
+  setMetaParams(params:any) {
     this.metaParams = params
+  }
+
+  applyStyleCallback<T>(row: ResultRow): T[] | TableRowStyle[] | ChartValueStyle[] {
+    const styles = (this.metaParams?.cb)
+      ? this.metaParams.cb(row, this.metaParams, this) : []
+    return styles
   }
 
   toSeriesCategories(): ChartData {
@@ -39,7 +54,8 @@ export default class Result {
       this.result.body.forEach(row => {
         categories.push({
           label: row.key,
-          values: row.cols.map(column => this.toNumber(column))
+          values: row.cols.map(column => this.toNumber(column)),
+          styles: this.applyStyleCallback<ChartValueStyle>(row)
         })
       })
 
@@ -136,19 +152,16 @@ export default class Result {
 
     this.result.body.forEach((row,r) => {
       const tableRow = []
-      const tableRowStyle = <TableRowStyle[]>[]
       if(params?.showRowLabels) {
         tableRow.push(String(row.key))
       }
       row.cols.forEach((cell,c) => {
         tableRow.push(this.renderCellValue(cell))
-        if(this.metaParams) {
-          tableRowStyle.push(this.renderRowStyle(cell))
-        }
       })
+
       body.push({
         values: tableRow,
-        styles: tableRowStyle
+        styles: this.applyStyleCallback<TableRowStyle>(row)
       })
     })
     return {
@@ -174,22 +187,6 @@ export default class Result {
     }
 
     return null
-  }
-
-  renderRowStyle(column: ResultColumn): TableRowStyle {
-    const style = <TableRowStyle>{}
-    if(Array.isArray(column.value)
-      && column.value[0]
-      && column.value[0].meta) {
-
-      column.value[0].meta.forEach(meta => {
-        const hasMetaParams = this.metaParams.find((metaParams:any) => meta.key === metaParams.key)
-        if(hasMetaParams) {
-          Object.assign(style, hasMetaParams.style)
-        }
-      })
-    }
-    return style
   }
 
   formatPointKeys(keys:any) {
