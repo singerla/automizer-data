@@ -4,8 +4,8 @@ import { Gesstabs } from "./parser/gesstabs";
 import { Generic } from ".";
 import {Parser} from './parser/parser';
 import ResultClass from './result';
-import {TableRowStyle} from 'pptx-automizer/src/types/table-types';
-import {ChartValueStyle} from 'pptx-automizer/src/types/chart-types';
+import {TableRowStyle} from 'pptx-automizer/dist/types/table-types';
+import {ChartValueStyle} from 'pptx-automizer/dist/types/chart-types';
 
 export type StoreOptions = {
   replaceExisting?: boolean,
@@ -270,7 +270,8 @@ export type RenameLabel = {
 }
 
 export type ModifierCommandArgument =
-    ModArgsFilter
+    ModArgsCustom
+  | ModArgsFilter
   | ModArgsFilterNested
   | ModArgsExclude
   | ModArgsStringTolabel
@@ -280,6 +281,11 @@ export type ModifierCommandArgument =
   | ModArgsAddPointInfo
   | ModArgsMap
   | ModArgsRename
+
+export type ModArgsCustom = {
+  key: string
+  args: any
+}
 
 export type ModArgsFilter = {
   key: string

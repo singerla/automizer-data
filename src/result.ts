@@ -89,6 +89,26 @@ export default class Result {
     }
   }
 
+  toScatter(): ChartData {
+    const series = [
+      {label: 'Series 1'}
+    ]
+    const categories = <ChartCategory[]> []
+
+    this.result.body.forEach((row:any, r) => {
+      categories.push({
+        label: row.key,
+        y: row.cols[0].value[0].value,
+        values: [row.cols[1].value[0].value]
+      })
+    })
+
+    return {
+      series: series,
+      categories: categories
+    }
+  }
+
   toLabels(): TableData {
     return {
       body: this.result.body.map(row => {
