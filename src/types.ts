@@ -165,7 +165,8 @@ export type CellKeys = {
 
 export type ResultColumn = {
   key: string,
-  value: ResultCell | DataPoint[]
+  value: ResultCell | DataPoint[],
+  style?: TableRowStyle | ChartValueStyle
 }
 
 export type ResultRow = {

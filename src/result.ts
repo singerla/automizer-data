@@ -9,10 +9,11 @@ import {
   ResultRow
 } from './types';
 import {ChartData} from 'pptx-automizer/dist';
-import {ChartCategory, ChartValueStyle} from 'pptx-automizer/dist/types/chart-types';
+import {ChartCategory, ChartSeries, ChartValueStyle} from 'pptx-automizer/dist/types/chart-types';
 import {TableData, TableRow, TableRowStyle} from 'pptx-automizer/dist/types/table-types';
 import Query from './query';
 import { vd } from './helper';
+import { Color } from '../../pptx-automizer/dist/types/modify-types';
 
 export default class Result {
   result: ResultType
@@ -90,16 +91,24 @@ export default class Result {
   }
 
   toScatter(): ChartData {
-    const series = [
-      {label: 'Series 1'}
-    ]
+    const series =  <ChartSeries[]>this.result.body[0].cols.map(col => {
+      return {
+        label: col.key,
+        style: col.style
+      }
+    })
     const categories = <ChartCategory[]> []
 
     this.result.body.forEach((row:any, r) => {
       categories.push({
         label: row.key,
-        y: row.cols[0].value[0].value,
-        values: [row.cols[1].value[0].value]
+        values: row.cols.map((col:any) => {
+          return {
+            x: Number(col.value[0].value),
+            y: Number(col.value[1].value)
+          }
+        }),
+        styles: this.applyStyleCallback<ChartValueStyle>(row)
       })
     })
 
@@ -142,7 +151,7 @@ export default class Result {
     return {
       body: this.result.body.map(row => {
         return {
-          values: row.cols.map(cell => this.toNumber(cell) )
+          values: row.cols.map(cell => this.toNumber(cell))
         }
       }),
     }
