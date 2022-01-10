@@ -16,7 +16,7 @@ import { vd } from '../helper';
 
 const csv = require('csv-parser')
 const fs = require('fs')
-
+const path = require('path')
 
 export class Gesstabs extends Parser {
   constructor(config: ParserOptions) {
@@ -24,6 +24,7 @@ export class Gesstabs extends Parser {
   }
 
   async fromCsv(file: string): Promise<Datasheet[]>  {
+    this.file = path.basename(file)
     return new Promise((resolve, reject) => {
       fs.createReadStream(file)
         .pipe(csv({separator: ';', headers: false}))
@@ -39,6 +40,7 @@ export class Gesstabs extends Parser {
   }
 
   async fromXlsx(file: string): Promise<Datasheet[]> {
+    this.file = path.basename(file)
     const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file));
     const data = workSheetsFromBuffer[0].data
     console.log('File rows count: ' + String(data.length))
@@ -52,9 +54,16 @@ export class Gesstabs extends Parser {
   }
 
   autoDetectConfig(data: any) {
-    this.tableSeparator = (!this.config.separator)
-      ? data[0][0]
-      : this.config.separator
+    if(!this.config.separator) {
+      const tableSeparatorRow = data.find((row:any) =>
+        row[0]
+        && typeof row[0] === 'string'
+        && row[0].trim().length > 0
+      )
+      this.tableSeparator = tableSeparatorRow[0]
+    } else {
+      this.tableSeparator = this.config.separator
+    }
   }
 
   parseSections(data: RawRow): void  {
@@ -67,8 +76,11 @@ export class Gesstabs extends Parser {
     if(firstCell.indexOf(this.tableSeparator) !== -1) {
       this.count++
       this.currentSection = 'info'
-      this.results[this.count] = <RawResultData> {
-        info: [],
+      this.results[this.count] = <RawResultData>  {
+        info: [{
+          key: 'file',
+          value: this.file
+        }],
         header: [],
         body: [],
         meta: [],
@@ -187,6 +199,7 @@ export class Gesstabs extends Parser {
 
     const signiCellSeparator = this.config.significance.cellSeparator
     const split = cell.split(signiCellSeparator)
+
     if (split[1]) {
       const signiMap = this.getSigniMap(split[1], signiHeaderLetters, colId)
       if(signiMap.length) {

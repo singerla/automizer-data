@@ -193,6 +193,7 @@ export default class Result {
         styles: this.applyStyleCallback<TableRowStyle>(row)
       })
     })
+
     return {
       body: body
     }
@@ -205,6 +206,10 @@ export default class Result {
 
   renderCellValue(column: ResultColumn): ResultCell {
     if(Array.isArray(column.value)) {
+      if(column.value[0].value === null) {
+        return ''
+      }
+
       if(column.value.length > 0) {
         return column.value[0].value
       }
@@ -215,7 +220,7 @@ export default class Result {
       return column.value
     }
 
-    return null
+    return ''
   }
 
   formatPointKeys(keys:any) {
