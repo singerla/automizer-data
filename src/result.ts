@@ -171,11 +171,14 @@ export default class Result {
     }
 
     if(params?.showColumnLabels) {
+      const header = []
+      if(params?.showRowLabels) {
+        header.push('')
+      }
+      header.push(...this.result.body[0].cols.map(col => col.key))
+
       body.push({
-        values: [
-          '',
-          ...this.result.body[0].cols.map(col => col.key)
-        ]
+        values: header
       })
     }
 
