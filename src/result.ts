@@ -18,6 +18,7 @@ import { Color } from '../../pptx-automizer/dist/types/modify-types';
 export default class Result {
   result: ResultType
   inputKeys: CellKeys
+  getRowKeys: any
   keys: CellKeys
   visibleKeys: {
     row: string[],
@@ -29,6 +30,9 @@ export default class Result {
 
   constructor(query: Query) {
     this.result = query.result
+    this.getRowKeys = () => {
+      return this.result.body.map(row => row.key)
+    }
     this.inputKeys = query.inputKeys
     this.keys = query.keys
     this.visibleKeys = query.visibleKeys
