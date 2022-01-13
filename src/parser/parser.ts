@@ -49,6 +49,8 @@ export class Parser {
 
       this.config.renderTags(table.info, tagsObj)
       const tags = tagsObj.tags
+      this.removeCategoryDuplicates(tags)
+
       const slices = this.parseColumnSlices(table.header)
       const subgroups = this.sliceColumns(table, table.header, slices)
 
@@ -80,6 +82,26 @@ export class Parser {
       value: value
     }
     return tag
+  }
+
+  removeCategoryDuplicates(tags: DataTag[]): void {
+    type Counter = { [key: string]: number }
+    const count = <Counter> {}
+    const currentCount = <Counter> {}
+    const increment = (counter: Counter, category: string) => {
+      counter[category] = (counter[category])
+        ? counter[category] + 1 : 1
+    }
+
+    tags.forEach(tag => increment(count, tag.category))
+    tags.forEach(tag => {
+      if(count[tag.category] > 1) {
+        increment(currentCount, tag.category)
+        if(currentCount[tag.category] > 1) {
+          tag.category += '_' + String(currentCount[tag.category])
+        }
+      }
+    })
   }
 
   parseColumnSlices(header: RawRow[]): RawColumnSlice[] {

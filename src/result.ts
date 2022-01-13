@@ -1,5 +1,6 @@
 import {
   CellKeys,
+  DataPoint,
   Datasheet,
   MetaParam,
   QueryResultKeys,
@@ -12,13 +13,10 @@ import {ChartData} from 'pptx-automizer/dist';
 import {ChartCategory, ChartSeries, ChartValueStyle} from 'pptx-automizer/dist/types/chart-types';
 import {TableData, TableRow, TableRowStyle} from 'pptx-automizer/dist/types/table-types';
 import Query from './query';
-import { vd } from './helper';
-import { Color } from '../../pptx-automizer/dist/types/modify-types';
 
 export default class Result {
   result: ResultType
   inputKeys: CellKeys
-  getRowKeys: any
   keys: CellKeys
   visibleKeys: {
     row: string[],
@@ -30,15 +28,58 @@ export default class Result {
 
   constructor(query: Query) {
     this.result = query.result
-    this.getRowKeys = () => {
-      return this.result.body.map(row => row.key)
-    }
     this.inputKeys = query.inputKeys
     this.keys = query.keys
     this.visibleKeys = query.visibleKeys
     this.allSheets = query.allSheets
     this.tags = <any>[]
     this.metaParams = <MetaParam> {}
+  }
+
+  getRowKeys() {
+    return this.result.body.map(row => row.key)
+  }
+
+  getColumnKeys() {
+    if(!this.result.body[0]) return []
+    return this.result.body[0].cols.map(col => col.key)
+  }
+
+  getPoint = (rowId:number, colId:number, valueId?:number) => {
+    const row = this.getRow(rowId)
+    const column = this.getColumn(row, colId)
+    return this.getValue(column, valueId)
+  }
+
+  getRow = (rowId:number): ResultRow => {
+    return this.result.body[rowId]
+  }
+
+  getColumn = (row: ResultRow, colId:number): ResultColumn|undefined => {
+    if(row && row.cols) {
+      return row.cols[colId]
+    }
+  }
+
+  getValue = (column: ResultColumn|undefined, valueId?:number): DataPoint|ResultCell|undefined => {
+    if(!column || !column.value) {
+      return
+    } else if(Array.isArray(column.value)) {
+      valueId = valueId || 0
+      return column.value[valueId]
+    } else {
+      return column.value
+    }
+  }
+
+  getMeta = (point: DataPoint, key:string): any => {
+    if(point && point.meta) {
+      const matchMeta = point.meta.filter(meta => meta.key === key)
+      if(matchMeta.length === 1) {
+        return matchMeta[0].value
+      }
+      return matchMeta
+    }
   }
 
   setMetaParams(params:any) {
