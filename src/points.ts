@@ -36,15 +36,21 @@ export default class Points {
   }
 
   filter(args: ModArgsFilter): DataPoint[] {
-    const {key, values, replace} = args
+    const {key, values, replace, origin} = args
     if(Array.isArray(values) && values.length) {
       let points
       if(key === 'row' || key === 'column') {
-        points = this.points.filter(point => values.includes(point[key]))
+        points = this.points.filter(point => {
+          const targetPoint = this.getTargetPoint(point, origin)
+          return values.includes(targetPoint[key])
+        })
       } else {
-        points = this.points.filter(point => point.tags.find(
-          tag => tag.categoryId === Number(key) && values.includes(tag.value)
-        ))
+        points = this.points.filter(point => {
+          const targetPoint = this.getTargetPoint(point, origin)
+          return targetPoint.tags.find(
+            tag => tag.categoryId === Number(key) && values.includes(tag.value)
+          )
+        })
       }
 
       if(replace === true) {
@@ -53,6 +59,13 @@ export default class Points {
       return points
     }
     return this.points
+  }
+
+  getTargetPoint(point: DataPoint, origin?:boolean): DataPoint {
+    if(origin === true) {
+      if(point.origin && point.origin[0]) return point.origin[0]
+    }
+    return point
   }
 
   filterNested(args: ModArgsFilterNested): void {

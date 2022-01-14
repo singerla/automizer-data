@@ -13,6 +13,7 @@ import {ChartData} from 'pptx-automizer/dist';
 import {ChartCategory, ChartSeries, ChartValueStyle} from 'pptx-automizer/dist/types/chart-types';
 import {TableData, TableRow, TableRowStyle} from 'pptx-automizer/dist/types/table-types';
 import Query from './query';
+import {vd} from './helper';
 
 export default class Result {
   result: ResultType
@@ -82,6 +83,15 @@ export default class Result {
     }
   }
 
+  getSeries = (): ChartSeries[] => {
+    return this.result.body[0].cols.map(col => {
+      return {
+        label: col.key,
+        style: col.style
+      }
+    })
+  }
+
   setMetaParams(params:any) {
     this.metaParams = params
   }
@@ -94,7 +104,7 @@ export default class Result {
 
   toSeriesCategories(): ChartData {
     if(this.result.body[0]) {
-      const series = this.result.body[0].cols.map(col => { return { label: col.key } } )
+      const series = this.getSeries()
       const categories = <ChartCategory[]> []
 
       this.result.body.forEach(row => {
@@ -118,7 +128,7 @@ export default class Result {
   }
 
   toVerticalLines(): ChartData {
-    const series = this.result.body[0].cols.map(col => { return { label: col.key } } )
+    const series = this.getSeries()
     const categories = <ChartCategory[]> []
 
     this.result.body.forEach((row, r) => {
@@ -135,13 +145,26 @@ export default class Result {
     }
   }
 
-  toScatter(): ChartData {
-    const series =  <ChartSeries[]>this.result.body[0].cols.map(col => {
-      return {
-        label: col.key,
-        style: col.style
-      }
+  toCombo(): ChartData {
+    const series = this.getSeries()
+    const categories = <ChartCategory[]> []
+
+    this.result.body.forEach((row, r) => {
+      categories.push({
+        label: row.key,
+        y: r + 0.5,
+        values: row.cols.map(cell => this.toNumber(cell))
+      })
     })
+
+    return {
+      series: series,
+      categories: categories
+    }
+  }
+
+  toScatter(): ChartData {
+    const series = this.getSeries()
     const categories = <ChartCategory[]> []
 
     this.result.body.forEach((row:any, r) => {

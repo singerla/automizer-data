@@ -292,6 +292,7 @@ export type ModArgsFilter = {
   key: string
   values: string[]
   replace?: boolean
+  origin?: boolean
 }
 
 export type ModArgsFilterNested = {
