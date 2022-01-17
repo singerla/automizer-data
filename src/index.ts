@@ -15,6 +15,7 @@ import { byColId } from './sort';
 import { getNestedClause, getTagGroupsByCategory, vd } from './helper'
 
 import {
+  QueryOptions,
   DataGrid,
   DataGridCategories,
   DataPointFilter,
@@ -66,8 +67,11 @@ const getData = async(selector: DataTag[] | DataTag[][], grid: any, prisma?: Pri
   return result
 }
 
-const getResult = async(selector: number[][], grid: any, prisma: any): Promise<Result> => {
-  const query = new Query(prisma).setGrid(grid)
+const getResult = async(selector: number[][], grid: any, prisma: any, options?:QueryOptions): Promise<Result> => {
+  const query = new Query(prisma)
+    .setGrid(grid)
+    .setOptions(options)
+
   await query.getByIds(selector)
 
   if(query.points.length > 0) {

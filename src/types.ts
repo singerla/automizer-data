@@ -42,6 +42,14 @@ export type StoreSummary = {
   deleted: number[],
 }
 
+export type QueryOptions = {
+  selectionValidator: SelectionValidator
+}
+
+export type SelectionValidator = {
+  (tags: Tag[]): boolean
+}
+
 export type Selector = number[][]
 
 export type DataTag = {
@@ -49,10 +57,6 @@ export type DataTag = {
   category: string
   value: string
   categoryId?: number
-}
-
-export type DataPointModified = {
-  mode: string
 }
 
 export type DataPoint = {
@@ -339,7 +343,7 @@ export type ModArgsCalcDifference = {
 
 export type ModArgsCalcSum = {
   match: DataPointTarget
-  items: string[]
+  items?: string[]
   mode: string
   alias: string
 }

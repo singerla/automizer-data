@@ -19,6 +19,8 @@ import {
   NestedParentValue,
   RawResultMeta,
   DataPointMeta,
+  SelectionValidator,
+  QueryOptions,
 } from './types';
 
 import Points from './points'
@@ -38,6 +40,7 @@ export default class Query {
   }
   points: DataPoint[]
   grid: DataGrid
+  selectionValidator: SelectionValidator
   result: Result
   tags: any[]
 
@@ -55,15 +58,27 @@ export default class Query {
     }
     this.points = <DataPoint[]> []
     this.grid = <DataGrid> {}
+    this.selectionValidator = <SelectionValidator> () => true
     this.allSheets = <Datasheet[]> []
     this.tags = <any>[]
 
     return this
   }
 
-  setGrid(grid:DataGrid) {
+  setGrid(grid:DataGrid): this {
     this.grid = grid
     return this
+  }
+
+  setOptions(options?:QueryOptions): this {
+    if(options?.selectionValidator) {
+      this.setSelectionValidator(options.selectionValidator)
+    }
+    return this
+  }
+
+  setSelectionValidator(validator:SelectionValidator): void {
+    this.selectionValidator = validator
   }
 
   async get(tags: DataTag[] | DataTag[][]): Promise<Query> {
@@ -85,10 +100,13 @@ export default class Query {
     for(const level in allTagIds) {
       const tagIds = allTagIds[level]
       const selectionTags = await this.getTagInfo(tagIds)
-      this.tags.push(selectionTags)
+      const isValid = this.selectionValidator(selectionTags)
 
-      const sheets = await this.getSheetsByTags(selectionTags)
-      this.processSheets(sheets, Number(level))
+      if(isValid) {
+        this.tags.push(selectionTags)
+        const sheets = await this.getSheetsByTags(selectionTags)
+        this.processSheets(sheets, Number(level))
+      }
     }
 
     this.setDataPointKeys(this.points, 'keys')
