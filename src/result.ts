@@ -10,7 +10,7 @@ import {
   ResultRow
 } from './types';
 import {ChartData} from 'pptx-automizer/dist';
-import {ChartCategory, ChartSeries, ChartValueStyle} from 'pptx-automizer/dist/types/chart-types';
+import {ChartBubble, ChartCategory, ChartSeries, ChartValueStyle} from 'pptx-automizer/dist/types/chart-types';
 import {TableData, TableRow, TableRowStyle} from 'pptx-automizer/dist/types/table-types';
 import Query from './query';
 import {vd} from './helper';
@@ -174,6 +174,30 @@ export default class Result {
           return {
             x: Number(col.value[0].value),
             y: Number(col.value[1].value)
+          }
+        }),
+        styles: this.applyStyleCallback<ChartValueStyle>(row)
+      })
+    })
+
+    return {
+      series: series,
+      categories: categories
+    }
+  }
+
+  toBubbles(): ChartData {
+    const series = this.getSeries()
+    const categories = <ChartCategory[]> []
+
+    this.result.body.forEach((row:any, r) => {
+      categories.push({
+        label: row.key,
+        values: row.cols.map((col:any) => {
+          return <ChartBubble> {
+            size: Number(col.value[0].value),
+            x: Number(col.value[1].value),
+            y: Number(col.value[2].value),
           }
         }),
         styles: this.applyStyleCallback<ChartValueStyle>(row)
