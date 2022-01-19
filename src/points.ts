@@ -251,6 +251,7 @@ export default class Points {
       )
 
       if(vsPoint) {
+        this.pushPointOrigin(point)
         point.value = Number(point.value) - Number(vsPoint.value)
       }
     })
