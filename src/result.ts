@@ -214,7 +214,8 @@ export default class Result {
     return {
       body: this.result.body.map(row => {
         return {
-          values: [ row.key ]
+          values: [ row.key ],
+          styles: this.applyStyleCallback<TableRowStyle>(row)
         }
       })
     }
@@ -226,14 +227,17 @@ export default class Result {
 
   toColumnLabels(): TableData {
     let series = <string[]>[]
+    let styles = <any>[]
     if(this.result.body && this.result.body.length) {
       series = this.result.body[0].cols.map(col => col.key)
+      styles = this.applyStyleCallback<TableRowStyle>(this.result.body[0])
     }
 
     return {
       body: [
         {
-          values: series
+          values: series,
+          styles: styles
         }
       ]
     }
