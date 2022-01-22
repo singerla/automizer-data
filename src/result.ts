@@ -37,50 +37,14 @@ export default class Result {
     this.metaParams = <MetaParam> {}
   }
 
-  getRowKeys() {
-    return this.result.body.map(row => row.key)
+  setMetaParams(params:any) {
+    this.metaParams = params
   }
 
-  getColumnKeys() {
-    if(!this.result.body[0]) return []
-    return this.result.body[0].cols.map(col => col.key)
-  }
-
-  getPoint = (rowId:number, colId:number, valueId?:number) => {
-    const row = this.getRow(rowId)
-    const column = this.getColumn(row, colId)
-    return this.getValue(column, valueId)
-  }
-
-  getRow = (rowId:number): ResultRow => {
-    return this.result.body[rowId]
-  }
-
-  getColumn = (row: ResultRow, colId:number): ResultColumn|undefined => {
-    if(row && row.cols) {
-      return row.cols[colId]
-    }
-  }
-
-  getValue = (column: ResultColumn|undefined, valueId?:number): DataPoint|ResultCell|undefined => {
-    if(!column || !column.value) {
-      return
-    } else if(Array.isArray(column.value)) {
-      valueId = valueId || 0
-      return column.value[valueId]
-    } else {
-      return column.value
-    }
-  }
-
-  getMeta = (point: DataPoint, key:string): any => {
-    if(point && point.meta) {
-      const matchMeta = point.meta.filter(meta => meta.key === key)
-      if(matchMeta.length === 1) {
-        return matchMeta[0].value
-      }
-      return matchMeta
-    }
+  applyStyleCallback<T>(row: ResultRow): T[] | TableRowStyle[] | ChartValueStyle[] {
+    const styles = (this.metaParams?.cb)
+      ? this.metaParams.cb(row, this.metaParams, this) : []
+    return styles
   }
 
   getSeries = (): ChartSeries[] => {
@@ -90,16 +54,6 @@ export default class Result {
         style: col.style
       }
     })
-  }
-
-  setMetaParams(params:any) {
-    this.metaParams = params
-  }
-
-  applyStyleCallback<T>(row: ResultRow): T[] | TableRowStyle[] | ChartValueStyle[] {
-    const styles = (this.metaParams?.cb)
-      ? this.metaParams.cb(row, this.metaParams, this) : []
-    return styles
   }
 
   toSeriesCategories(): ChartData {

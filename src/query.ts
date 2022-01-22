@@ -26,6 +26,8 @@ import {
 import Points from './points'
 
 import _ from "lodash";
+import ResultInfo from './helper/resultInfo';
+import TransformResult from './helper/transformResult';
 
 export default class Query {
   prisma: PrismaClient
@@ -256,6 +258,9 @@ export default class Query {
           label: parentLabel,
           value: sheet.data[parentRow][c]
         })
+        if(parentLabel === metaContent.label) {
+          this.pushPointMeta(pointMeta, 'isParent', true)
+        }
       })
       this.pushPointMeta(pointMeta, metaContent.key, parentValues)
     }
@@ -275,7 +280,6 @@ export default class Query {
   modifyDataPoints(dataPoints:DataPoint[], level: number): void {
     const modifiers = this.getDatapointModifiersByLevel(level)
     const points = new Points(dataPoints)
-
     modifiers.forEach(modifier => {
       if(modifier.cb) {
         modifier.cb(points)
@@ -293,7 +297,6 @@ export default class Query {
 
   getDatapointModifiersByLevel(level:number): DataPointModifier[] {
     const modifiers = <DataPointModifier[]> []
-
     this.grid?.modify?.forEach(modifier => {
       if(modifier.applyToLevel && modifier.applyToLevel.indexOf(level) > -1) {
         modifiers.push(modifier)
@@ -456,6 +459,9 @@ export default class Query {
         cols: cols
       })
     }
+
+    this.result.info = new ResultInfo(this.result)
+    this.result.transform = new TransformResult(this.result)
 
     this.visibleKeys.column = [...new Set(this.visibleKeys.column)]
   }

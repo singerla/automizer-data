@@ -6,6 +6,8 @@ import {Parser} from './parser/parser';
 import ResultClass from './result';
 import {TableRowStyle} from 'pptx-automizer/dist/types/table-types';
 import {ChartValueStyle} from 'pptx-automizer/dist/types/chart-types';
+import ResultInfo from './helper/resultInfo';
+import TransformResult from './helper/transformResult';
 
 export type StoreOptions = {
   replaceExisting?: boolean,
@@ -179,7 +181,9 @@ export type ResultRow = {
 }
 
 export type Result = {
-  body: ResultRow[]
+  body: ResultRow[],
+  info: ResultInfo
+  transform: TransformResult
 }
 
 export type Tagger = {
