@@ -103,6 +103,18 @@ export default class TransformResult {
     }
   }
 
+  dropColumn(atIndex:number): this {
+    this.forEachRow((row: ResultRow, r:number) => {
+      const leftCols = this.sliceColumns(row, 0, atIndex)
+      const rightCols = this.sliceColumns(row, atIndex + 1)
+      row.cols = [
+        ...leftCols,
+        ...rightCols
+      ]
+    })
+    return this
+  }
+
   createDataPoint(rowKey?: string, colKey?: string, value?: ResultCell): DataPoint {
     return {
       tags: [],
@@ -119,6 +131,15 @@ export default class TransformResult {
   sliceColumns(row: ResultRow, start:number, end?:number): ResultColumn[] {
     const cols = row.cols.slice(start, end)
     return cols
+  }
+
+  pushMeta(point:DataPoint, meta:any) {
+    point.meta = (!point.meta) ? [] : point.meta
+    point.meta.push(meta)
+  }
+
+  setPointStyle(point:DataPoint, style:any) {
+    point.style = style
   }
 
   dump(verbose?:boolean): this {

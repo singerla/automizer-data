@@ -69,6 +69,7 @@ export type DataPoint = {
   meta?: DataPointMeta[]
   origin?: DataPoint[]
   mode?: string
+  style?: ChartValueStyle
 }
 
 export type DataPointMeta = {

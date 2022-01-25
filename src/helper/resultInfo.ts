@@ -62,4 +62,9 @@ export default class ResultInfo {
     }
   }
 
+  getTag = (point: DataPoint, categoryId:number): any => {
+    if(point && point.tags) {
+      return point.tags.find(tag => tag.categoryId === categoryId)
+    }
+  }
 }

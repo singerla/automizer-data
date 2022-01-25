@@ -41,12 +41,6 @@ export default class Result {
     this.metaParams = params
   }
 
-  applyStyleCallback<T>(row: ResultRow): T[] | TableRowStyle[] | ChartValueStyle[] {
-    const styles = (this.metaParams?.cb)
-      ? this.metaParams.cb(row, this.metaParams, this) : []
-    return styles
-  }
-
   getSeries = (): ChartSeries[] => {
     return this.result.body[0].cols.map(col => {
       return {
@@ -89,7 +83,7 @@ export default class Result {
       categories.push({
         label: row.key,
         y: r,
-        values: row.cols.map(cell => this.toNumber(cell))
+        values: row.cols.map(cell => this.toNumber(cell)),
       })
     })
 
@@ -107,7 +101,8 @@ export default class Result {
       categories.push({
         label: row.key,
         y: r + 0.5,
-        values: row.cols.map(cell => this.toNumber(cell))
+        values: row.cols.map(cell => this.toNumber(cell)),
+        styles: this.parseValueStyle(row.cols)
       })
     })
 
@@ -252,8 +247,9 @@ export default class Result {
     }
   }
 
-  toNumber(column: ResultColumn): number {
+  toNumber(column: ResultColumn): any {
     const value = this.renderCellValue(column)
+    if(value === '') return value
     return Number(value)
   }
 
@@ -297,4 +293,22 @@ export default class Result {
 
     return queryResultKeys
   }
+
+  applyStyleCallback<T>(row: ResultRow): T[] | TableRowStyle[] | ChartValueStyle[] {
+    const styles = (this.metaParams?.cb)
+      ? this.metaParams.cb(row, this.metaParams, this) : []
+    return styles
+  }
+
+  parseValueStyle(cols: ResultColumn[]) {
+    return cols.map(cell => {
+      if(Array.isArray(cell.value)
+        && cell.value[0]
+        && cell.value[0].style) {
+        return cell.value[0].style
+      }
+      return null
+    })
+  }
+
 }
