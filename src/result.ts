@@ -254,8 +254,10 @@ export default class Result {
   }
 
   renderCellValue(column: ResultColumn): ResultCell {
+    if(!column) return ''
+
     if(Array.isArray(column.value)) {
-      if(column.value[0].value === null) {
+      if(!column.value[0] || column.value[0].value === null) {
         return ''
       }
 

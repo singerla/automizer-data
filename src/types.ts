@@ -344,6 +344,7 @@ export type ModArgsCalcDifference = {
   match: DataPointTarget
   item: string
   mode: string
+  revert: boolean
 }
 
 export type ModArgsCalcSum = {

@@ -139,6 +139,7 @@ export default class TransformResult {
   }
 
   setPointStyle(point:DataPoint, style:any) {
+    if(!point) return
     point.style = style
   }
 
