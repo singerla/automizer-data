@@ -364,6 +364,7 @@ export type ModArgsAddMeta = {
   key: string
   glue?: string
   replace?: boolean
+  append?: boolean
 }
 
 export type ModArgsAddPointInfo = {

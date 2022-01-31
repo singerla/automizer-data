@@ -115,6 +115,18 @@ export default class TransformResult {
     return this
   }
 
+  dropRow(atIndex:number): this {
+    const rowsBefore = this.result.body.slice(0, atIndex)
+    const rowsAfter = this.result.body.slice(atIndex + 1)
+
+    this.result.body = [
+      ...rowsBefore,
+      ...rowsAfter
+    ]
+
+    return this
+  }
+
   createDataPoint(rowKey?: string, colKey?: string, value?: ResultCell): DataPoint {
     return {
       tags: [],

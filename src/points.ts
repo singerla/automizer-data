@@ -181,14 +181,21 @@ export default class Points {
       this.pushPointOrigin(point)
       const targetMeta = point.meta?.find(meta => meta.key === key)
       if(targetMeta && targetMeta.value) {
-        if(args.glue) {
-          point.value += String(args.glue) + targetMeta.value
-        } else if(args.replace) {
-          point.value = targetMeta.value as string
-          point.row = targetMeta.key
-          this.pushUnique(replacePoints, point)
+        if(args.append) {
+          const newPoint = { ...point }
+          newPoint.value = targetMeta.value as string
+          newPoint.row = newPoint.row + ' ' + targetMeta.key
+          this.push([newPoint])
         } else {
-          point.value = targetMeta.value as string
+          if(args.glue) {
+            point.value += String(args.glue) + targetMeta.value
+          } else if(args.replace) {
+            point.value = targetMeta.value as string
+            point.row = targetMeta.key
+            this.pushUnique(replacePoints, point)
+          } else {
+            point.value = targetMeta.value as string
+          }
         }
       }
     })
@@ -200,9 +207,6 @@ export default class Points {
 
   addPointInfo(args: ModArgsAddMeta): void {
     this.points.forEach(point => {
-      // vd(point)
-
-
     })
   }
 
