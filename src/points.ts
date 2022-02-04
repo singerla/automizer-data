@@ -353,6 +353,9 @@ export default class Points {
           point[target] = rename.by
         }
       }
+      if(rename.ucFirst) {
+        point[target] = point[target][0].toUpperCase() + point[target].slice(1)
+      }
     })
   }
 

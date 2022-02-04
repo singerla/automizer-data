@@ -70,6 +70,7 @@ export type DataPoint = {
   origin?: DataPoint[]
   mode?: string
   style?: ChartValueStyle
+  getMeta: (key:string) => DataPointMeta | undefined
 }
 
 export type DataPointMeta = {
@@ -174,14 +175,17 @@ export type ResultColumn = {
   key: string,
   value: ResultCell | DataPoint[],
   style?: TableRowStyle | ChartValueStyle
+  getPoint: (index?:number) => DataPoint
 }
 
 export type ResultRow = {
   key: string,
   cols: ResultColumn[]
+  getColumn: (colId:number) => ResultColumn
 }
 
 export type Result = {
+  isValid: () => boolean,
   body: ResultRow[],
   info: ResultInfo
   transform: TransformResult
@@ -277,6 +281,7 @@ export type RenameLabel = {
   by: string
   cb?: (label:string) => string
   isPattern: boolean
+  ucFirst?: boolean
 }
 
 export type ModifierCommandArgument =

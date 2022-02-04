@@ -62,6 +62,13 @@ export default class ResultInfo {
     }
   }
 
+  hasMeta = (point: DataPoint, key:string): any => {
+    const hasMeta = this.getMeta(point, key)
+    return (typeof hasMeta === 'string'
+      || hasMeta === true
+      || (Array.isArray(hasMeta) && hasMeta.length) > 0)
+  }
+
   getTag = (point: DataPoint, categoryId:number): any => {
     if(point && point.tags) {
       return point.tags.find(tag => tag.categoryId === categoryId)

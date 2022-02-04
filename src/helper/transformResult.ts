@@ -1,5 +1,6 @@
 import {DataPoint, ResultCell, ResultRow, ResultColumn, Result} from '../types';
 import { vd } from '../helper';
+import { Query } from '..';
 export type RowCallback = {
   (row: ResultRow, r:number): void
 }
@@ -94,12 +95,15 @@ export default class TransformResult {
     return this
   }
 
-  createColumn(rowKey: string, colKey: string): ResultColumn {
+  createColumn(rowKey: string, colKey: string, value?: ResultCell, points?: DataPoint[]): ResultColumn {
+    points = (!points) ? [
+      this.createDataPoint(rowKey, colKey, value)
+    ] : points
+
     return {
       key: colKey,
-      value: [
-        this.createDataPoint(rowKey, colKey)
-      ]
+      value: points,
+      getPoint: Query.getPointCb(points)
     }
   }
 
@@ -128,12 +132,18 @@ export default class TransformResult {
   }
 
   createDataPoint(rowKey?: string, colKey?: string, value?: ResultCell): DataPoint {
-    return {
+    const point = <DataPoint> {
       tags: [],
+      meta: [],
       row: rowKey || 'n/a',
       column: colKey || 'n/a',
-      value: value || null
+      value: value || null,
+      getMeta: () => undefined
     }
+
+    point.getMeta = Query.getMetaCb(point)
+
+    return point
   }
 
   sliceRows(start:number, end?:number): void {

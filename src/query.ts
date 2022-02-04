@@ -20,7 +20,7 @@ import {
   RawResultMeta,
   DataPointMeta,
   SelectionValidator,
-  QueryOptions,
+  QueryOptions, ResultColumn,
 } from './types';
 
 import Points from './points'
@@ -212,7 +212,8 @@ export default class Query {
             row: sheet.rows[r],
             column: sheet.columns[c],
             value: point,
-            meta: this.getDataPointMeta(sheet, r, c)
+            meta: this.getDataPointMeta(sheet, r, c),
+            getMeta: Query.getMetaCb(point)
           })
         })
       })
@@ -341,7 +342,7 @@ export default class Query {
     this[mode][category][value] = true
   }
 
-  merge() {
+  async merge() {
     let rows = this.checkForCallback(this.grid.row, this.keys)
     let columns = this.checkForCallback(this.grid.column, this.keys)
 
@@ -369,7 +370,7 @@ export default class Query {
     }
 
     if(this.grid.transform) {
-      this.transformResult(this.grid.transform)
+      await this.transformResult(this.grid.transform)
     }
 
     return this
@@ -442,7 +443,7 @@ export default class Query {
 
   setResult(result: any): void {
     for(const r in result) {
-      const cols = []
+      const cols = <ResultColumn[]>[]
       this.visibleKeys.row.push(r)
 
       for(const c in result[r]) {
@@ -450,20 +451,49 @@ export default class Query {
 
         cols.push({
           key: c,
-          value: result[r][c]
+          value: result[r][c],
+          getPoint: Query.getPointCb(result[r][c])
         })
       }
 
       this.result.body.push({
         key: r,
-        cols: cols
+        cols: cols,
+        getColumn: Query.getColumnCb(cols)
       })
     }
 
+    this.result.isValid = (): boolean => {
+      if(this.result.body && this.result.body[0] && this.result.body[0].cols) {
+        return true
+      }
+      return false
+    }
     this.result.info = new ResultInfo(this.result)
     this.result.transform = new TransformResult(this.result)
 
     this.visibleKeys.column = [...new Set(this.visibleKeys.column)]
+  }
+
+  static getPointCb(points: DataPoint[]) {
+    return (index?:number): DataPoint => {
+      const point = points[index || 0]
+      return point
+    }
+  }
+
+  static getColumnCb(cols: ResultColumn[]) {
+    return (colId?:number): ResultColumn => {
+      return cols[colId || 0]
+    }
+  }
+
+  static getMetaCb(point: DataPoint) {
+    return (key:string): DataPointMeta | undefined => {
+      if(point.meta) {
+        return point.meta.find(meta => meta.key === key)
+      }
+    }
   }
 
   filterColumns(columns: number|number[]): Query {
@@ -498,13 +528,16 @@ export default class Query {
     }
   }
 
-  transformResult(transformations:DataGridTransformation[]) {
+  async transformResult(transformations:DataGridTransformation[]) {
+    if(!this.result.isValid()) {
+      return
+    }
     try {
-      transformations.forEach(transform => {
+      for(const transform of transformations) {
         if(transform.cb && typeof transform.cb === 'function') {
-          transform.cb(this.result, this.points)
+          await transform.cb(this.result, this.points)
         }
-      })
+      }
     } catch (e) {
       throw e
     }
