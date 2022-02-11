@@ -20,7 +20,7 @@ import {
   RawResultMeta,
   DataPointMeta,
   SelectionValidator,
-  QueryOptions, ResultColumn,
+  QueryOptions, ResultColumn, ResultCell,
 } from './types';
 
 import Points from './points'
@@ -206,15 +206,17 @@ export default class Query {
   setDataPoints(dataPoints:DataPoint[]): DataPoint[] {
     this.sheets.forEach(sheet => {
       sheet.data.forEach((points, r) => {
-        points.forEach((point: any, c: number) => {
-          dataPoints.push({
+        points.forEach((value: ResultCell, c: number) => {
+          const dataPoint = <DataPoint> {
             tags: sheet.tags,
             row: sheet.rows[r],
             column: sheet.columns[c],
-            value: point,
+            value: value,
             meta: this.getDataPointMeta(sheet, r, c),
-            getMeta: Query.getMetaCb(point)
-          })
+            getMeta: () => undefined
+          }
+          dataPoint.getMeta = Query.getMetaCb(dataPoint)
+          dataPoints.push(dataPoint)
         })
       })
     })
@@ -343,8 +345,8 @@ export default class Query {
   }
 
   async merge() {
-    let rows = this.checkForCallback(this.grid.row, this.keys)
-    let columns = this.checkForCallback(this.grid.column, this.keys)
+    let rows = this.checkForCallback(this.grid.row, this.keys, this.points)
+    let columns = this.checkForCallback(this.grid.column, this.keys, this.points)
 
     let points = <any> []
     let result = <any> {}
@@ -380,9 +382,9 @@ export default class Query {
     return _.cloneDeep(this)
   }
 
-  checkForCallback(cb: any, keys: CellKeys): DataPointFilter[] {
+  checkForCallback(cb: any, keys: CellKeys, points:DataPoint[]): DataPointFilter[] {
     const cbResult = (typeof cb === 'function')
-      ? cb(keys)
+      ? cb(keys, points)
       : cb
 
     return cbResult

@@ -65,7 +65,7 @@ export class Generic extends Parser {
       }
     }
 
-    if(firstCell.length === 0 && !hasSecondCell
+    if((firstCell.length === 0 && !hasSecondCell)
       || this.config.skipRows.indexOf(firstCell) > -1) {
       return;
     }
@@ -76,6 +76,12 @@ export class Generic extends Parser {
           key: this.currentSection,
           value: firstCell
         })
+      }
+
+      if(hasFirstCell && this.config.firstCell === firstCell) {
+        this.currentSection = 'header'
+        this.results[this.count].header.push(data)
+        return
       }
 
       if(!hasFirstCell && hasSecondCell

@@ -14,6 +14,7 @@ import {ChartBubble, ChartCategory, ChartSeries, ChartValueStyle} from 'pptx-aut
 import {TableData, TableRow, TableRowStyle} from 'pptx-automizer/dist/types/table-types';
 import Query from './query';
 import {vd} from './helper';
+import {TextStyle} from 'pptx-automizer/dist/types/modify-types';
 
 export default class Result {
   result: ResultType
@@ -296,9 +297,24 @@ export default class Result {
     return queryResultKeys
   }
 
-  applyStyleCallback<T>(row: ResultRow): T[] | TableRowStyle[] | ChartValueStyle[] {
-    const styles = (this.metaParams?.cb)
-      ? this.metaParams.cb(row, this.metaParams, this) : []
+  applyStyleCallback<T>(row: ResultRow): T[] | TextStyle[] | ChartValueStyle[] {
+    if(this.metaParams?.cb) {
+      return this.metaParams.cb(row, this.metaParams, this)
+    }
+
+    const styles = <any[]>[]
+    row.cols.forEach((column: ResultColumn) => {
+      if(column.value && Array.isArray(column.value)) {
+        column.value.forEach(point => {
+          if(point.style) {
+            styles.push(point.style)
+          } else {
+            styles.push(null)
+          }
+        })
+      }
+    })
+
     return styles
   }
 

@@ -51,6 +51,10 @@ export class Parser {
       const tags = tagsObj.tags
       this.removeCategoryDuplicates(tags)
 
+      if(this.config.renderRawResultData) {
+        this.config.renderRawResultData(table, this)
+      }
+
       const slices = this.parseColumnSlices(table.header)
       const subgroups = this.sliceColumns(table, table.header, slices)
 

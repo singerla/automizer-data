@@ -18,10 +18,12 @@ export type ParserType = Parser|Generic|Gesstabs
 
 export type ParserOptions = {
   separator?: string
+  firstCell?: string
   renderTags: (info: RawResultInfo[], pushCb: Tagger) => void
   renderHeader?: (cells: string[], meta: RawResultMeta[], parser: ParserType) => string[]
   renderRow: (cells: ResultCell[], label: string, meta: RawResultMeta[], parser: ParserType) => ResultCell[]
   renderLabel?: (label: string) => string
+  renderRawResultData?: (data: RawResultData, parser: ParserType) => void
   metaMap: MetaMap
   significance?: ParserOptionsSignificance
   overcodes?: Overcodes[]
@@ -69,7 +71,7 @@ export type DataPoint = {
   meta?: DataPointMeta[]
   origin?: DataPoint[]
   mode?: string
-  style?: ChartValueStyle
+  style?: TableRowStyle | ChartValueStyle
   getMeta: (key:string) => DataPointMeta | undefined
 }
 
@@ -173,7 +175,7 @@ export type CellKeys = {
 
 export type ResultColumn = {
   key: string,
-  value: ResultCell | DataPoint[],
+  value: DataPoint[],
   style?: TableRowStyle | ChartValueStyle
   getPoint: (index?:number) => DataPoint
 }
