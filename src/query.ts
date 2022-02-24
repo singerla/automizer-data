@@ -20,7 +20,7 @@ import {
   RawResultMeta,
   DataPointMeta,
   SelectionValidator,
-  QueryOptions, ResultColumn, ResultCell,
+  QueryOptions, ResultColumn, ResultCell, CategoryCount,
 } from './types';
 
 import Points from './points'
@@ -45,6 +45,7 @@ export default class Query {
   selectionValidator: SelectionValidator
   result: Result
   tags: any[]
+  nonGreedySelector: boolean
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma
@@ -63,6 +64,7 @@ export default class Query {
     this.selectionValidator = <SelectionValidator> () => true
     this.allSheets = <Datasheet[]> []
     this.tags = <any>[]
+    this.nonGreedySelector = true
 
     return this
   }
@@ -75,6 +77,9 @@ export default class Query {
   setOptions(options?:QueryOptions): this {
     if(options?.selectionValidator) {
       this.setSelectionValidator(options.selectionValidator)
+    }
+    if(options?.nonGreedySelector) {
+      this.nonGreedySelector = options?.nonGreedySelector
     }
     return this
   }
@@ -119,6 +124,9 @@ export default class Query {
   processSheets(sheets: Sheets, level: number) {
     const dataPoints = <DataPoint[]>[]
     if(sheets.length > 0) {
+      if(this.nonGreedySelector) {
+        // sheets = this.filterSheets(sheets)
+      }
       this.parseSheets(sheets)
       this.setDataPoints(dataPoints)
       this.setDataPointKeys(dataPoints, 'inputKeys')
@@ -199,8 +207,31 @@ export default class Query {
         meta: JSON.parse(sheet.meta),
       }
     })
-
     this.allSheets.push(...this.sheets)
+  }
+
+  /*
+   * Filters sheets with least tag count by categoryId.
+   * This will prevent mixing sheets with different set of tags.
+   */
+  filterSheets(sheets: Sheets): Sheets {
+    const nonGreedyIds = this.getSheetCategoryCount(sheets).map(count => count.sheetId)
+    return sheets.filter(sheet => nonGreedyIds.includes((sheet.id)))
+  }
+
+  getSheetCategoryCount(sheets: Sheets): CategoryCount[] {
+    const categoryCount = <CategoryCount[]>[]
+    sheets.forEach(sheet => {
+      categoryCount.push({
+        sheetId: sheet.id,
+        categoryIds: sheet.tags.map(tag => tag.categoryId)
+      })
+    })
+
+    categoryCount.sort((a,b) => a.categoryIds.length - b.categoryIds.length)
+    const smallestCount = categoryCount[0].categoryIds.length
+
+    return categoryCount.filter(categoryCount => categoryCount.categoryIds.length <= smallestCount)
   }
 
   setDataPoints(dataPoints:DataPoint[]): DataPoint[] {

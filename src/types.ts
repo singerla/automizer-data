@@ -47,12 +47,19 @@ export type StoreSummary = {
 }
 
 export type QueryOptions = {
-  selectionValidator: SelectionValidator
+  selectionValidator?: SelectionValidator
+  nonGreedySelector?: boolean
 }
 
 export type SelectionValidator = {
   (tags: Tag[]): boolean
 }
+
+export type CategoryCount = {
+  sheetId: number;
+  categoryIds: number[];
+}
+
 
 export type Selector = number[][]
 
