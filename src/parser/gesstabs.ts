@@ -145,7 +145,14 @@ export class Gesstabs extends Parser {
 
     for(const overcodeLevel in this.config.overcodes) {
       const overcode = this.config.overcodes[overcodeLevel]
-      const isOvercode = (firstCell.indexOf(overcode.prefix) === 0)
+      let isOvercode = false
+      if(overcode.prefix) {
+        isOvercode = (firstCell.indexOf(overcode.prefix) === 0)
+      } else if(overcode.match) {
+        isOvercode = (firstCell.includes(overcode.match))
+      } else if(overcode.callback) {
+        isOvercode = overcode.callback(firstCell)
+      }
 
       if(isOvercode) {
         this.nested = this.nested.filter(nested => nested.level < Number(overcodeLevel))

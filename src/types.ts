@@ -222,7 +222,8 @@ export type MetaParamStyle = {
 }
 
 export type Overcodes = {
-  prefix: string;
+  prefix?: string;
+  match?: string;
   key: string;
   callback?: (label:string) => boolean
 }
