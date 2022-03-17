@@ -107,6 +107,14 @@ export default class TransformResult {
     }
   }
 
+  createRow(rowKey: string, columns: ResultColumn[]): ResultRow {
+    return {
+      key: rowKey,
+      cols: columns,
+      getColumn: Query.getColumnCb(columns)
+    }
+  }
+
   dropColumn(atIndex:number): this {
     this.forEachRow((row: ResultRow, r:number) => {
       const leftCols = this.sliceColumns(row, 0, atIndex)
@@ -138,10 +146,12 @@ export default class TransformResult {
       row: rowKey || 'n/a',
       column: colKey || 'n/a',
       value: value || null,
-      getMeta: () => undefined
+      getMeta: () => undefined,
+      getTag: () => undefined,
     }
 
     point.getMeta = Query.getMetaCb(point)
+    point.getTag = Query.getTagCb(point)
 
     return point
   }

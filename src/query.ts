@@ -244,9 +244,12 @@ export default class Query {
             column: sheet.columns[c],
             value: value,
             meta: this.getDataPointMeta(sheet, r, c),
-            getMeta: () => undefined
+            getMeta: () => undefined,
+            getTag: () => undefined,
           }
           dataPoint.getMeta = Query.getMetaCb(dataPoint)
+          dataPoint.getTag = Query.getTagCb(dataPoint)
+
           dataPoints.push(dataPoint)
         })
       })
@@ -525,6 +528,14 @@ export default class Query {
     return (key:string): DataPointMeta | undefined => {
       if(point.meta) {
         return point.meta.find(meta => meta.key === key)
+      }
+    }
+  }
+
+  static getTagCb(point: DataPoint) {
+    return (categoryId:number): DataTag | undefined => {
+      if(point.tags) {
+        return point.tags.find(meta => meta.categoryId === categoryId)
       }
     }
   }

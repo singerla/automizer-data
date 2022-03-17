@@ -80,6 +80,7 @@ export type DataPoint = {
   mode?: string
   style?: TableRowStyle | ChartValueStyle
   getMeta: (key:string) => DataPointMeta | undefined
+  getTag: (categoryId:number) => DataTag | undefined
 }
 
 export type DataPointMeta = {
