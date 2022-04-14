@@ -38,7 +38,11 @@ import {
   ModArgsTranspose,
   ModArgsAddToNew,
   ModArgsCalcDifference,
-  ModArgsCalcSum
+  ModArgsCalcSum,
+  ResultColumn,
+  ResultRow,
+  ResultCell,
+  DataPointMeta
 } from './types'
 import {
   ParserOptions,
@@ -67,7 +71,7 @@ const getData = async(selector: DataTag[] | DataTag[][], grid: any, prisma?: Pri
   return result
 }
 
-const getResult = async(selector: number[][], grid: any, prisma: any, options?:QueryOptions): Promise<Result> => {
+const getResult = async(selector: number[][], grid: any, prisma: PrismaClient, options?:QueryOptions): Promise<Result> => {
   const query = new Query(prisma)
     .setGrid(grid)
     .setOptions(options)
@@ -93,10 +97,12 @@ const sort = {
 }
 
 export type { ParserOptions, RawResultInfo, StoreOptions, Tagger }
+export type { ResultColumn, ResultRow, ResultCell }
 export type {
   DataGrid,
   DataGridCategories,
   DataPointFilter,
+  DataPointMeta,
   DataResultCellFilter,
   DataGridTransformation
 }
@@ -125,3 +131,4 @@ export type {
 export { Query, Parser, Gesstabs, Generic, Store, filter, cell, sort, getData, getResult }
 export { Points, Result }
 export { getNestedClause, getTagGroupsByCategory }
+export { PrismaClient }

@@ -4,8 +4,8 @@ import { Gesstabs } from "./parser/gesstabs";
 import { Generic } from ".";
 import {Parser} from './parser/parser';
 import ResultClass from './result';
-import {TableRowStyle} from 'pptx-automizer/dist/types/table-types';
-import {ChartValueStyle} from 'pptx-automizer/dist/types/chart-types';
+import {TableRowStyle} from 'pptx-automizer';
+import {ChartValueStyle} from 'pptx-automizer';
 import ResultInfo from './helper/resultInfo';
 import TransformResult from './helper/transformResult';
 

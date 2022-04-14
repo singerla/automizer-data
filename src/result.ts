@@ -9,12 +9,11 @@ import {
   ResultColumn,
   ResultRow
 } from './types';
-import {ChartData} from 'pptx-automizer/dist';
-import {ChartBubble, ChartCategory, ChartSeries, ChartValueStyle} from 'pptx-automizer/dist/types/chart-types';
-import {TableData, TableRow, TableRowStyle} from 'pptx-automizer/dist/types/table-types';
+import {ChartData} from 'pptx-automizer';
+import {ChartBubble, ChartCategory, ChartSeries, ChartValueStyle} from 'pptx-automizer';
+import {TableData, TableRow, TableRowStyle} from 'pptx-automizer';
 import Query from './query';
-import {vd} from './helper';
-import {TextStyle} from 'pptx-automizer/dist/types/modify-types';
+import {TextStyle} from 'pptx-automizer';
 
 export default class Result {
   result: ResultType

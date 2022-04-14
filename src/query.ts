@@ -1,4 +1,5 @@
-import {PrismaClient, Tag} from './client'
+import {Tag} from './client'
+import { PrismaClient } from './client'
 import { getNestedClause, vd } from './helper'
 
 import {
@@ -30,7 +31,7 @@ import ResultInfo from './helper/resultInfo';
 import TransformResult from './helper/transformResult';
 
 export default class Query {
-  prisma: PrismaClient
+  prisma: PrismaClient | any
   clause: any
   sheets: Datasheet[]
   allSheets: Datasheet[]
@@ -47,7 +48,7 @@ export default class Query {
   tags: any[]
   nonGreedySelector: boolean
 
-  constructor(prisma: PrismaClient) {
+  constructor(prisma: PrismaClient | any) {
     this.prisma = prisma
     this.sheets = []
     this.inputKeys = <CellKeys> {}
@@ -124,9 +125,6 @@ export default class Query {
   processSheets(sheets: Sheets, level: number) {
     const dataPoints = <DataPoint[]>[]
     if(sheets.length > 0) {
-      if(this.nonGreedySelector) {
-        // sheets = this.filterSheets(sheets)
-      }
       this.parseSheets(sheets)
       this.setDataPoints(dataPoints)
       this.setDataPointKeys(dataPoints, 'inputKeys')
@@ -186,6 +184,10 @@ export default class Query {
         tags: true
       }
     })
+
+    if(this.nonGreedySelector) {
+      sheets = this.filterSheets(sheets)
+    }
 
     return sheets
   }

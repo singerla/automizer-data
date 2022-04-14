@@ -2,7 +2,7 @@ import {getData, getResult, Store} from './index';
 import { DataGrid } from './types';
 import { all, filterByDataTag, filterBy } from './filter';
 import { value } from './cell'
-import {PrismaClient} from '../prisma/client';
+import {PrismaClient} from './client';
 
 const run = async() => {
   const client = new PrismaClient()
