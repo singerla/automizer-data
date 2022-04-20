@@ -1,7 +1,6 @@
-import {getDataObject, Store} from '../src';
-import { DataGrid } from '../src/types';
-import { all } from '../src/filter';
-import { value } from '../src/cell';
+import {getResult} from '../src';
+import {all} from '../src/filter';
+import {value} from '../src/cell';
 import {PrismaClient} from '../src/client';
 
 test('get demo data by tag IDs and convert to SeriesCategories', async () => {
@@ -11,12 +10,12 @@ test('get demo data by tag IDs and convert to SeriesCategories', async () => {
   ]
 
   const grid = {
-    rows: all('row'),
-    columns: all('column'),
+    row: all('row'),
+    column: all('column'),
     cell: value
   }
 
-  const result = await getDataObject(selector, grid, client)
+  const result = await getResult(selector, grid, client)
      .then(summary => {
       return summary
     })
@@ -26,7 +25,7 @@ test('get demo data by tag IDs and convert to SeriesCategories', async () => {
     .finally(async () => {
       await client.$disconnect()
     })
-    
+
   const chartData = result.toSeriesCategories()
 
   // console.dir(chartData, {depth: 10})

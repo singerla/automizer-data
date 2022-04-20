@@ -1,6 +1,5 @@
 import {
   CellKeys,
-  DataPoint,
   Datasheet,
   MetaParam,
   QueryResultKeys,
@@ -9,11 +8,18 @@ import {
   ResultColumn,
   ResultRow
 } from './types';
-import {ChartData} from 'pptx-automizer';
-import {ChartBubble, ChartCategory, ChartSeries, ChartValueStyle} from 'pptx-automizer';
-import {TableData, TableRow, TableRowStyle} from 'pptx-automizer';
+import {
+  ChartBubble,
+  ChartCategory,
+  ChartData,
+  ChartSeries,
+  ChartValueStyle,
+  TableData,
+  TableRow,
+  TableRowStyle,
+  TextStyle
+} from 'pptx-automizer';
 import Query from './query';
-import {TextStyle} from 'pptx-automizer';
 
 export default class Result {
   result: ResultType

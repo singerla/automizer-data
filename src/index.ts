@@ -65,10 +65,12 @@ const getData = async(selector: DataTag[] | DataTag[][], grid: any, prisma?: Pri
   const query = new Query(prisma)
   query.setGrid(grid)
   await query.get(selector)
-  const result = query.merge()
-  await query.prisma.$disconnect()
 
-  return result
+  if(query.points.length > 0) {
+    await query.merge()
+  }
+
+  return new Result(query)
 }
 
 const getResult = async(selector: number[][], grid: any, prisma: PrismaClient, options?:QueryOptions): Promise<Result> => {

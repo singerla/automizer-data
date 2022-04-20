@@ -1,7 +1,6 @@
 import {getData, Store} from '../src';
-import { DataGrid } from '../src/types';
-import { all } from '../src/filter';
-import { value } from '../src/cell';
+import {all} from '../src/filter';
+import {value} from '../src/cell';
 import {PrismaClient} from '../src/client';
 
 test('get demo data and convert to SeriesCategories', async () => {
@@ -38,8 +37,8 @@ test('get demo data and convert to SeriesCategories', async () => {
 // }
 
   const grid = {
-    rows: all('row'),
-    columns: all('column'),
+    row: all('row'),
+    column: all('column'),
     cell: value
   }
 
