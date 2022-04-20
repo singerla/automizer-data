@@ -1,4 +1,4 @@
-import {Tag} from '../prisma/client';
+import {Tag} from '../src/client';
 
 export const getNestedClause = (selectionTags:Tag[]): any => {
   const tagGroups = getTagGroupsByCategory(selectionTags)
