@@ -1,14 +1,30 @@
 import {PrismaClient} from '../src/client';
 import { Store } from '../src/index';
-import { ParserOptions, Tagger, RawResultInfo } from "../src/types";
+import {ParserOptions, Tagger, RawResultInfo, StatusTracker} from '../src/types';
 import { Gesstabs } from "../src/parser/gesstabs";
 
+// Progress bar is not available inside a running test.
+const cliProgress = require('cli-progress');
+
+
 test('store demo xlsx-data from Gesstabs with prisma client', async () => {
+  const filename = `${__dirname}/data/test-data.xlsx`
+
+  // create a new progress bar instance and use shades_classic theme
+  const bar1 = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+
   const store = new Store(
-    new PrismaClient()
+    new PrismaClient(),
+    {
+      filename: filename,
+      userId: 1,
+      statusTracker: (status) => {
+        console.log(status.share)
+        bar1.update(status.share, {filename: filename})
+      }
+    }
   )
 
-  const filename = `${__dirname}/data/test-data.xlsx`
   const config = <ParserOptions> {
     // This string separates tables if found in Column A
     separator: 'Table Separator',
@@ -60,6 +76,8 @@ test('store demo xlsx-data from Gesstabs with prisma client', async () => {
     },
   }
 
+  bar1.start(100,0)
+
   const parse = new Gesstabs(config)
   const datasheets = await parse.fromXlsx(filename)
   const summary = await store.run(datasheets)
@@ -70,6 +88,7 @@ test('store demo xlsx-data from Gesstabs with prisma client', async () => {
       throw e
     })
     .finally(async () => {
+      bar1.stop()
       await store.prisma.$disconnect()
     })
 

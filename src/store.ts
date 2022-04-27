@@ -1,6 +1,6 @@
 import {Category, PrismaClient, Sheet, Tag } from './client';
 import Query from './query'
-import { Datasheet, DataTag, StoreOptions, StoreSummary } from './types'
+import {Datasheet, DataTag, StatusTracker, StoreOptions, StoreSummary} from './types'
 import crypto from 'crypto'
 
 export class Store {
@@ -11,6 +11,7 @@ export class Store {
   categories: Category[]
   tags: Tag[]
   importId: number
+  status: StatusTracker
 
   constructor(prisma: PrismaClient, options?: StoreOptions) {
     this.prisma = prisma
@@ -21,7 +22,12 @@ export class Store {
 
     this.query = new Query(this.prisma)
     this.options = {
-      replaceExisting: true
+      replaceExisting: true,
+      filename: 'unknown',
+      userId: 1,
+      statusTracker: (status: StatusTracker) => {
+        console.log(status.share)
+      }
     }
 
     if(options) {
@@ -31,6 +37,18 @@ export class Store {
     this.importId = 0
     this.categories = []
     this.tags = []
+    this.status = {
+      current: 0,
+      max: 0,
+      share: 0,
+      info: undefined,
+      increment: () => {
+        this.status.current++
+        this.status.share = Math.round(this.status.current / this.status.max * 100)
+        this.status.next(this.status)
+      },
+      next: this.options.statusTracker,
+    }
   }
 
   async run(datasheets: Datasheet[]): Promise<StoreSummary> {
@@ -38,11 +56,16 @@ export class Store {
       await this.options?.runBefore(this.prisma)
     }
 
+    this.status.max = datasheets.length
+    this.status.info = 'analyze datasheets'
+
     await this.getImport()
     await this.getCategories()
     await this.getTags()
 
     for(let i in datasheets) {
+      this.status.info = 'store datasheets'
+      this.status.increment()
       await this.storeData(datasheets[i])
     }
 
@@ -54,9 +77,11 @@ export class Store {
   async getImport() {
     const newImport = await this.prisma.import.create({
       data: {
-        file: 'Test',
+        file: this.options.filename,
         user: {
-          connect: { id: 1}
+          connect: {
+            id: this.options.userId
+          }
         }
       }
     })

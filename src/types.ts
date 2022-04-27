@@ -12,6 +12,9 @@ import TransformResult from './helper/transformResult';
 export type StoreOptions = {
   replaceExisting?: boolean,
   runBefore?: (prisma: PrismaClient) => Promise<void>
+  filename?: string;
+  userId?: number;
+  statusTracker?: StatusTracker['next']
 }
 
 export type ParserType = Parser|Generic|Gesstabs
@@ -44,6 +47,15 @@ export type ResultCell = number|string|null
 export type StoreSummary = {
   ids: number[],
   deleted: number[],
+}
+
+export type StatusTracker = {
+  current: number;
+  max: number;
+  share: number;
+  info: string | undefined;
+  next: (tracker: StatusTracker) => void;
+  increment: () => void;
 }
 
 export type QueryOptions = {
