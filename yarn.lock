@@ -3378,10 +3378,10 @@ posix-character-classes@^0.1.0:
   resolved "https://registry.yarnpkg.com/posix-character-classes/-/posix-character-classes-0.1.1.tgz#01eac0fe3b5af71a2a6c02feabb8c1fef7e00eab"
   integrity sha1-AerA/jta9xoqbAL+q7jB/vfgDqs=
 
-pptx-automizer@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/pptx-automizer/-/pptx-automizer-0.1.0.tgz#837fe787ef84a222b07f04b3e291ab6c38960786"
-  integrity sha512-B4t9XDsMSpxFWjIQw79eAYBOVNQseSeiDC8a5ni4xMgO50E1joV2iMMDIcVeGvTDfMB8P0UNB6bLFPa0xd8p3Q==
+pptx-automizer@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/pptx-automizer/-/pptx-automizer-0.1.1.tgz#3a176135e389125367ee318d86bce6d388d20bc9"
+  integrity sha512-Frpf9Cx4aN2UtNTz023PoAa9tzGezQO8m4QUdNOL2z82yq9IT3GBd8gEA7eXs++pqlC7xr9UMhBq1qlo5ts3HQ==
   dependencies:
     jszip "^3.6.0"
     regexp.escape "^1.1.0"
