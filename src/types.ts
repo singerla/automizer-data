@@ -1,53 +1,61 @@
-
-import {PrismaClient, Sheet, Tag } from "./client"
+import { PrismaClient, Sheet, Tag } from "./client";
 import { Gesstabs } from "./parser/gesstabs";
 import { Generic } from ".";
-import {Parser} from './parser/parser';
-import ResultClass from './result';
-import {TableRowStyle} from 'pptx-automizer';
-import {ChartValueStyle} from 'pptx-automizer';
-import ResultInfo from './helper/resultInfo';
-import TransformResult from './helper/transformResult';
+import { Parser } from "./parser/parser";
+import ResultClass from "./result";
+import { TableRowStyle } from "pptx-automizer";
+import { ChartValueStyle } from "pptx-automizer";
+import ResultInfo from "./helper/resultInfo";
+import TransformResult from "./helper/transformResult";
 
 export type StoreOptions = {
-  replaceExisting?: boolean,
-  runBefore?: (prisma: PrismaClient) => Promise<void>
+  replaceExisting?: boolean;
+  runBefore?: (prisma: PrismaClient) => Promise<void>;
   filename?: string;
   userId?: number;
-  statusTracker?: StatusTracker['next']
-}
+  statusTracker?: StatusTracker["next"];
+};
 
-export type ParserType = Parser|Generic|Gesstabs
+export type ParserType = Parser | Generic | Gesstabs;
 
 export type ParserOptions = {
-  separator?: string
-  firstCell?: string
-  renderTags: (info: RawResultInfo[], pushCb: Tagger) => void
-  renderHeader?: (cells: string[], meta: RawResultMeta[], parser: ParserType) => string[]
-  renderRow: (cells: ResultCell[], label: string, meta: RawResultMeta[], parser: ParserType) => ResultCell[]
-  renderLabel?: (label: string) => string
-  renderRawResultData?: (data: RawResultData, parser: ParserType) => void
-  metaMap: MetaMap
-  significance?: ParserOptionsSignificance
-  overcodes?: Overcodes[]
-  skipRows: string[]
-  worksheetId?: number
-}
+  separator?: string;
+  firstCell?: string;
+  renderTags: (info: RawResultInfo[], pushCb: Tagger) => void;
+  renderHeader?: (
+    cells: string[],
+    meta: RawResultMeta[],
+    parser: ParserType
+  ) => string[];
+  renderRow: (
+    cells: ResultCell[],
+    label: string,
+    meta: RawResultMeta[],
+    parser: ParserType
+  ) => ResultCell[];
+  renderLabel?: (label: string) => string;
+  renderRawResultData?: (data: RawResultData, parser: ParserType) => void;
+  metaMap: MetaMap;
+  significance?: ParserOptionsSignificance;
+  overcodes?: Overcodes[];
+  skipRows: string[];
+  worksheetId?: number;
+};
 
 export type ParserOptionsSignificance = {
-  cellSeparator: string,
-  headerSeparator: string,
-  headerFilter: string[],
-  lettersKey: string,
-  valueKey: string,
-}
+  cellSeparator: string;
+  headerSeparator: string;
+  headerFilter: string[];
+  lettersKey: string;
+  valueKey: string;
+};
 
-export type ResultCell = number|string|null
+export type ResultCell = number | string | null;
 
 export type StoreSummary = {
-  ids: number[],
-  deleted: number[],
-}
+  ids: number[];
+  deleted: number[];
+};
 
 export type StatusTracker = {
   current: number;
@@ -56,62 +64,62 @@ export type StatusTracker = {
   info: string | undefined;
   next: (tracker: StatusTracker) => void;
   increment: () => void;
-}
+};
 
 export type QueryOptions = {
-  selectionValidator?: SelectionValidator
-  nonGreedySelector?: boolean
-}
+  selectionValidator?: SelectionValidator;
+  nonGreedySelector?: boolean;
+};
 
 export type SelectionValidator = {
-  (tags: Tag[]): boolean
-}
+  (tags: Tag[]): boolean;
+};
 
 export type CategoryCount = {
   sheetId: number;
   categoryIds: number[];
-}
+};
 
-
-export type Selector = number[][]
+export type Selector = number[][];
 
 export type DataTag = {
-  id?: number
-  category: string
-  value: string
-  categoryId?: number
-}
+  id?: number;
+  category: string;
+  value: string;
+  categoryId?: number;
+};
 
 export type DataPoint = {
-  tags: DataTag[]
-  row: string
-  column: string
-  value: ResultCell
-  meta?: DataPointMeta[]
-  origin?: DataPoint[]
-  mode?: string
-  style?: TableRowStyle | ChartValueStyle
-  getMeta: (key:string) => DataPointMeta | undefined
-  getTag: (categoryId:number) => DataTag | undefined
-}
+  tags: DataTag[];
+  row: string;
+  column: string;
+  value: ResultCell;
+  meta?: DataPointMeta[];
+  origin?: DataPoint[];
+  mode?: string;
+  style?: TableRowStyle | ChartValueStyle;
+  getMeta: (key: string) => DataPointMeta | undefined;
+  setMeta: (key: string, value: any) => DataPoint;
+  getTag: (categoryId: number) => DataTag | undefined;
+};
 
 export type DataPointMeta = {
-  key: string
-  value: ResultCell | NestedParentValue[]
-}
+  key: string;
+  value: ResultCell | NestedParentValue[];
+};
 
 export type Datasheet = {
-  id?: number
-  tags: DataTag[]
-  columns: string[]
-  rows: string[]
-  data: ResultCell[][]
-  meta: RawResultMeta[]
-}
+  id?: number;
+  tags: DataTag[];
+  columns: string[];
+  rows: string[];
+  data: ResultCell[][];
+  meta: RawResultMeta[];
+};
 
 export type Sheets = (Sheet & {
   tags: Tag[];
-})[]
+})[];
 
 export type QueryResult = {
   result: string;
@@ -120,195 +128,199 @@ export type QueryResult = {
   keys: string;
   inputKeys: string;
   visibleKeys: string;
-}
+};
 
 export type QueryResultKeys = {
   row: string[];
   column: string[];
   category: QueryResultCategoryKeys[];
-}
+};
 
 export type QueryResultCategoryKeys = {
   categoryId: number;
   keys: string[];
-}
+};
 
 export type DataPointFilterResult = {
-  points: DataPoint[]
-  label: string
-}
+  points: DataPoint[];
+  label: string;
+};
 
 export type DataPointFilter = {
-  (points: DataPoint[]): DataPointFilterResult
-}
+  (points: DataPoint[]): DataPointFilterResult;
+};
 
 export type DataGridFunction = {
-  (tag: DataTag|string, key?:string|string[]): DataPointFilter
-}
+  (tag: DataTag | string, key?: string | string[]): DataPointFilter;
+};
 
 export type DataGridCategories = {
-  (keys: CellKeys) : DataPointFilter[]
-}
+  (keys: CellKeys): DataPointFilter[];
+};
 
 export type DataGrid = {
-  row: DataPointFilter[] | DataGridCategories,
-  column: DataPointFilter[] | DataGridCategories,
-  cell: DataResultCellFilter,
-  modify?: DataPointModifier[]
-  sort?: DataPointSortation[]
-  transform?: DataGridTransformation[]
-}
+  row: DataPointFilter[] | DataGridCategories;
+  column: DataPointFilter[] | DataGridCategories;
+  cell: DataResultCellFilter;
+  modify?: DataPointModifier[];
+  sort?: DataPointSortation[];
+  transform?: DataGridTransformation[];
+};
 
 export type ResultCellInfo = {
-  value: ResultCell,
-  tags: Tag[]
-}
+  value: ResultCell;
+  tags: Tag[];
+};
 
 export type DataResultCellFilter = {
-  (points: DataPoint[]): ResultCell|DataPoint[]
-}
+  (points: DataPoint[]): ResultCell | DataPoint[];
+};
 
 export type DataPointModifier = {
-  applyToLevel?: number[],
-  executionOrder?: number,
-  cb?: any
-  callbacks?: any[]
-}
+  applyToLevel?: number[];
+  executionOrder?: number;
+  cb?: any;
+  callbacks?: any[];
+};
 
 export type DataPointSortation = {
-  cb?: any
-  section: DataPointTarget
-}
+  cb?: any;
+  section: DataPointTarget;
+};
 
 export type DataGridTransformation = {
-  cb?: any
-  section: DataPointTarget
-}
+  cb?: any;
+  section: DataPointTarget;
+};
 
 export type CellKey = {
-  [key: string]: boolean
-}
+  [key: string]: boolean;
+};
 
 export type CellKeys = {
-  [key: string]: CellKey
-}
+  [key: string]: CellKey;
+};
 
 export type ResultColumn = {
-  key: string,
-  value: DataPoint[],
-  style?: TableRowStyle | ChartValueStyle
-  getPoint: (index?:number) => DataPoint
-}
+  key: string;
+  value: DataPoint[];
+  style?: TableRowStyle | ChartValueStyle;
+  getPoint: (index?: number) => DataPoint;
+};
 
 export type ResultRow = {
-  key: string,
-  cols: ResultColumn[]
-  getColumn: (colId:number) => ResultColumn
-}
+  key: string;
+  cols: ResultColumn[];
+  getColumn: (colId: number) => ResultColumn;
+};
 
 export type Result = {
-  isValid: () => boolean,
-  body: ResultRow[],
-  info: ResultInfo
-  transform: TransformResult
-}
+  isValid: () => boolean;
+  body: ResultRow[];
+  info: ResultInfo;
+  transform: TransformResult;
+};
 
 export type Tagger = {
-  tags: DataTag[],
-  push: (cat:string, val:string) => void
-}
+  tags: DataTag[];
+  push: (cat: string, val: string) => void;
+};
 
 export type MetaMap = {
-  [key: string]: string[]
-}
+  [key: string]: string[];
+};
 
 export type MetaParam = {
-  cb: (row: ResultRow, params: MetaParam, result: ResultClass) => TableRowStyle[] | ChartValueStyle[],
-  styles: MetaParamStyle[]
-}
+  cb: (
+    row: ResultRow,
+    params: MetaParam,
+    result: ResultClass
+  ) => TableRowStyle[] | ChartValueStyle[];
+  styles: MetaParamStyle[];
+};
 
 export type MetaParamStyle = {
-  key?: string,
-  value?: string,
-  keys?: string[],
-  style: TableRowStyle|ChartValueStyle
-}
+  key?: string;
+  value?: string;
+  keys?: string[];
+  style: TableRowStyle | ChartValueStyle;
+};
 
 export type Overcodes = {
   prefix?: string;
   match?: string;
   key: string;
-  callback?: (label:string) => boolean
-}
+  callback?: (label: string) => boolean;
+};
 
-export type RawRow = ResultCell[]
+export type RawRow = ResultCell[];
 
 export type RawResultMeta = {
   key: string;
   label: string;
-  data?: RawRow|RawRow[];
+  data?: RawRow | RawRow[];
   info?: RawResultInfo[];
-}
+};
 
 export type RawResultInfo = {
   key: string;
   value: string;
   info?: string;
-}
+};
 
 export type RawResultNestedParent = {
   level: number;
   key: string;
   label: string;
-}
+};
 
 export type NestedParentValue = {
   label: string;
   value: ResultCell;
-}
+};
 
 export type RawResultNestedItem = {
   label: string;
-  parents: RawResultNestedParent[]
-}
+  parents: RawResultNestedParent[];
+};
 
 export type RawResultData = {
-  info: RawResultInfo[],
-  header: RawRow[],
-  body: RawRow[],
-  meta: RawResultMeta[]
-  nested?: RawResultNestedItem[]
-}
+  info: RawResultInfo[];
+  header: RawRow[];
+  body: RawRow[];
+  meta: RawResultMeta[];
+  nested?: RawResultNestedItem[];
+};
 
 export type RawColumnSlice = {
-  label: string,
-  start: number,
-  end: number,
-  length: number
-}
+  label: string;
+  start: number;
+  end: number;
+  length: number;
+};
 
 export type RawTable = {
-  label: string,
-  rows: string[],
-  columns: string[],
-  data: ResultCell[][],
-  meta: RawResultMeta[]
-}
+  label: string;
+  rows: string[];
+  columns: string[];
+  data: ResultCell[][];
+  meta: RawResultMeta[];
+};
 
-export type DataPointTarget = 'row' | 'column'
+export type DataPointTarget = "row" | "column";
 
 export type RenameLabel = {
-  target?: DataPointTarget
-  targets?: DataPointTarget[]
-  replace: string
-  by: string
-  cb?: (label:string) => string
-  isPattern: boolean
-  ucFirst?: boolean
-}
+  target?: DataPointTarget;
+  targets?: DataPointTarget[];
+  replace: string;
+  by: string;
+  cb?: (label: string) => string;
+  isPattern: boolean;
+  ucFirst?: boolean;
+};
 
 export type ModifierCommandArgument =
-    ModArgsCustom
+  | ModArgsCustom
   | ModArgsFilter
   | ModArgsFilterNested
   | ModArgsExclude
@@ -318,94 +330,94 @@ export type ModifierCommandArgument =
   | ModArgsAddMeta
   | ModArgsAddPointInfo
   | ModArgsMap
-  | ModArgsRename
+  | ModArgsRename;
 
 export type ModArgsCustom = {
-  key: string
-  args: any
-}
+  key: string;
+  args: any;
+};
 
 export type ModArgsFilter = {
-  key: string
-  values: string[]
-  replace?: boolean
-  origin?: boolean
-}
+  key: string;
+  values: string[];
+  replace?: boolean;
+  origin?: boolean;
+};
 
 export type ModArgsFilterNested = {
   values: string[];
   hideParents: boolean;
   hideChildren: boolean;
-}
+};
 
 export type ModArgsExclude = {
-  key: string
-  values: string[]
-  excludeAll: boolean
-}
+  key: string;
+  values: string[];
+  excludeAll: boolean;
+};
 
 export type ModArgsStringTolabel = {
-  value: string
-  target: DataPointTarget
-}
+  value: string;
+  target: DataPointTarget;
+};
 
 export type ModArgsTagTolabel = {
-  categoryId: number
-  target: DataPointTarget
-  glue?: string
-}
+  categoryId: number;
+  target: DataPointTarget;
+  glue?: string;
+};
 
 export type ModArgsAddToOthers = {
-  push?: number
-  match: DataPointTarget
-  mode: string
-}
+  push?: number;
+  match: DataPointTarget;
+  mode: string;
+};
 
 export type ModArgsAddToNew = {
-  key: DataPointTarget
-  values: string[]
-  alias: string
-  mode: string
-}
+  key: DataPointTarget;
+  values: string[];
+  alias: string;
+  mode: string;
+};
 
 export type ModArgsCalcDifference = {
-  match: DataPointTarget
-  item: string
-  mode: string
-  revert: boolean
-}
+  match: DataPointTarget;
+  item: string;
+  mode: string;
+  revert: boolean;
+};
 
 export type ModArgsCalcSum = {
-  match: DataPointTarget
-  items?: string[]
-  mode: string
-  alias: string
-}
+  match: DataPointTarget;
+  items?: string[];
+  mode: string;
+  alias: string;
+};
 
 export type AggregatePoints = {
-  alias: string
-  key: string
-  points: DataPoint[]
-}
+  alias: string;
+  key: string;
+  points: DataPoint[];
+};
 
 export type ModArgsAddMeta = {
-  key: string
-  glue?: string
-  replace?: boolean
-  append?: boolean
-}
+  key: string;
+  glue?: string;
+  replace?: boolean;
+  append?: boolean;
+};
 
 export type ModArgsAddPointInfo = {
-  key: string
-}
+  key: string;
+};
 
 export type ModArgsMap = {
-  source: number|DataPointTarget
-  target: DataPointTarget
-}
+  source: number | DataPointTarget;
+  target: DataPointTarget;
+};
 
 export type ModArgsRename = {
-  renameStack: RenameLabel[]
-}
+  renameStack: RenameLabel[];
+};
 
-export type ModArgsTranspose = {}
+export type ModArgsTranspose = {};
