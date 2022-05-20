@@ -3,8 +3,11 @@ import { Gesstabs } from "./parser/gesstabs";
 import { Generic } from ".";
 import { Parser } from "./parser/parser";
 import ResultClass from "./result";
-import { TableRowStyle } from "pptx-automizer";
-import { ChartValueStyle } from "pptx-automizer";
+import {
+  ChartValueStyle,
+  ShapeValueStyle,
+  TableRowStyle,
+} from "pptx-automizer";
 import ResultInfo from "./helper/resultInfo";
 import TransformResult from "./helper/transformResult";
 
@@ -97,7 +100,7 @@ export type DataPoint = {
   meta?: DataPointMeta[];
   origin?: DataPoint[];
   mode?: string;
-  style?: TableRowStyle | ChartValueStyle;
+  style?: TableRowStyle | ChartValueStyle | ShapeValueStyle;
   getMeta: (key: string) => DataPointMeta | undefined;
   setMeta: (key: string, value: any) => DataPoint;
   getTag: (categoryId: number) => DataTag | undefined;
