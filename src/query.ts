@@ -325,6 +325,8 @@ export default class Query {
         });
         if (parentLabel === metaContent.label) {
           this.pushPointMeta(pointMeta, "isParent", true);
+        } else {
+          this.pushPointMeta(pointMeta, "isChild", true);
         }
       });
       this.pushPointMeta(pointMeta, metaContent.key, parentValues);
