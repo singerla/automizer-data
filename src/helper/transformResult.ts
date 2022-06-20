@@ -70,6 +70,7 @@ export default class TransformResult {
   }
 
   getDataPoints(col: ResultColumn): DataPoint[] {
+    // return col?.value || [];
     if (col.value && Array.isArray(col.value)) {
       return col.value;
     }

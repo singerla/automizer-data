@@ -438,7 +438,7 @@ export default class Query {
     this.setResult(result);
 
     if (this.grid.sort) {
-      this.sortResult(this.grid.sort);
+      await this.sortResult(this.grid.sort);
     }
 
     if (this.grid.transform) {
@@ -610,13 +610,13 @@ export default class Query {
     return this;
   }
 
-  sortResult(sortation: DataPointSortation[]) {
+  async sortResult(sortation: DataPointSortation[]) {
     try {
-      sortation.forEach((sort) => {
+      for (const sort of sortation) {
         if (sort.cb && typeof sort.cb === "function") {
-          sort.cb(this.result, this.points);
+          await sort.cb(this.result, this.points);
         }
-      });
+      }
     } catch (e) {
       throw e;
     }
