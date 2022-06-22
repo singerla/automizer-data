@@ -354,6 +354,7 @@ export type ModArgsExclude = {
   key: string;
   values: string[];
   excludeAll: boolean;
+  gate: number;
 };
 
 export type ModArgsStringTolabel = {
