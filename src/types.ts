@@ -68,6 +68,7 @@ export type StatusTracker = {
 
 export type QueryOptions = {
   selectionValidator?: SelectionValidator;
+  enableSelectionValidator?: boolean;
   nonGreedySelector?: boolean;
 };
 
@@ -165,6 +166,7 @@ export type DataGrid = {
   modify?: DataPointModifier[];
   sort?: DataPointSortation[];
   transform?: DataGridTransformation[];
+  options?: QueryOptions;
 };
 
 export type ResultCellInfo = {
