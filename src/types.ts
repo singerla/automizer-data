@@ -25,7 +25,8 @@ export type ParserOptions = {
   renderHeader?: (
     cells: string[],
     meta: RawResultMeta[],
-    parser: ParserType
+    parser: ParserType,
+    slice: RawColumnSlice
   ) => string[];
   renderRow: (
     cells: ResultCell[],
