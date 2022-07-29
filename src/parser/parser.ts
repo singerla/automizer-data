@@ -224,7 +224,8 @@ export class Parser {
       rawTable.columns = this.config.renderHeader(
         rawTable.columns,
         rawTable.meta,
-        this
+        this,
+        slice
       );
     }
   }
