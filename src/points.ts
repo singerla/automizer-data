@@ -151,7 +151,7 @@ export default class Points {
     this.targetPoints(points).forEach((point) => {
       this.pushPointOrigin(point);
       const tag = point.tags.find((tag) => tag.categoryId === categoryId);
-      const value = tag?.value ? tag?.value : "n/a";
+      const value = tag?.value ? tag?.value : "n/a addTagToLabel";
       point[target] += glue + value;
     });
   }
@@ -246,7 +246,7 @@ export default class Points {
         point[target] = point[source];
       } else {
         const tag = point.tags.find((tag) => tag.categoryId === source);
-        point[target] = tag?.value ? tag?.value : "n/a";
+        point[target] = tag?.value ? tag?.value : "n/a map";
       }
     });
   }

@@ -145,8 +145,8 @@ export default class TransformResult {
     const point = <DataPoint>{
       tags: [],
       meta: [],
-      row: rowKey || "n/a",
-      column: colKey || "n/a",
+      row: rowKey || "n/a createDataPoint",
+      column: colKey || "n/a createDataPoint",
       value: value || null,
       getMeta: () => undefined,
       setMeta: () => undefined,

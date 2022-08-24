@@ -409,6 +409,7 @@ export type ModArgsAddMeta = {
   glue?: string;
   replace?: boolean;
   append?: boolean;
+  asCell?: boolean;
 };
 
 export type ModArgsAddPointInfo = {

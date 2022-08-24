@@ -81,14 +81,14 @@ export default class Result {
     };
   }
 
-  toVerticalLines(): ChartData {
+  toVerticalLines(params?: { yValueOffset?: number }): ChartData {
     const series = this.getSeries();
     const categories = <ChartCategory[]>[];
-
+    const yValueOffset = params?.yValueOffset || 0;
     this.result.body.forEach((row, r) => {
       categories.push({
         label: row.key,
-        y: r,
+        y: r + yValueOffset,
         values: row.cols.map((cell) => this.toNumber(cell)),
       });
     });
