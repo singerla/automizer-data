@@ -3,8 +3,7 @@ import { Gesstabs } from "./parser/gesstabs";
 import { Generic } from ".";
 import { Parser } from "./parser/parser";
 import ResultClass from "./result";
-import { TableRowStyle } from "pptx-automizer";
-import { ChartValueStyle } from "pptx-automizer";
+import { ChartValueStyle, TableRowStyle } from "pptx-automizer";
 import ResultInfo from "./helper/resultInfo";
 import TransformResult from "./helper/transformResult";
 
@@ -36,6 +35,11 @@ export type ParserOptions = {
   ) => ResultCell[];
   renderLabel?: (label: string) => string;
   renderRawResultData?: (data: RawResultData, parser: ParserType) => void;
+  renderRawTables?: (
+    rawTables: RawTable[],
+    tags: DataTag[],
+    parser: ParserType
+  ) => void;
   metaMap: MetaMap;
   significance?: ParserOptionsSignificance;
   overcodes?: Overcodes[];

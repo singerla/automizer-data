@@ -11,6 +11,7 @@ import {
   ModArgsFilterNested,
   NestedParentValue,
   RenameLabel,
+  ResultCell,
 } from "./types";
 import {
   ModArgsFilter,
@@ -22,6 +23,7 @@ import {
   ModArgsRename,
   ModArgsTranspose,
 } from "./types";
+import TransformResult from "./helper/transformResult";
 
 export default class Points {
   points: DataPoint[];
@@ -69,6 +71,14 @@ export default class Points {
       if (point.origin && point.origin[0]) return point.origin[0];
     }
     return point;
+  }
+
+  createDataPoint(
+    rowKey?: string,
+    colKey?: string,
+    value?: ResultCell
+  ): DataPoint {
+    return TransformResult.createDataPoint(rowKey, colKey, value);
   }
 
   filterNested(args: ModArgsFilterNested): void {
