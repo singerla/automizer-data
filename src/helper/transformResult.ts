@@ -137,7 +137,7 @@ export default class TransformResult {
     return this;
   }
 
-  createDataPoint(
+  static createDataPoint(
     rowKey?: string,
     colKey?: string,
     value?: ResultCell
@@ -158,6 +158,14 @@ export default class TransformResult {
     point.getTag = Query.getTagCb(point);
 
     return point;
+  }
+
+  createDataPoint(
+    rowKey?: string,
+    colKey?: string,
+    value?: ResultCell
+  ): DataPoint {
+    return TransformResult.createDataPoint(rowKey, colKey, value);
   }
 
   sliceRows(start: number, end?: number): void {
