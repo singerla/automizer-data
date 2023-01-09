@@ -63,7 +63,7 @@ export class Parser {
       }
 
       const slices = this.parseColumnSlices(table.header);
-      const subgroups = this.sliceColumns(table, table.header, slices);
+      const subgroups = this.sliceColumns(table, table.header, slices, tags);
 
       subgroups.forEach((subgroup) => {
         const targetTags = [...tags];
@@ -157,7 +157,8 @@ export class Parser {
   sliceColumns(
     table: RawResultData,
     subgroupHeaders: RawRow[],
-    slices: RawColumnSlice[]
+    slices: RawColumnSlice[],
+    tags: DataTag[]
   ) {
     const bottomLevel = subgroupHeaders.length - 1;
     const subgroupHeader = subgroupHeaders[bottomLevel];
@@ -182,11 +183,16 @@ export class Parser {
 
       rawTables.push(rawTable);
     });
+
+    if (this.config.renderRawTables) {
+      this.config.renderRawTables(rawTables, tags, this);
+    }
+
     return rawTables;
   }
 
   renderBody(body: RawRow[], slice: RawColumnSlice, rawTable: RawTable) {
-    body.forEach((row) => {
+    body.forEach((row, r) => {
       const rowArr = Object.values(row);
       let rowLabel = String(rowArr[0]);
       const sliced = rowArr.slice(slice.start + 1, slice.end + 1);
