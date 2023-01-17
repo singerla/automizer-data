@@ -1,30 +1,33 @@
-import {getData, getResult, Store} from './index';
-import { DataGrid } from './types';
-import { all, filterByDataTag, filterBy } from './filter';
-import { value } from './cell'
-import {PrismaClient} from './client';
+import { getResult } from "./index";
+import { all } from "./filter";
+import { dump, renderPoints, value } from "./cell";
+import { PrismaClient } from "./client";
+import { vd } from "./helper";
 
-const run = async() => {
-  const client = new PrismaClient()
-  const selector = [
-    [
-      4,6,   // Age, Gender
-      3,5  // Q13, Sweden
-    ]
-  ]
+const run = async () => {
+  const client = new PrismaClient();
+  const selector = [[3, 5]];
 
   const grid = {
-    rows: all('row'),
-    columns: all('column'),
-    cell: value
-  }
+    row: all("row"),
+    column: all("column"),
+    cell: value({}),
+  };
 
   const result = await getResult(selector, grid, client)
-  // console.log(result.points.length)
+    .then((summary) => {
+      return summary;
+    })
+    .catch((e) => {
+      throw e;
+    })
+    .finally(async () => {
+      await client.$disconnect();
+    });
 
-  return result
-}
+  const chartData = result.toSeriesCategories();
 
-run().then(result => {
+  console.dir(chartData, { depth: 10 });
+};
 
-})
+run().then((result) => {});

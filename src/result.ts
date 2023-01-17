@@ -20,6 +20,7 @@ import {
   TextStyle,
 } from "pptx-automizer";
 import Query from "./query";
+import { vd } from "./helper";
 
 export default class Result {
   result: ResultType;
@@ -279,6 +280,10 @@ export default class Result {
     }
 
     if (typeof column.value === "number" || typeof column.value === "string") {
+      return column.value;
+    }
+
+    if (typeof column.value === "function") {
       return column.value;
     }
 

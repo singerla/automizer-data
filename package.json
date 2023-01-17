@@ -9,11 +9,6 @@
   "author": "Thomas Singer <tsinger@gmx.de> (github.com/singerla)",
   "license": "MIT",
   "private": false,
-  "jest": {
-    "collectCoverageFrom": [
-      "src/{!(pretty),}.js"
-    ]
-  },
   "files": [
     "dist",
     "README"
@@ -21,16 +16,16 @@
   "main": "dist/index.js",
   "types": "dist/index.d.js",
   "devDependencies": {
-    "@types/jest": "^26.0.20",
-    "@types/lodash": "^4.14.171",
-    "@types/node": "15.12.4",
-    "jest": "^26.6.3",
-    "nodemon": "^2.0.7",
-    "pptx-automizer": "^0.1.1",
-    "prisma": "^3.13.0",
-    "ts-jest": "^26.5.2",
-    "ts-node": "10.0.0",
-    "typescript": "4.3.3"
+    "@types/jest": "^29.2.5",
+    "@types/lodash": "^4.14.191",
+    "@types/node": "18.11.18",
+    "jest": "^29.3.1",
+    "nodemon": "^2.0.20",
+    "pptx-automizer": "^0.2.0",
+    "prisma": "^4.8.1",
+    "ts-jest": "^29.0.5",
+    "ts-node": "10.9.1",
+    "typescript": "4.9.4"
   },
   "scripts": {
     "dev": "nodemon -e ts --exec 'ts-node' src/dev.ts",
@@ -40,12 +35,12 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@prisma/client": "^3.13.0",
-    "@types/node-xlsx": "^0.15.2",
-    "cli-progress": "^3.10.0",
+    "@prisma/client": "^4.8.1",
+    "@types/node-xlsx": "^0.21.0",
+    "cli-progress": "^3.11.2",
     "csv-parser": "^3.0.0",
     "lodash": "^4.17.21",
-    "node-xlsx": "^0.17.1"
+    "node-xlsx": "^0.21.0"
   },
   "engines": {
     "node": ">=12.2.0"

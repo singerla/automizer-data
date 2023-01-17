@@ -421,7 +421,7 @@ export default class Query {
     let points = <any>[];
     let result = <any>{};
 
-    rows.forEach((rowCb, r) => {
+    rows?.forEach((rowCb, r) => {
       let rowCbResult = rowCb(this.points);
       points[r] = rowCbResult.points;
 
