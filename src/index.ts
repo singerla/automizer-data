@@ -10,7 +10,7 @@ import { Gesstabs } from "./parser/gesstabs";
 import { Generic } from "./parser/generic";
 
 import { all, filterBy, filterByDataTag } from "./filter";
-import { dump, value, valueMeta } from "./cell";
+import { dump, points, value, valueMeta } from "./cell";
 import { byColId } from "./sort";
 import { getNestedClause, getTagGroupsByCategory } from "./helper";
 
@@ -55,19 +55,11 @@ import {
 const getData = async (
   selector: DataTag[] | DataTag[][],
   grid: any,
-  prisma?: PrismaClient
+  prisma?: PrismaClient,
+  options?: QueryOptions
 ) => {
-  if (!prisma) {
-    prisma = new PrismaClient();
-  }
-
-  const query = new Query(prisma);
-  query.setGrid(grid);
-  await query.get(selector);
-
-  if (query.points.length > 0) {
-    await query.merge();
-  }
+  const mode = "getByDataTag";
+  const query = await runQuery({ selector, grid, prisma, options, mode });
 
   return new Result(query);
 };
@@ -78,15 +70,39 @@ const getResult = async (
   prisma: PrismaClient,
   options?: QueryOptions
 ): Promise<Result> => {
-  const query = new Query(prisma).setGrid(grid).setOptions(options);
+  const query = await runQuery({ selector, grid, prisma, options });
 
-  await query.getByIds(selector);
+  return new Result(query);
+};
 
-  if (query.points.length > 0) {
+const runQuery = async (options): Promise<Query> => {
+  const prisma = options.prisma || new PrismaClient();
+  const merge = typeof options.merge === "boolean" ? options.merge : true;
+  const grid = options.grid || {
+    row: all("row"),
+    column: all("column"),
+    cell: points,
+  };
+  const selector = options.selector || [[]];
+  const mode = options.mode || "getByIds";
+  const queryOptions = options.options || {};
+
+  const query = new Query(prisma);
+
+  query.setGrid(grid).setOptions(queryOptions);
+
+  switch (mode) {
+    case "getByDataTag":
+      await query.get(selector as DataTag[] | DataTag[][]);
+    default:
+      await query.getByIds(selector as number[][]);
+  }
+
+  if (merge && query.points.length > 0) {
     await query.merge();
   }
 
-  return new Result(query);
+  return query;
 };
 
 const cell = {
@@ -147,6 +163,7 @@ export {
   sort,
   getData,
   getResult,
+  runQuery,
 };
 export { Points, Result };
 export { getNestedClause, getTagGroupsByCategory };

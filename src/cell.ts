@@ -32,6 +32,8 @@ export const value = (params: any) => {
   };
 };
 
+export const points = (points: DataPoint[]): DataPoint[] => points;
+
 export const dump = (points: DataPoint[]): ResultCell => {
   console.dir(points, { depth: 10 });
   if (!points.length) {

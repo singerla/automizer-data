@@ -462,15 +462,12 @@ export default class Query {
     return cbResult;
   }
 
-  async getTagIds(tags: DataTag[]): Promise<number[]> {
-    for (let i in tags) {
-      let tag = tags[i];
-      await this.setCategoryId(tag);
-      await this.setTagId(tag);
-    }
-
-    return tags.map((tag) => <number>tag.id);
-  }
+  // TODO: remove
+  // async getTagIds(tags: DataTag[]): Promise<number[]> {
+  //   tags = await this.getTags(tags)
+  //
+  //   return tags.map((tag) => <number>tag.id);
+  // }
 
   async getTags(tags: DataTag[]): Promise<DataTag[]> {
     for (let i in tags) {

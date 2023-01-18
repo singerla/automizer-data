@@ -1,33 +1,53 @@
-import { getResult } from "./index";
-import { all } from "./filter";
-import { dump, renderPoints, value } from "./cell";
-import { PrismaClient } from "./client";
 import { vd } from "./helper";
+import { runQuery } from "./index";
+import Modelizer from "./modelizer";
 
 const run = async () => {
-  const client = new PrismaClient();
-  const selector = [[3, 5]];
+  // const result1 = await runQuery({ selector: [[2, 4]], merge: false });
+  const result2 = await runQuery({ selector: [[2, 3]], merge: false });
 
-  const grid = {
-    row: all("row"),
-    column: all("column"),
-    cell: value({}),
-  };
+  const model = new Modelizer();
 
-  const result = await getResult(selector, grid, client)
-    .then((summary) => {
-      return summary;
-    })
-    .catch((e) => {
-      throw e;
-    })
-    .finally(async () => {
-      await client.$disconnect();
+  model.addPoints(
+    result2.points,
+    (point) => point.row,
+    (point) => point.column
+  );
+
+  // model.addPoints(
+  //   result1.points,
+  //   (point) => point.row,
+  //   (point) => point.column
+  // );
+
+  // model.addRow("answer 16");
+  // model.addRow("answer 12");
+  //
+
+  const testColId = model.addColumn("test");
+  model.render((cell, r, c) => {
+    cell.value = cell.getValue() + " " + cell.points.length;
+  });
+
+  model.dump(16, 16);
+
+  model.process((model: Modelizer) => {
+    model.rowKeys.forEach((rowKey, r) => {
+      const cell1 = model.getCell(r, 1);
+      const cell2 = model.getCell(r, 2);
+      const diff = cell1.toNumber() - cell2.toNumber();
+      model.setCellValue(r, testColId, diff);
     });
+  });
 
-  const chartData = result.toSeriesCategories();
+  model.render((cell, r, c) => {
+    cell.value = cell.getValue() + " " + cell.points.length;
+  });
 
-  console.dir(chartData, { depth: 10 });
+  model.dump(16, 16);
+  // const chartData = result.toSeriesCategories();
+
+  // console.dir(chartData, { depth: 10 });
 };
 
 run().then((result) => {});
