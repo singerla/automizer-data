@@ -24,30 +24,83 @@ const run = async () => {
   // model.addRow("answer 12");
   //
 
-  const testColId = model.addColumn("test");
-  model.render((cell, r, c) => {
-    cell.value = cell.getValue() + " " + cell.points.length;
+  // model.dump(16, 16);
+
+  // const testColId = model.addColumn("test");
+  // const testColId2 = model.addColumn("test2");
+  // model.render((cell, r, c) => {
+  //   cell.value = cell.getValue() + " " + cell.points.length;
+  // });
+
+  model.processRows((row) => {
+    const cell1 = row.getCell("19-29").toNumber();
+    const cell2 = row.getCell("Total").toNumber();
+    row
+      .setCellValue("test", cell1 - cell2)
+      .setCellValue("test2", cell2 - cell1);
+
+    const cell3 = row.getCell("test2").toNumber();
+    const cell4 = row.getCell(2).toNumber();
+    row.setCellValue("40-69", cell3 - cell4);
   });
+  //
+  // model.getColumn(testColId).dump();
+  // model.getRow("answer 1").dump();
+  //
 
-  model.dump(16, 16);
-
-  model.process((model: Modelizer) => {
-    model.rowKeys.forEach((rowKey, r) => {
-      const cell1 = model.getCell(r, 1);
-      const cell2 = model.getCell(r, 2);
-      const diff = cell1.toNumber() - cell2.toNumber();
-      model.setCellValue(r, testColId, diff);
-    });
-  });
-
-  model.render((cell, r, c) => {
-    cell.value = cell.getValue() + " " + cell.points.length;
-  });
-
-  model.dump(16, 16);
+  // model.getCell("answer 1", "male");
+  // model.setCellValue("answer 1", "male", 100);
+  // // model.render((cell, r, c) => {
+  // //   cell.value = cell.getValue() + " " + cell.points.length;
+  // // });
+  //
+  // model.dump(16, 16, [0, 1, 2], [0, testColId, "40-69", "male"]);
   // const chartData = result.toSeriesCategories();
 
+  // model.addRow("test row");
+  model.processColumns((column) => {
+    const cell1 = column.getCell("answer 1").toNumber();
+    const cell2 = column.getCell("answer 2").toNumber();
+    column.setCellValue("test row", cell1 + cell2);
+  });
+
+  //
+  // model.getRow("test row").cells.forEach((cell) => {
+  //   const value = cell.getValue();
+  //   cell.setValue(value + "test");
+  // });
+
+  // model.getColumn("Total").cells.forEach((cell) => {
+  //   const quId = cell.getPoint(0).getTag(100).value;
+  //   cell.setValue(quId + " m");
+  // });
+  //
+  // model.getColumn("test 3").cells.forEach((cell) => {
+  //   cell.setValue(cell.col + " " + cell.row);
+  // });
+  //
+  // model.sort("col", ["test2", "Total", "test 3"]);
+
+  const sortRow = "test row";
+  const keys = model.exportKeys("col");
+
+  const sort = keys.sort((a, b) => {
+    const rowA = model.getCell(sortRow, a).toNumber();
+    const rowB = model.getCell(sortRow, b).toNumber();
+    return rowB - rowA;
+  });
+
+  vd(sort);
+  model.dump(16, 16);
+
+  model.sort("col", sort);
+
+  model.dump(16, 16);
   // console.dir(chartData, { depth: 10 });
 };
 
-run().then((result) => {});
+run()
+  .then((result) => {})
+  .catch((e) => {
+    throw e;
+  });

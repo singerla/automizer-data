@@ -582,7 +582,14 @@ export default class Query {
   static getTagCb(point: DataPoint) {
     return (categoryId: number): DataTag | undefined => {
       if (point.tags) {
-        return point.tags.find((meta) => meta.categoryId === categoryId);
+        return (
+          point.tags.find((meta) => meta.categoryId === categoryId) || {
+            value: undefined,
+            category: undefined,
+            categoryId: categoryId,
+            id: undefined,
+          }
+        );
       }
     };
   }
