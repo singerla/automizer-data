@@ -1,6 +1,11 @@
-import { DataPoint } from "./types";
+import { DataPoint, Result, ResultRow } from "./types";
 import TransformResult from "./helper/transformResult";
+import { vd } from "./helper";
 
+type ModelizerOptions = {
+  strict?: boolean;
+  result?: Result;
+};
 /**
  * A Table is a set of rows.
  */
@@ -182,7 +187,6 @@ type AddPointsOptions = {
 type KeyFromCb = (point: DataPoint) => string;
 type ValueFromCb = (point: DataPoint) => CellValue;
 type ModelEachCb = (cell: Cell) => void;
-
 type RenderTableCb = (
   cell: Cell,
   r: number,
@@ -198,11 +202,22 @@ export default class Modelizer {
   rowKeys: string[] = [];
   colKeys: string[] = [];
   strict: boolean;
+  result: Result;
 
-  constructor(strict?: boolean) {
-    this.strict = strict;
+  constructor(options?: ModelizerOptions) {
+    this.strict = options?.strict !== undefined ? options?.strict : true;
+    this.result = options?.result;
     this.rowKeys = [];
     this.colKeys = [];
+  }
+
+  toResult() {
+    // const body = []
+    // this.processRows((row) => {
+    //   const cols = []
+    //   const bodyRow = <Re
+    // })
+    // vd(this.result.body);
   }
 
   /**
@@ -271,14 +286,14 @@ export default class Modelizer {
    * @returns {this}
    */
   addPoint(point: DataPoint, options?: AddPointsOptions): this {
-    const rowKey = options.rowKey ? options.rowKey(point) : point.row;
-    const colKey = options.colKey ? options.colKey(point) : point.column;
+    const rowKey = options?.rowKey ? options.rowKey(point) : point.row;
+    const colKey = options?.colKey ? options.colKey(point) : point.column;
 
     const r = this.addRow(rowKey);
     const c = this.addColumn(colKey);
     const cell = this.pushCellPoints(r, c, point);
 
-    if (options.value) {
+    if (options?.value) {
       const value = options.value(point);
       cell.setValue(value);
     } else if (cell.value === undefined) {

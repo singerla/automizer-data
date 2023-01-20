@@ -138,8 +138,9 @@ export default class Query {
     }
 
     if (this.useModelizer) {
-      this.result.modelizer = new Modelizer();
-
+      this.result.modelizer = new Modelizer({
+        result: this.result,
+      });
       this.result.modelizer.addPoints(this.points);
     }
   }

@@ -1,17 +1,29 @@
 import { vd } from "./helper";
-import { runQuery } from "./index";
+import { getResult, runQuery } from "./index";
 import Modelizer from "./modelizer";
 
 const run = async () => {
-  const result1 = await runQuery({ selector: [[2, 4]], merge: false });
-  const result2 = await runQuery({ selector: [[2, 3]], merge: false });
-
-  const model = new Modelizer();
-
-  model.addPoints(result2.points, {
-    rowKey: (point) => point.row,
-    colKey: (point) => point.column,
+  const query = await runQuery({
+    selector: [[2, 4]],
+    merge: true,
+    options: {
+      useModelizer: true,
+    },
   });
+
+  const mod = query.result.modelizer;
+  mod.setCellValue("answer 1", "Total", "Test 123");
+  mod.toResult();
+
+  // const result1 = await runQuery({ selector: [[2, 4]], merge: false });
+  // const result2 = await runQuery({ selector: [[2, 3]], merge: false });
+  //
+  // const model = new Modelizer();
+  //
+  // model.addPoints(result2.points, {
+  //   rowKey: (point) => point.row,
+  //   colKey: (point) => point.column,
+  // });
 
   // model.addPoints(
   //   result1.points,
@@ -30,9 +42,11 @@ const run = async () => {
   // model.render((cell, r, c) => {
   //   cell.value = cell.getValue() + " " + cell.points.length;
   // });
-
-  model.setCellValue(0, "Total", "test");
-  model.dump();
+  //
+  // model.setCellValue(0, "Total", "test");
+  // model.dump();
+  //
+  //
 
   // model.getCell(2, 1).dump();
   //
