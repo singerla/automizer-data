@@ -3,16 +3,15 @@ import { runQuery } from "./index";
 import Modelizer from "./modelizer";
 
 const run = async () => {
-  // const result1 = await runQuery({ selector: [[2, 4]], merge: false });
+  const result1 = await runQuery({ selector: [[2, 4]], merge: false });
   const result2 = await runQuery({ selector: [[2, 3]], merge: false });
 
   const model = new Modelizer();
 
-  model.addPoints(
-    result2.points,
-    (point) => point.row,
-    (point) => point.column
-  );
+  model.addPoints(result2.points, {
+    rowKey: (point) => point.row,
+    colKey: (point) => point.column,
+  });
 
   // model.addPoints(
   //   result1.points,
@@ -32,17 +31,25 @@ const run = async () => {
   //   cell.value = cell.getValue() + " " + cell.points.length;
   // });
 
-  model.processRows((row) => {
-    const cell1 = row.getCell("19-29").toNumber();
-    const cell2 = row.getCell("Total").toNumber();
-    row
-      .setCellValue("test", cell1 - cell2)
-      .setCellValue("test2", cell2 - cell1);
+  model.setCellValue(0, "Total", "test");
+  model.dump();
 
-    const cell3 = row.getCell("test2").toNumber();
-    const cell4 = row.getCell(2).toNumber();
-    row.setCellValue("40-69", cell3 - cell4);
-  });
+  // model.getCell(2, 1).dump();
+  //
+  // model.processRows((row) => {
+  //   const cell1 = row.getCell("19-29").toNumber();
+  //   const cell2 = row.getCell("Total").toNumber();
+  //   row
+  //     .setCellValue("test", cell1 - cell2)
+  //     .setCellValue("test2", cell2 - cell1);
+  //
+  //   const cell3 = row.getCell("test2").toNumber();
+  //   const cell4 = row.getCell(2).toNumber();
+  //   // row.getCell(2).dump();
+  //   row.setCellValue("40-69", cell3 - cell4);
+  //
+  //   row.setCellValue;
+  // });
   //
   // model.getColumn(testColId).dump();
   // model.getRow("answer 1").dump();
@@ -58,11 +65,11 @@ const run = async () => {
   // const chartData = result.toSeriesCategories();
 
   // model.addRow("test row");
-  model.processColumns((column) => {
-    const cell1 = column.getCell("answer 1").toNumber();
-    const cell2 = column.getCell("answer 2").toNumber();
-    column.setCellValue("test row", cell1 + cell2);
-  });
+  // model.processColumns((column) => {
+  //   const cell1 = column.getCell("answer 1").toNumber();
+  //   const cell2 = column.getCell("answer 2").toNumber();
+  //   column.setCellValue("test row", cell1 + cell2);
+  // });
 
   //
   // model.getRow("test row").cells.forEach((cell) => {
@@ -81,21 +88,21 @@ const run = async () => {
   //
   // model.sort("col", ["test2", "Total", "test 3"]);
 
-  const sortRow = "test row";
-  const keys = model.exportKeys("col");
+  // const sortRow = "test row";
+  // const keys = model.exportKeys("col");
+  //
+  // const sort = keys.sort((a, b) => {
+  //   const rowA = model.getCell(sortRow, a).toNumber();
+  //   const rowB = model.getCell(sortRow, b).toNumber();
+  //   return rowB - rowA;
+  // });
 
-  const sort = keys.sort((a, b) => {
-    const rowA = model.getCell(sortRow, a).toNumber();
-    const rowB = model.getCell(sortRow, b).toNumber();
-    return rowB - rowA;
-  });
+  // vd(sort);
+  // model.dump(16, 16);
 
-  vd(sort);
-  model.dump(16, 16);
+  // model.sort("col", sort);
 
-  model.sort("col", sort);
-
-  model.dump(16, 16);
+  // model.dump(16, 16);
   // console.dir(chartData, { depth: 10 });
 };
 

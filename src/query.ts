@@ -32,6 +32,7 @@ import Points from "./points";
 import _ from "lodash";
 import ResultInfo from "./helper/resultInfo";
 import TransformResult from "./helper/transformResult";
+import Modelizer from "./modelizer";
 
 export default class Query {
   prisma: PrismaClient | any;
@@ -50,6 +51,7 @@ export default class Query {
   result: Result;
   tags: any[];
   nonGreedySelector: boolean;
+  useModelizer: boolean;
 
   constructor(prisma: PrismaClient | any) {
     this.prisma = prisma;
@@ -62,6 +64,7 @@ export default class Query {
     };
     this.result = <Result>{
       body: <ResultRow[]>[],
+      modelizer: undefined,
     };
     this.points = <DataPoint[]>[];
     this.grid = <DataGrid>{};
@@ -69,6 +72,7 @@ export default class Query {
     this.allSheets = <Datasheet[]>[];
     this.tags = <any>[];
     this.nonGreedySelector = true;
+    this.useModelizer = false;
 
     return this;
   }
@@ -84,6 +88,9 @@ export default class Query {
     }
     if (options?.nonGreedySelector) {
       this.nonGreedySelector = options?.nonGreedySelector;
+    }
+    if (options?.useModelizer) {
+      this.useModelizer = options?.useModelizer;
     }
     return this;
   }
@@ -107,6 +114,17 @@ export default class Query {
   }
 
   async getByIds(allTagIds: Selector): Promise<Query> {
+    await this.processTagIds(allTagIds);
+    this.setDataPointKeys(this.points, "keys");
+    return this;
+  }
+
+  async getPoints(allTagIds: Selector): Promise<DataPoint[]> {
+    await this.processTagIds(allTagIds);
+    return this.points;
+  }
+
+  async processTagIds(allTagIds): Promise<void> {
     for (const level in allTagIds) {
       const tagIds = allTagIds[level];
       const selectionTags = await this.getTagInfo(tagIds);
@@ -119,9 +137,11 @@ export default class Query {
       }
     }
 
-    this.setDataPointKeys(this.points, "keys");
+    if (this.useModelizer) {
+      this.result.modelizer = new Modelizer();
 
-    return this;
+      this.result.modelizer.addPoints(this.points);
+    }
   }
 
   processSheets(sheets: Sheets, level: number) {

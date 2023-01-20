@@ -71,7 +71,6 @@ const getResult = async (
   options?: QueryOptions
 ): Promise<Result> => {
   const query = await runQuery({ selector, grid, prisma, options });
-
   return new Result(query);
 };
 

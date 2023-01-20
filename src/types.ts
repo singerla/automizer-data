@@ -6,6 +6,15 @@ import ResultClass from "./result";
 import { ChartValueStyle, TableRowStyle } from "pptx-automizer";
 import ResultInfo from "./helper/resultInfo";
 import TransformResult from "./helper/transformResult";
+import Modelizer from "./modelizer";
+
+export type RunOptions = {
+  merge: boolean;
+  grid;
+  selector;
+  mode: "";
+  options: QueryOptions;
+};
 
 export type StoreOptions = {
   replaceExisting?: boolean;
@@ -75,6 +84,7 @@ export type QueryOptions = {
   selectionValidator?: SelectionValidator;
   enableSelectionValidator?: boolean;
   nonGreedySelector?: boolean;
+  useModelizer?: boolean;
 };
 
 export type SelectionValidator = {
@@ -224,6 +234,7 @@ export type ResultRow = {
 export type Result = {
   isValid: () => boolean;
   body: ResultRow[];
+  modelizer: Modelizer;
   info: ResultInfo;
   transform: TransformResult;
 };
