@@ -1,233 +1,48 @@
-import { DataPoint, Result, ResultRow } from "./types";
+import { DataPoint, Result, ResultColumn, ResultRow } from "./types/types";
 import TransformResult from "./helper/transformResult";
 import { vd } from "./helper";
-
-type ModelizerOptions = {
-  strict?: boolean;
-  result?: Result;
-};
-/**
- * A Table is a set of rows.
- */
-type Table = Row[];
-/**
- * A row is a set of cells. Rows go from left to right.
- */
-type Row = Cell[];
-/**
- * A column is a set of cells that go from top to bottom inside a table.
- */
-type Column = Cell[];
-/**
- * A Cell holds an array of points associated to a row and a column.
- * The value of a cell is initially set by the first datapoint to initialize
- * the cell as well as the row key and the column key.
- */
-type Cell = {
-  /**
-   * The cell value will be used as final output.
-   */
-  value: CellValue;
-  /**
-   * The number of the current row, starting from zero.
-   */
-  row: number;
-  /**
-   * The number of the current column, starting from zero.
-   */
-  col: number;
-  /**
-   * The key of the current column,
-   * by default given from first point.
-   */
-  rowKey: string;
-  /**
-   * The key of the current row,
-   * by default given from first point.
-   */
-  colKey: string;
-  /**
-   * An array of datapoints associated with the current Cell.
-   * By default, the first point initializes the cell and passes
-   * its value, row- and columns-key.
-   */
-  points: DataPoint[];
-  /**
-   * Get the i-th point associated with current cell.
-   * Skip i to retreive the first point.
-   * @param i
-   */
-  getPoint: (i?: number) => DataPoint;
-  /**
-   * Get the current value of cell. If no changes were made, this is the
-   * value of first datapoint.
-   */
-  getValue: () => CellValue;
-  /**
-   * Set current value of cell. The cell value will be used as final output.
-   * @param value
-   */
-  setValue: (value: CellValue) => void;
-  /**
-   * Retreive all neighbour cells from left to right of the current cell,
-   * including the current cell.
-   */
-  getRow: () => ModelRow;
-  /**
-   * Retreive all cells from the same column of the current cell,
-   * including the current cell.
-   */
-  getColumn: () => ModelColumn;
-  /**
-   * Get the current cell value as a number.
-   */
-  toNumber: () => number;
-  /**
-   * Log contents of the current cell to console.
-   */
-  dump: () => void;
-};
-
-/**
- * A ModelRow holds all cells of a row. Each cell can be processed or logged.
- */
-type ModelRow = {
-  /**
-   * Holds an array of all cells of the current row.
-   */
-  cells: Row;
-  /**
-   * Apply a callback to each cell of current row.
-   */
-  each: (cb: ModelEachCb) => ModelRow;
-  /**
-   * Retrieve a cell from current row by key.
-   * @param c
-   */
-  getCell: (c: Key) => Cell;
-  /**
-   * Set a cell value by key.
-   * @param c
-   * @param cellValue
-   */
-  setCellValue: (c: Key, cellValue: CellValue) => ModelRow;
-  /**
-   * Update an existing cell.
-   * @param c
-   * @param cell
-   */
-  setCell: (c: Key, cell: Cell) => ModelRow;
-  /**
-   * Log contents of the current row to console.
-   */
-  dump: (s1?: number, s2?: number) => void;
-};
-
-/**
- * A ModelColumn holds all cells of a column. Each cell can be processed or
- * logged.
- */
-type ModelColumn = {
-  /**
-   * Holds an array of all cells of the current column.
-   */
-  cells: Column;
-  /**
-   * Apply a callback to each cell of current column.
-   */
-  each: (cb: ModelEachCb) => ModelColumn;
-  /**
-   * Retrieve a cell from current column by key.
-   * @param r
-   */
-  getCell: (r: Key) => Cell;
-  /**
-   * Set a cell value by key.
-   * @param r
-   * @param cellValue
-   */
-  setCellValue: (r: Key, cellValue: CellValue) => ModelColumn;
-  /**
-   * Update an existing cell.
-   * @param r
-   * @param cell
-   */
-  setCell: (r: Key, cell: Cell) => ModelColumn;
-  /**
-   * Log contents of the current column to console.
-   * @param s1
-   * @param s2
-   */
-  dump: (s1?: number, s2?: number) => void;
-};
-/**
- * Each cell can hold a value. The value is used to be displayed.
- */
-type CellValue = string | number | null | undefined;
-/**
- * A key is a selector to describe a target row or target column.
- * A numeric key will start from zero, a string key will match a named row or
- * column.
- */
-type Key = string | number;
-/**
- * There are "row" or "col" dimensions. "row" will go from left to right, while
- * "col" will go from to to bottom, both starting with zero.
- */
-type KeyMode = "row" | "col";
-/**
- * A table will be constructed by adding DataPoints.
- */
-type AddPointsOptions = {
-  rowKey?: KeyFromCb;
-  colKey?: KeyFromCb;
-  value?: ValueFromCb;
-  filter?: (point) => boolean;
-};
-type KeyFromCb = (point: DataPoint) => string;
-type ValueFromCb = (point: DataPoint) => CellValue;
-type ModelEachCb = (cell: Cell) => void;
-type RenderTableCb = (
-  cell: Cell,
-  r: number,
-  c: number,
-  rowKey: Key,
-  colKey: Key
-) => void;
-type ProcessRowCb = (row: ModelRow, r: number, rowKey: Key) => void;
-type ProcessColumnCb = (column: ModelColumn, c: number, colKey: Key) => void;
+import { Query } from "./index";
+import _ from "lodash";
+import {
+  AddPointsOptions,
+  Cell,
+  CellValue,
+  Key,
+  KeyMode,
+  ModelColumn,
+  ModelEachCb,
+  ModelizerOptions,
+  ModelRow,
+  ProcessColumnCb,
+  ProcessRowCb,
+  RenderTableCb,
+  Table,
+} from "./types/modelizer-types";
 
 export default class Modelizer {
-  table: Table = [];
-  rowKeys: string[] = [];
-  colKeys: string[] = [];
+  #table: Table = [];
+  readonly #keys: {
+    row: string[];
+    col: string[];
+  };
   strict: boolean;
-  result: Result;
 
   constructor(options?: ModelizerOptions) {
     this.strict = options?.strict !== undefined ? options?.strict : true;
-    this.result = options?.result;
-    this.rowKeys = [];
-    this.colKeys = [];
-  }
-
-  toResult() {
-    // const body = []
-    // this.processRows((row) => {
-    //   const cols = []
-    //   const bodyRow = <Re
-    // })
-    // vd(this.result.body);
+    this.#keys = {
+      row: [],
+      col: [],
+    };
   }
 
   /**
    * Apply a callback to each cell of the current table.
-   * @param mode
-   * @returns {string[]} immutable array of strings.
+   * @returns {this}
+   * @param cb The callback to run on each cell
    */
   process(cb: RenderTableCb): this {
-    this.rowKeys.forEach((rowKey, r) => {
-      this.colKeys.forEach((colKey, c) => {
+    this.getKeys("row").forEach((rowKey, r) => {
+      this.getKeys("col").forEach((colKey, c) => {
         const cell = this.getCell(r, c);
         cb(cell, r, c, rowKey, colKey);
       });
@@ -237,10 +52,10 @@ export default class Modelizer {
 
   /**
    * Pass a callback to run on each row.
-   * @param cb
+   * @param cb The callback to run on each row
    */
   processRows(cb: ProcessRowCb): this {
-    this.rowKeys.forEach((rowKey, r) => {
+    this.getKeys("row").forEach((rowKey, r) => {
       const row = this.getRow(r);
       cb(row, r, rowKey);
     });
@@ -249,10 +64,10 @@ export default class Modelizer {
 
   /**
    * Pass a callback to run on each column.
-   * @param cb
+   * @param cb The callback to run on each column
    */
   processColumns(cb: ProcessColumnCb): this {
-    this.colKeys.forEach((colKey, c) => {
+    this.getKeys("col").forEach((colKey, c) => {
       const column = this.getColumn(c);
       cb(column, c, colKey);
     });
@@ -338,13 +153,16 @@ export default class Modelizer {
     return keys.indexOf(key);
   }
 
-  #getKeyName(mode: KeyMode): string {
-    return mode + "Keys";
+  #getKeys(mode: KeyMode): string[] {
+    return this.#keys[mode];
   }
 
-  #getKeys(mode: KeyMode): string[] {
-    const from = this.#getKeyName(mode);
-    return this[from];
+  #addKeyByMode(mode, key): void {
+    this.#keys[mode].push(key);
+  }
+
+  #setKeys(mode: KeyMode, keys: string[]): void {
+    this.#keys[mode] = keys;
   }
 
   #getKey(key: Key, mode: KeyMode): string {
@@ -352,17 +170,12 @@ export default class Modelizer {
     return this.#getKeys(mode)[id];
   }
 
-  #addKeyByMode(mode, key): void {
-    const from = this.#getKeyName(mode);
-    this[from].push(key);
-  }
-
   /**
-   * Pass a {CellValue} to a target {Cell}. The point will not change the
-   * target cell value.
+   * Pass a {CellValue} to a target {Cell}.
    * @param r Pass a number or a string to determine the target cell row.
    * @param c Pass a row or column key to target the cell.
-   * @param point The point to push the cell's point stack with.
+   * @param value A string or a number to alter the cell value.
+   * @return {Cell}
    */
   setCellValue(r: Key, c: Key, value: CellValue): Cell {
     const targetCell = this.getCell(r, c);
@@ -377,7 +190,7 @@ export default class Modelizer {
    * @param c Pass a row or column key to target the cell.
    * @param point The point to push the cell's point stack with.
    */
-  pushCellPoints(r, c, point: DataPoint): Cell {
+  pushCellPoints(r: Key, c: Key, point: DataPoint): Cell {
     const targetCell = this.getCell(r, c);
     targetCell.points.push(point);
     return targetCell;
@@ -390,8 +203,10 @@ export default class Modelizer {
    */
   getRow(r: Key): ModelRow {
     const rowId = this.#parseCellKey(r, "row");
-    const cells = this.table[rowId];
+    const cells = this.#getRowCells(rowId);
     const modelRow = {
+      key: this.#getKey(rowId, "row"),
+      id: rowId,
       cells: cells,
       each: (cb: ModelEachCb) => {
         modelRow.cells.forEach((cell) => cb(cell));
@@ -415,6 +230,8 @@ export default class Modelizer {
     const colId = this.#parseCellKey(c, "col");
     const column = this.#getColumnCells(colId);
     const modelColumn = {
+      key: this.#getKey(colId, "col"),
+      id: colId,
       cells: column,
       each: (cb: ModelEachCb) => {
         column.forEach((cell) => cb(cell));
@@ -429,8 +246,12 @@ export default class Modelizer {
     return modelColumn;
   }
 
+  #getRowCells(r: number) {
+    return this.getKeys("col").map((colKey, c) => this.getCell(r, c));
+  }
+
   #getColumnCells(c: number) {
-    return this.rowKeys.map((rowKey, r) => this.getCell(r, c));
+    return this.getKeys("row").map((rowKey, r) => this.getCell(r, c));
   }
 
   /**
@@ -447,7 +268,7 @@ export default class Modelizer {
 
     this.#initializeCell(rowId, colId);
 
-    return this.table[rowId][colId];
+    return this.#table[rowId][colId];
   }
 
   /**
@@ -463,18 +284,18 @@ export default class Modelizer {
     const c = this.#parseCellKey(colKey, "row");
 
     this.#initializeCell(r, c);
-    this.table[r][c] = cell;
+    this.#table[r][c] = cell;
 
-    return this.table[r][c];
+    return this.#table[r][c];
   }
 
   #initializeCell(r: number, c: number): void {
     this.#initializeRow(r);
-    this.table[r][c] = this.table[r][c] || this.#defaultCell(r, c);
+    this.#table[r][c] = this.#table[r][c] || this.#defaultCell(r, c);
   }
 
   #initializeRow(r: number): void {
-    this.table[r] = this.table[r] || [];
+    this.#table[r] = this.#table[r] || [];
   }
 
   #parseCellKeys(keys: Key[], mode: KeyMode): number[] {
@@ -488,7 +309,7 @@ export default class Modelizer {
     if (typeof key === "number") {
       if (keys[key]) return key;
       this.#handleError(
-        `Key of '${mode}' not found: ${key}. Length is keys are: ${keys.length}`
+        `Key of '${mode}' not found: ${key}. Length is: ${keys.length}`
       );
     }
 
@@ -532,7 +353,15 @@ export default class Modelizer {
       colKey: this.#getKey(c, "col"),
       points: <DataPoint[]>[],
       getPoint: (i?: number) => {
-        return cell.points[i || 0] || TransformResult.createDataPoint();
+        i = cell.points[i] ? i : 0;
+        if (!cell.points || !cell.points[i]) {
+          cell.points[i] = TransformResult.createDataPoint();
+        }
+        return cell.points[i];
+      },
+      addPoint: (point: DataPoint) => {
+        cell.points = cell.points || [];
+        cell.points.push(point);
       },
       getValue: () => cell.value || cell.getPoint(0).value,
       setValue: (value: CellValue) => (cell.value = value),
@@ -573,6 +402,16 @@ export default class Modelizer {
   }
 
   /**
+   * Get the first of all DataPoints. This is helpful if you need general tags
+   * or meta information and if you can assure that all active datapoints
+   * hold the same information as Point zero.
+   * @returns {DataPoint}
+   */
+  getFirstPoint() {
+    return this.getCell(0, 0).getPoint();
+  }
+
+  /**
    * Specify "row" or "col" and an array of keys to filter and sort the target
    * dimension of current table.
    * @param mode
@@ -581,30 +420,29 @@ export default class Modelizer {
   sort(mode: KeyMode, keys: Key[]): this {
     const ids = this.#parseCellKeys(keys, mode);
     const existingKeys = this.#getKeys(mode);
-    const keyName = this.#getKeyName(mode);
 
     const sortedKeys = [];
     ids.forEach((id) => {
       sortedKeys.push(existingKeys[id]);
     });
-    this[keyName] = sortedKeys;
+    this.#setKeys(mode, sortedKeys);
 
     if (mode === "col") {
-      this.table.forEach((row, r) => {
+      this.#table.forEach((row, r) => {
         const cols = [];
         ids.forEach((id) => {
           cols.push(row[id]);
         });
-        this.table[r] = cols;
+        this.#table[r] = cols;
       });
     }
 
     if (mode === "row") {
       const filteredRows = [];
       ids.forEach((id) => {
-        filteredRows.push(this.table[id]);
+        filteredRows.push(this.#table[id]);
       });
-      this.table = filteredRows;
+      this.#table = filteredRows;
     }
 
     return this;
@@ -681,7 +519,7 @@ export default class Modelizer {
     fill = fill || " ";
     let content = String(s);
     const right = size - content.length;
-    if (right > 0) {
+    if (right >= 0) {
       for (let i = 0; i <= right; i++) {
         content = content + fill;
       }

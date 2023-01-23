@@ -8,7 +8,7 @@ import {
   ResultCell,
   ResultColumn,
   ResultRow,
-} from "./types";
+} from "./types/types";
 import {
   ChartBubble,
   ChartCategory,

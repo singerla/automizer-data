@@ -10,7 +10,7 @@ import { Gesstabs } from "./parser/gesstabs";
 import { Generic } from "./parser/generic";
 
 import { all, filterBy, filterByDataTag } from "./filter";
-import { dump, points, value, valueMeta } from "./cell";
+import { dump, points, value } from "./cell";
 import { byColId } from "./sort";
 import { getNestedClause, getTagGroupsByCategory } from "./helper";
 
@@ -50,7 +50,7 @@ import {
   Selector,
   StoreOptions,
   Tagger,
-} from "./types";
+} from "./types/types";
 
 const getData = async (
   selector: DataTag[] | DataTag[][],
@@ -106,7 +106,6 @@ const runQuery = async (options): Promise<Query> => {
 
 const cell = {
   value,
-  valueMeta,
   dump,
 };
 const filter = {

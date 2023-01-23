@@ -4,7 +4,7 @@ import {
   ResultRow,
   ResultColumn,
   Result,
-} from "../types";
+} from "../types/types";
 import { vd } from "../helper";
 import { Query } from "..";
 export type RowCallback = {

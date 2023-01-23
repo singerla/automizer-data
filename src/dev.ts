@@ -12,8 +12,47 @@ const run = async () => {
   });
 
   const mod = query.result.modelizer;
-  mod.setCellValue("answer 1", "Total", "Test 123");
-  mod.toResult();
+  mod.strict = false;
+
+  // mod.setCellValue(2, 3, 102);
+  // mod.addColumn("col 15");
+  // mod.addColumn("col 16");
+  // //mod.addColumn("Test 2");
+  // mod.addRow("answer 16");
+  // mod.setCellValue(0, "col 16", 103);
+
+  mod.getColumn("Total 1").each((cell) => {
+    mod.setCellValue(cell.rowKey, "Test 2", cell.toNumber() + 1);
+  });
+
+  // mod.getCell(0, "Total").getPoint().setMeta("base", 300);
+  mod
+    .getRow(0)
+    .each((cell) =>
+      mod.setCellValue(
+        "Base",
+        cell.colKey,
+        cell.getPoint().getMeta("base")?.value as string
+      )
+    );
+
+  // mod.setCellValue("answer 1", "Total", "Test 123123123");
+  // mod.addRow("answer 1123");
+  // mod.addColumn("col 1123");
+  //
+  // mod.setCellValue("answer 1123", "col 1123", 3123);
+  // mod.processRows((modelRow) => {
+  //   modelRow.each((cell) => {
+  //     // vd(cell);
+  //   });
+  // });
+  //
+  // mod.strict = false;
+  // mod.getColumn("Total").each((cell) => {
+  //   mod.setCellValue(cell.rowKey, "Test 2", cell.toNumber() + 1);
+  // });
+
+  mod.dump();
 
   // const result1 = await runQuery({ selector: [[2, 4]], merge: false });
   // const result2 = await runQuery({ selector: [[2, 3]], merge: false });

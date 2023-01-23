@@ -6,7 +6,7 @@ import {
   StatusTracker,
   StoreOptions,
   StoreSummary,
-} from "./types";
+} from "./types/types";
 import crypto from "crypto";
 
 export class Store {

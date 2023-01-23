@@ -1,12 +1,12 @@
-import { PrismaClient, Sheet, Tag } from "./client";
-import { Gesstabs } from "./parser/gesstabs";
-import { Generic } from ".";
-import { Parser } from "./parser/parser";
-import ResultClass from "./result";
+import { PrismaClient, Sheet, Tag } from "../client";
+import { Gesstabs } from "../parser/gesstabs";
+import { Generic } from "../index";
+import { Parser } from "../parser/parser";
+import ResultClass from "../result";
 import { ChartValueStyle, TableRowStyle } from "pptx-automizer";
-import ResultInfo from "./helper/resultInfo";
-import TransformResult from "./helper/transformResult";
-import Modelizer from "./modelizer";
+import ResultInfo from "../helper/resultInfo";
+import TransformResult from "../helper/transformResult";
+import Modelizer from "../modelizer";
 
 export type RunOptions = {
   merge: boolean;
@@ -189,8 +189,14 @@ export type ResultCellInfo = {
   tags: Tag[];
 };
 
+export type DataMergeResult = {
+  [rowKey: string]: {
+    [colKey: string]: DataPoint[];
+  };
+};
+
 export type DataResultCellFilter = {
-  (points: DataPoint[]): ResultCell | DataPoint[];
+  (points: DataPoint[]): DataPoint[];
 };
 
 export type DataPointModifier = {
@@ -206,7 +212,7 @@ export type DataPointSortation = {
 };
 
 export type DataGridTransformation = {
-  cb?: any;
+  cb?: (result: Result, mod: Modelizer, points: DataPoint[]) => void;
   section: DataPointTarget;
 };
 
@@ -235,6 +241,7 @@ export type Result = {
   isValid: () => boolean;
   body: ResultRow[];
   modelizer: Modelizer;
+  getFromModelizer: () => void;
   info: ResultInfo;
   transform: TransformResult;
 };

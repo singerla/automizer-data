@@ -25,7 +25,8 @@ import {
   ResultColumn,
   ResultCell,
   CategoryCount,
-} from "./types";
+  DataMergeResult,
+} from "./types/types";
 
 import Points from "./points";
 
@@ -138,11 +139,38 @@ export default class Query {
     }
 
     if (this.useModelizer) {
-      this.result.modelizer = new Modelizer({
-        result: this.result,
-      });
+      this.result.modelizer = new Modelizer();
       this.result.modelizer.addPoints(this.points);
+      this.result.getFromModelizer = () => {
+        const tmpResult = this.fromModelizer(this.result);
+        this.setResult(tmpResult);
+      };
     }
+  }
+
+  fromModelizer(result): DataMergeResult {
+    const body = <DataMergeResult>{};
+    result.modelizer.processRows((modelRow) => {
+      const cols = {};
+      modelRow.each((cell) => {
+        cell.points = cell.points || [];
+        const points = _.cloneDeep(cell.points);
+        if (points[0]) {
+          points[0].value = cell.value;
+        } else {
+          points.push(
+            TransformResult.createDataPoint(
+              modelRow.key,
+              cell.colKey,
+              cell.value
+            )
+          );
+        }
+        cols[cell.colKey] = points;
+      });
+      body[modelRow.key] = cols;
+    });
+    return body;
   }
 
   processSheets(sheets: Sheets, level: number) {
@@ -439,15 +467,15 @@ export default class Query {
       this.points
     );
 
-    let points = <any>[];
-    let result = <any>{};
+    let points = <DataPoint[][]>[];
+    let result = <DataMergeResult>{};
 
     rows?.forEach((rowCb, r) => {
       let rowCbResult = rowCb(this.points);
       points[r] = rowCbResult.points;
 
       let rowKey = rowCbResult.label;
-      result[rowKey] = <ResultRow>{};
+      result[rowKey] = {};
       columns.forEach((columnCb, c) => {
         let cellPoints = columnCb(points[r]);
 
@@ -535,18 +563,23 @@ export default class Query {
     tag.id = tagItem.id;
   }
 
-  setResult(result: any): void {
+  setResult(result: DataMergeResult): void {
+    this.visibleKeys.row = [];
+    this.visibleKeys.column = [];
+    this.result.body = [];
+
     for (const r in result) {
       const cols = <ResultColumn[]>[];
       this.visibleKeys.row.push(r);
 
-      for (const c in result[r]) {
+      const row = result[r];
+      for (const c in row) {
         this.visibleKeys.column.push(c);
 
         cols.push({
           key: c,
-          value: result[r][c],
-          getPoint: Query.getPointCb(result[r][c]),
+          value: row[c],
+          getPoint: Query.getPointCb(row[c]),
         });
       }
 
@@ -654,7 +687,7 @@ export default class Query {
     try {
       for (const transform of transformations) {
         if (transform.cb && typeof transform.cb === "function") {
-          await transform.cb(this.result, this.points);
+          await transform.cb(this.result, this.result.modelizer, this.points);
         }
       }
     } catch (e) {

@@ -12,7 +12,7 @@ import {
   RawResultNestedParent,
   RawResultNestedItem,
   RawResultInfo,
-} from "../types";
+} from "../types/types";
 import { vd } from "../helper";
 
 export class Parser {

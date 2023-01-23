@@ -1,22 +1,8 @@
 import { vd } from "./helper";
-import { DataPoint, DataTag, ResultCell, ResultCellInfo } from "./types";
-
-export const valueMeta = (params: any) => {
-  const targetMetaTag =
-    params.args && params.args.mode ? params.args.mode : "base";
-  return (points: DataPoint[]): ResultCell => {
-    return points
-      .map((point) =>
-        point.meta
-          ?.filter((meta) => meta.key === targetMetaTag)
-          .map((meta) => meta?.value)
-      )
-      .join("|");
-  };
-};
+import { DataPoint, DataTag, ResultCell, ResultCellInfo } from "./types/types";
 
 export const value = (params: any) => {
-  return (points: DataPoint[]): ResultCell | DataPoint[] => {
+  return (points: DataPoint[]): DataPoint[] => {
     const args = params.args;
     if (!args || !args.mode) {
       return points;
@@ -34,13 +20,13 @@ export const value = (params: any) => {
 
 export const points = (points: DataPoint[]): DataPoint[] => points;
 
-export const dump = (points: DataPoint[]): ResultCell => {
+export const dump = (points: DataPoint[]): DataPoint[] => {
   console.dir(points, { depth: 10 });
   if (!points.length) {
     return undefined;
   }
 
-  return points[0].value;
+  return points;
 };
 
 export const renderPoints = (points: DataPoint[]): ResultCell => {
