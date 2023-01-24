@@ -1,9 +1,9 @@
 import { vd } from "./helper";
 import { DataPoint, DataTag, ResultCell, ResultCellInfo } from "./types/types";
 
-export const value = (params: any) => {
+export const value = (params?: any) => {
   return (points: DataPoint[]): DataPoint[] => {
-    const args = params.args;
+    const args = params?.args;
     if (!args || !args.mode) {
       return points;
     }

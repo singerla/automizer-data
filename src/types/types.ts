@@ -7,14 +7,7 @@ import { ChartValueStyle, TableRowStyle } from "pptx-automizer";
 import ResultInfo from "../helper/resultInfo";
 import TransformResult from "../helper/transformResult";
 import Modelizer from "../modelizer";
-
-export type RunOptions = {
-  merge: boolean;
-  grid;
-  selector;
-  mode: "";
-  options: QueryOptions;
-};
+import { ModelizerOptions } from "./modelizer-types";
 
 export type StoreOptions = {
   replaceExisting?: boolean;
@@ -81,10 +74,15 @@ export type StatusTracker = {
 };
 
 export type QueryOptions = {
+  selector: Selector;
   selectionValidator?: SelectionValidator;
   enableSelectionValidator?: boolean;
   nonGreedySelector?: boolean;
+  grid?: DataGrid;
+  merge?: boolean;
+  prisma?: PrismaClient;
   useModelizer?: boolean;
+  modelizer?: ModelizerOptions;
 };
 
 export type SelectionValidator = {
@@ -96,7 +94,8 @@ export type CategoryCount = {
   categoryIds: number[];
 };
 
-export type Selector = number[][];
+export type IdSelector = number[] | number[][];
+export type Selector = DataTag[] | DataTag[][] | IdSelector;
 
 export type DataTag = {
   id?: number;

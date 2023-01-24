@@ -24,7 +24,7 @@ test("store demo xlsx-data from Gesstabs with prisma client", async () => {
     filename: filename,
     userId: 1,
     statusTracker: (status) => {
-      console.log(status.share);
+      // console.log(status.share);
       bar1.update(status.share, { filename: filename });
     },
   });
@@ -90,7 +90,7 @@ test("store demo xlsx-data from Gesstabs with prisma client", async () => {
     })
     .finally(async () => {
       bar1.stop();
-      await store.prisma.$disconnect();
+      // await store.prisma.$disconnect();
     });
 
   expect(summary.ids.length).toBe(19);

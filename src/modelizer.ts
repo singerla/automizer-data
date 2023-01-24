@@ -19,59 +19,34 @@ import {
   Table,
 } from "./types/modelizer-types";
 
+/**
+ * Modelizer class needs some datapoints to work. Each datapoint will add
+ * a key to #keys.row and #keys.col. All #keys will define the rows and
+ * columns of the output table. Rows and columns can be added, removed, sorted
+ * and modelized.
+ */
 export default class Modelizer {
   #table: Table = [];
   readonly #keys: {
     row: string[];
     col: string[];
   };
+  /**
+   * If strict mode is 'true', no keys will be added automatically.
+   * In lax mode, every string running through #parseCellKey will create
+   * a new entry, if not existing.
+   */
   strict: boolean;
 
   constructor(options?: ModelizerOptions) {
     this.strict = options?.strict !== undefined ? options?.strict : true;
+    if (options.points) {
+      this.addPoints(options.points);
+    }
     this.#keys = {
       row: [],
       col: [],
     };
-  }
-
-  /**
-   * Apply a callback to each cell of the current table.
-   * @returns {this}
-   * @param cb The callback to run on each cell
-   */
-  process(cb: RenderTableCb): this {
-    this.getKeys("row").forEach((rowKey, r) => {
-      this.getKeys("col").forEach((colKey, c) => {
-        const cell = this.getCell(r, c);
-        cb(cell, r, c, rowKey, colKey);
-      });
-    });
-    return this;
-  }
-
-  /**
-   * Pass a callback to run on each row.
-   * @param cb The callback to run on each row
-   */
-  processRows(cb: ProcessRowCb): this {
-    this.getKeys("row").forEach((rowKey, r) => {
-      const row = this.getRow(r);
-      cb(row, r, rowKey);
-    });
-    return this;
-  }
-
-  /**
-   * Pass a callback to run on each column.
-   * @param cb The callback to run on each column
-   */
-  processColumns(cb: ProcessColumnCb): this {
-    this.getKeys("col").forEach((colKey, c) => {
-      const column = this.getColumn(c);
-      cb(column, c, colKey);
-    });
-    return this;
   }
 
   /**
@@ -115,6 +90,44 @@ export default class Modelizer {
       cell.setValue(point.value);
     }
 
+    return this;
+  }
+  /**
+   * Apply a callback to each cell of the current table.
+   * @returns {this}
+   * @param cb The callback to run on each cell
+   */
+  process(cb: RenderTableCb): this {
+    this.getKeys("row").forEach((rowKey, r) => {
+      this.getKeys("col").forEach((colKey, c) => {
+        const cell = this.getCell(r, c);
+        cb(cell, r, c, rowKey, colKey);
+      });
+    });
+    return this;
+  }
+
+  /**
+   * Pass a callback to run on each row.
+   * @param cb The callback to run on each row
+   */
+  processRows(cb: ProcessRowCb): this {
+    this.getKeys("row").forEach((rowKey, r) => {
+      const row = this.getRow(r);
+      cb(row, r, rowKey);
+    });
+    return this;
+  }
+
+  /**
+   * Pass a callback to run on each column.
+   * @param cb The callback to run on each column
+   */
+  processColumns(cb: ProcessColumnCb): this {
+    this.getKeys("col").forEach((colKey, c) => {
+      const column = this.getColumn(c);
+      cb(column, c, colKey);
+    });
     return this;
   }
 
@@ -212,6 +225,13 @@ export default class Modelizer {
         modelRow.cells.forEach((cell) => cb(cell));
         return modelRow;
       },
+      collect: (): CellValue[] => {
+        const values = [];
+        modelRow.each((cell) => {
+          values.push(cell.toNumber());
+        });
+        return values;
+      },
       getCell: (c: Key) => this.getCell(r, c),
       setCell: (c: Key, cell: Cell) => this.setCell(r, c, cell).getRow(),
       setCellValue: (c: Key, value: CellValue) =>
@@ -236,6 +256,13 @@ export default class Modelizer {
       each: (cb: ModelEachCb) => {
         column.forEach((cell) => cb(cell));
         return modelColumn;
+      },
+      collect: (): CellValue[] => {
+        const values = [];
+        modelColumn.each((cell) => {
+          values.push(cell.toNumber());
+        });
+        return values;
       },
       getCell: (r: number) => this.getCell(r, c),
       setCell: (r: number, cell: Cell) => this.setCell(r, c, cell).getColumn(),

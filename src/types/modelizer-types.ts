@@ -2,6 +2,7 @@ import { DataPoint } from "./types";
 
 export type ModelizerOptions = {
   strict?: boolean;
+  points?: DataPoint[];
 };
 /**
  * A Table is a set of rows.
@@ -106,6 +107,10 @@ export interface ModelRow {
    */
   each: (cb: ModelEachCb) => ModelRow;
   /**
+   * Retrieve an array of all cell values.
+   */
+  collect: () => CellValue[];
+  /**
    * Retrieve a cell from current row by key.
    * @param c
    */
@@ -155,6 +160,10 @@ export interface ModelColumn {
    */
   getCell: (r: Key) => Cell;
   /**
+   * Retrieve an array of all cell values.
+   */
+  collect: () => CellValue[];
+  /**
    * Set a cell value by key.
    * @param r
    * @param cellValue
@@ -168,8 +177,8 @@ export interface ModelColumn {
   setCell: (r: Key, cell: Cell) => ModelColumn;
   /**
    * Log contents of the current column to console.
-   * @param s1
-   * @param s2
+   * @param s1 Width of first column
+   * @param s2 Width of body columns
    */
   dump: (s1?: number, s2?: number) => void;
 }

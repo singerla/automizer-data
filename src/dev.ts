@@ -1,40 +1,82 @@
+import { Query } from "./index";
 import { vd } from "./helper";
-import { getResult, runQuery } from "./index";
-import Modelizer from "./modelizer";
 
 const run = async () => {
-  const query = await runQuery({
-    selector: [[2, 4]],
-    merge: true,
-    options: {
-      useModelizer: true,
+  const selector = [
+    {
+      category: "variable",
+      value: "Q12",
     },
+    {
+      category: "subgroup",
+      value: "Gender",
+    },
+  ];
+
+  const query = await Query.run({
+    selector,
+    merge: true,
+    useModelizer: true,
   });
 
-  const mod = query.result.modelizer;
+  const mod = query.getModelizer();
   mod.strict = false;
+  mod.getColumn("Difference").each((cell) => {
+    const totalCell = cell.getRow().getCell("Total").toNumber();
+    const vsCell = cell.getRow().getCell("female").toNumber();
+    cell.setValue(totalCell - vsCell);
+  });
 
-  // mod.setCellValue(2, 3, 102);
+  mod.dump();
+
+  const is = [];
+  mod.getColumn("Difference").each((cell) => {
+    is.push(cell.toNumber());
+  });
+
+  const fixture = [8, 15, -27];
+
+  // mod.setCellValue("answer 1", "Diff", "maika");
+  //
+  // const cb = function (cell: Cell) {
+  //   const row = cell.getRow();
+  //   const totalNumber = row.getCell("Total").toNumber();
+  //   const vsNumber = row.getCell("19-29").toNumber();
+  //
+  //   cell.setValue(vsNumber - totalNumber);
+  // };
+  //
+  // mod
+  //   .getColumn("Diff")
+  //   .each((cell) => {
+  //     cell.getValue;
+  //   })
+  //   .dump(20, 10);
+  //
+  // // mod.dump();
+  //
+  // const expectedResult = [-26, -20, 9, -26, -20, 9];
+
   // mod.addColumn("col 15");
   // mod.addColumn("col 16");
   // //mod.addColumn("Test 2");
   // mod.addRow("answer 16");
   // mod.setCellValue(0, "col 16", 103);
 
-  mod.getColumn("Total 1").each((cell) => {
-    mod.setCellValue(cell.rowKey, "Test 2", cell.toNumber() + 1);
-  });
-
-  // mod.getCell(0, "Total").getPoint().setMeta("base", 300);
-  mod
-    .getRow(0)
-    .each((cell) =>
-      mod.setCellValue(
-        "Base",
-        cell.colKey,
-        cell.getPoint().getMeta("base")?.value as string
-      )
-    );
+  // mod.getColumn("Total 1").each((cell) => {
+  //   mod.setCellValue(cell.rowKey, "Test 2", cell.toNumber() + 1);
+  // });
+  //
+  // // mod.getCell(0, "Total").getPoint().setMeta("base", 300);
+  // mod
+  //   .getRow(0)
+  //   .each((cell) =>
+  //     mod.setCellValue(
+  //       "Base",
+  //       cell.colKey,
+  //       cell.getPoint().getMeta("base")?.value as string
+  //     )
+  //   );
 
   // mod.setCellValue("answer 1", "Total", "Test 123123123");
   // mod.addRow("answer 1123");
@@ -52,7 +94,7 @@ const run = async () => {
   //   mod.setCellValue(cell.rowKey, "Test 2", cell.toNumber() + 1);
   // });
 
-  mod.dump();
+  // mod.dump();
 
   // const result1 = await runQuery({ selector: [[2, 4]], merge: false });
   // const result2 = await runQuery({ selector: [[2, 3]], merge: false });
