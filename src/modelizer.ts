@@ -40,7 +40,7 @@ export default class Modelizer {
 
   constructor(options?: ModelizerOptions) {
     this.strict = options?.strict !== undefined ? options?.strict : true;
-    if (options.points) {
+    if (options?.points) {
       this.addPoints(options.points);
     }
     this.#keys = {
