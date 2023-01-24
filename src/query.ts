@@ -530,7 +530,7 @@ export default class Query {
     return cbResult;
   }
 
-  async parseSelector(selector: Selector): Promise<IdSelector> {
+  async parseSelector(selector: Selector): Promise<IdSelector[]> {
     if (selector[0] && !Array.isArray(selector[0])) {
       selector = [selector] as DataTag[][];
     }
@@ -540,7 +540,7 @@ export default class Query {
     }
 
     if (typeof selector[0][0] === "number") {
-      return selector as IdSelector;
+      return selector as IdSelector[];
     }
 
     if (
@@ -553,7 +553,7 @@ export default class Query {
         tagIdSelector.push(tagIds);
       }
 
-      return tagIdSelector as IdSelector;
+      return tagIdSelector as IdSelector[];
     }
 
     throw new Error("Invalid selector.");

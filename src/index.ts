@@ -48,6 +48,7 @@ import {
   ResultColumn,
   ResultRow,
   Selector,
+  IdSelector,
   StoreOptions,
   Tagger,
 } from "./types/types";
@@ -97,6 +98,7 @@ export type {
   ModArgsCalcDifference,
   ModArgsCalcSum,
   Selector,
+  IdSelector,
 };
 export { Query, Parser, Gesstabs, Generic, Store, filter, cell };
 export { Points, Result };

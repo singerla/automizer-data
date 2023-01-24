@@ -94,8 +94,8 @@ export type CategoryCount = {
   categoryIds: number[];
 };
 
-export type IdSelector = number[] | number[][];
-export type Selector = DataTag[] | DataTag[][] | IdSelector;
+export type IdSelector = number[];
+export type Selector = DataTag[] | DataTag[][] | IdSelector[];
 
 export type DataTag = {
   id?: number;
