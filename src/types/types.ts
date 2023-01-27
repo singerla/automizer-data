@@ -9,11 +9,13 @@ import TransformResult from "../helper/transformResult";
 import Modelizer from "../modelizer";
 import { ModelizerOptions } from "./modelizer-types";
 
+export type PrismaId = number;
+
 export type StoreOptions = {
   replaceExisting?: boolean;
   runBefore?: (prisma: PrismaClient) => Promise<void>;
   filename?: string;
-  userId?: number;
+  userId?: PrismaId;
   statusTracker?: StatusTracker["next"];
 };
 
@@ -60,8 +62,8 @@ export type ParserOptionsSignificance = {
 export type ResultCell = number | string | null;
 
 export type StoreSummary = {
-  ids: number[];
-  deleted: number[];
+  ids: PrismaId[];
+  deleted: PrismaId[];
 };
 
 export type StatusTracker = {
@@ -90,18 +92,32 @@ export type SelectionValidator = {
 };
 
 export type CategoryCount = {
-  sheetId: number;
-  categoryIds: number[];
+  sheetId: PrismaId;
+  categoryIds: PrismaId[];
 };
 
-export type IdSelector = number[];
+export type IdSelector = PrismaId[];
 export type Selector = DataTag[] | DataTag[][] | IdSelector[];
 
+export type NestedClause = {
+  tags: {
+    some: {
+      id:
+        | PrismaId
+        | {
+            in: PrismaId[];
+            AND?: NestedClause;
+          };
+    };
+  };
+};
+export type NestedClauseTagGroup = Record<PrismaId, PrismaId[]>;
+
 export type DataTag = {
-  id?: number;
+  id?: PrismaId;
   category: string;
   value: string;
-  categoryId?: number;
+  categoryId?: PrismaId;
 };
 
 export type DataPoint = {

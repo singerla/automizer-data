@@ -47,7 +47,8 @@ export const filterBy = <DataGridFunction>(
 export const all = function (section: string): DataGridCategories {
   return (keys: CellKeys): DataPointFilter[] => {
     if (!keys.hasOwnProperty(section)) {
-      throw new Error('Filter "all": no keys for section: ' + section);
+      // throw new Error('Filter "all": no keys for section: ' + section);
+      return [];
     }
     return Object.keys(keys[section]).map((key) => filterBy(section, key));
   };
