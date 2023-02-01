@@ -10,7 +10,7 @@ import { Gesstabs } from "./parser/gesstabs";
 import { Generic } from "./parser/generic";
 
 import { all, filterBy, filterByDataTag } from "./filter";
-import { dump, value, valueMeta } from "./cell";
+import { dump, points, value } from "./cell";
 import { byColId } from "./sort";
 import { getNestedClause, getTagGroupsByCategory } from "./helper";
 
@@ -48,50 +48,13 @@ import {
   ResultColumn,
   ResultRow,
   Selector,
+  IdSelector,
   StoreOptions,
   Tagger,
-} from "./types";
-
-const getData = async (
-  selector: DataTag[] | DataTag[][],
-  grid: any,
-  prisma?: PrismaClient
-) => {
-  if (!prisma) {
-    prisma = new PrismaClient();
-  }
-
-  const query = new Query(prisma);
-  query.setGrid(grid);
-  await query.get(selector);
-
-  if (query.points.length > 0) {
-    await query.merge();
-  }
-
-  return new Result(query);
-};
-
-const getResult = async (
-  selector: number[][],
-  grid: any,
-  prisma: PrismaClient,
-  options?: QueryOptions
-): Promise<Result> => {
-  const query = new Query(prisma).setGrid(grid).setOptions(options);
-
-  await query.getByIds(selector);
-
-  if (query.points.length > 0) {
-    await query.merge();
-  }
-
-  return new Result(query);
-};
+} from "./types/types";
 
 const cell = {
   value,
-  valueMeta,
   dump,
 };
 const filter = {
@@ -135,19 +98,9 @@ export type {
   ModArgsCalcDifference,
   ModArgsCalcSum,
   Selector,
+  IdSelector,
 };
-export {
-  Query,
-  Parser,
-  Gesstabs,
-  Generic,
-  Store,
-  filter,
-  cell,
-  sort,
-  getData,
-  getResult,
-};
+export { Query, Parser, Gesstabs, Generic, Store, filter, cell };
 export { Points, Result };
 export { getNestedClause, getTagGroupsByCategory };
 export { PrismaClient };

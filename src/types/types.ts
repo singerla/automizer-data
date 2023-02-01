@@ -1,17 +1,21 @@
-import { PrismaClient, Sheet, Tag } from "./client";
-import { Gesstabs } from "./parser/gesstabs";
-import { Generic } from ".";
-import { Parser } from "./parser/parser";
-import ResultClass from "./result";
+import { PrismaClient, Sheet, Tag } from "../client";
+import { Gesstabs } from "../parser/gesstabs";
+import { Generic } from "../index";
+import { Parser } from "../parser/parser";
+import ResultClass from "../result";
 import { ChartValueStyle, TableRowStyle } from "pptx-automizer";
-import ResultInfo from "./helper/resultInfo";
-import TransformResult from "./helper/transformResult";
+import ResultInfo from "../helper/resultInfo";
+import TransformResult from "../helper/transformResult";
+import Modelizer from "../modelizer";
+import { ModelizerOptions } from "./modelizer-types";
+
+export type PrismaId = number;
 
 export type StoreOptions = {
   replaceExisting?: boolean;
   runBefore?: (prisma: PrismaClient) => Promise<void>;
   filename?: string;
-  userId?: number;
+  userId?: PrismaId;
   statusTracker?: StatusTracker["next"];
 };
 
@@ -58,8 +62,8 @@ export type ParserOptionsSignificance = {
 export type ResultCell = number | string | null;
 
 export type StoreSummary = {
-  ids: number[];
-  deleted: number[];
+  ids: PrismaId[];
+  deleted: PrismaId[];
 };
 
 export type StatusTracker = {
@@ -72,9 +76,15 @@ export type StatusTracker = {
 };
 
 export type QueryOptions = {
+  selector: Selector;
   selectionValidator?: SelectionValidator;
   enableSelectionValidator?: boolean;
   nonGreedySelector?: boolean;
+  grid?: DataGrid;
+  merge?: boolean;
+  prisma?: PrismaClient;
+  useModelizer?: boolean;
+  modelizer?: ModelizerOptions;
 };
 
 export type SelectionValidator = {
@@ -82,17 +92,32 @@ export type SelectionValidator = {
 };
 
 export type CategoryCount = {
-  sheetId: number;
-  categoryIds: number[];
+  sheetId: PrismaId;
+  categoryIds: PrismaId[];
 };
 
-export type Selector = number[][];
+export type IdSelector = PrismaId[];
+export type Selector = DataTag[] | DataTag[][] | IdSelector[];
+
+export type NestedClause = {
+  tags: {
+    some: {
+      id:
+        | PrismaId
+        | {
+            in: PrismaId[];
+            AND?: NestedClause;
+          };
+    };
+  };
+};
+export type NestedClauseTagGroup = Record<PrismaId, PrismaId[]>;
 
 export type DataTag = {
-  id?: number;
+  id?: PrismaId;
   category: string;
   value: string;
-  categoryId?: number;
+  categoryId?: PrismaId;
 };
 
 export type DataPoint = {
@@ -179,8 +204,14 @@ export type ResultCellInfo = {
   tags: Tag[];
 };
 
+export type DataMergeResult = {
+  [rowKey: string]: {
+    [colKey: string]: DataPoint[];
+  };
+};
+
 export type DataResultCellFilter = {
-  (points: DataPoint[]): ResultCell | DataPoint[];
+  (points: DataPoint[]): DataPoint[];
 };
 
 export type DataPointModifier = {
@@ -196,7 +227,7 @@ export type DataPointSortation = {
 };
 
 export type DataGridTransformation = {
-  cb?: any;
+  cb?: (result: Result, mod: Modelizer, points: DataPoint[]) => void;
   section: DataPointTarget;
 };
 
@@ -224,6 +255,8 @@ export type ResultRow = {
 export type Result = {
   isValid: () => boolean;
   body: ResultRow[];
+  modelizer: Modelizer;
+  getFromModelizer: () => void;
   info: ResultInfo;
   transform: TransformResult;
 };

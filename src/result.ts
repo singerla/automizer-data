@@ -1,5 +1,6 @@
 import {
   CellKeys,
+  DataPoint,
   Datasheet,
   MetaParam,
   QueryResultKeys,
@@ -7,7 +8,7 @@ import {
   ResultCell,
   ResultColumn,
   ResultRow,
-} from "./types";
+} from "./types/types";
 import {
   ChartBubble,
   ChartCategory,
@@ -21,6 +22,7 @@ import {
 } from "pptx-automizer";
 import Query from "./query";
 import { vd } from "./helper";
+import Modelizer from "./modelizer";
 
 export default class Result {
   result: ResultType;
@@ -33,6 +35,7 @@ export default class Result {
   allSheets: Datasheet[];
   tags: any[];
   metaParams: MetaParam;
+  points: DataPoint[];
 
   constructor(query: Query) {
     this.result = query.result;
@@ -40,6 +43,7 @@ export default class Result {
     this.keys = query.keys;
     this.visibleKeys = query.visibleKeys;
     this.allSheets = query.allSheets;
+    this.points = query.points;
     this.tags = <any>[];
     this.metaParams = <MetaParam>{};
   }

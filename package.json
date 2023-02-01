@@ -29,11 +29,15 @@
   },
   "scripts": {
     "dev": "nodemon -e ts --exec 'ts-node' src/dev.ts",
+    "dev-test": "nodemon -e ts --exec 'ts-node' src/dev-test.ts",
     "store": "ts-node store.ts",
     "dev-store": "nodemon -e ts --exec 'ts-node' store.ts",
     "test": "npx jest",
     "build": "tsc"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },  
   "dependencies": {
     "@prisma/client": "^4.8.1",
     "@types/node-xlsx": "^0.21.0",

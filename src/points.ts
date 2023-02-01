@@ -12,7 +12,7 @@ import {
   NestedParentValue,
   RenameLabel,
   ResultCell,
-} from "./types";
+} from "./types/types";
 import {
   ModArgsFilter,
   ModArgsStringTolabel,
@@ -22,7 +22,7 @@ import {
   ModArgsMap,
   ModArgsRename,
   ModArgsTranspose,
-} from "./types";
+} from "./types/types";
 import TransformResult from "./helper/transformResult";
 
 export default class Points {

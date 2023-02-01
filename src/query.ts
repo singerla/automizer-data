@@ -25,13 +25,18 @@ import {
   ResultColumn,
   ResultCell,
   CategoryCount,
-} from "./types";
+  DataMergeResult,
+  IdSelector,
+} from "./types/types";
 
 import Points from "./points";
 
 import _ from "lodash";
 import ResultInfo from "./helper/resultInfo";
 import TransformResult from "./helper/transformResult";
+import Modelizer from "./modelizer";
+import { all } from "./filter";
+import { value } from "./cell";
 
 export default class Query {
   prisma: PrismaClient | any;
@@ -50,6 +55,8 @@ export default class Query {
   result: Result;
   tags: any[];
   nonGreedySelector: boolean;
+  useModelizer: boolean;
+  options: QueryOptions;
 
   constructor(prisma: PrismaClient | any) {
     this.prisma = prisma;
@@ -62,6 +69,7 @@ export default class Query {
     };
     this.result = <Result>{
       body: <ResultRow[]>[],
+      modelizer: undefined,
     };
     this.points = <DataPoint[]>[];
     this.grid = <DataGrid>{};
@@ -69,8 +77,25 @@ export default class Query {
     this.allSheets = <Datasheet[]>[];
     this.tags = <any>[];
     this.nonGreedySelector = true;
+    this.useModelizer = false;
 
     return this;
+  }
+
+  static run(options: QueryOptions): Promise<Query> {
+    const prisma = options.prisma || new PrismaClient();
+    const query = new Query(prisma);
+
+    const grid = options.grid || {
+      row: all("row"),
+      column: all("column"),
+      cell: value(),
+    };
+    query.setGrid(grid).setOptions(options);
+
+    const selector = options.selector || [[]];
+
+    return query.get(selector);
   }
 
   setGrid(grid: DataGrid): this {
@@ -85,6 +110,13 @@ export default class Query {
     if (options?.nonGreedySelector) {
       this.nonGreedySelector = options?.nonGreedySelector;
     }
+    if (options?.useModelizer) {
+      this.useModelizer = options?.useModelizer;
+    }
+    options.merge = typeof options.merge === "boolean" ? options.merge : true;
+
+    this.options = options;
+
     return this;
   }
 
@@ -92,21 +124,27 @@ export default class Query {
     this.selectionValidator = validator;
   }
 
-  async get(tags: DataTag[] | DataTag[][]): Promise<Query> {
-    const allTagIds = tags[0].hasOwnProperty("category") ? [tags] : tags;
+  async get(selector: Selector): Promise<Query> {
+    const tagIds = await this.parseSelector(selector).catch(() => {
+      throw new Error("Parse Selector failed");
+    });
 
-    for (const level in allTagIds) {
-      const tagIds = allTagIds[level];
-      const sheets = await this.getSheets(<DataTag[]>tagIds);
-      this.processSheets(sheets, Number(level));
-    }
+    await this.processTagIds(tagIds);
 
     this.setDataPointKeys(this.points, "keys");
-
+    if (this.options.merge) {
+      await this.merge().catch((e) => {
+        throw e;
+      });
+    }
     return this;
   }
 
-  async getByIds(allTagIds: Selector): Promise<Query> {
+  getModelizer(): Modelizer {
+    return this.result.modelizer;
+  }
+
+  async processTagIds(allTagIds): Promise<void> {
     for (const level in allTagIds) {
       const tagIds = allTagIds[level];
       const selectionTags = await this.getTagInfo(tagIds);
@@ -119,9 +157,39 @@ export default class Query {
       }
     }
 
-    this.setDataPointKeys(this.points, "keys");
+    if (this.useModelizer) {
+      this.result.modelizer = new Modelizer(this.options.modelizer);
+      this.result.modelizer.addPoints(this.points);
+      this.result.getFromModelizer = () => {
+        const tmpResult = this.fromModelizer(this.result);
+        this.setResult(tmpResult);
+      };
+    }
+  }
 
-    return this;
+  fromModelizer(result): DataMergeResult {
+    const body = <DataMergeResult>{};
+    result.modelizer.processRows((modelRow) => {
+      const cols = {};
+      modelRow.each((cell) => {
+        cell.points = cell.points || [];
+        const points = cell.points;
+        if (points[0]) {
+          points[0].value = cell.value;
+        } else {
+          points.push(
+            TransformResult.createDataPoint(
+              modelRow.key,
+              cell.colKey,
+              cell.value
+            )
+          );
+        }
+        cols[cell.colKey] = points;
+      });
+      body[modelRow.key] = cols;
+    });
+    return body;
   }
 
   processSheets(sheets: Sheets, level: number) {
@@ -418,15 +486,15 @@ export default class Query {
       this.points
     );
 
-    let points = <any>[];
-    let result = <any>{};
+    let points = <DataPoint[][]>[];
+    let result = <DataMergeResult>{};
 
     rows?.forEach((rowCb, r) => {
       let rowCbResult = rowCb(this.points);
       points[r] = rowCbResult.points;
 
       let rowKey = rowCbResult.label;
-      result[rowKey] = <ResultRow>{};
+      result[rowKey] = {};
       columns.forEach((columnCb, c) => {
         let cellPoints = columnCb(points[r]);
 
@@ -462,14 +530,39 @@ export default class Query {
     return cbResult;
   }
 
-  async getTagIds(tags: DataTag[]): Promise<number[]> {
-    for (let i in tags) {
-      let tag = tags[i];
-      await this.setCategoryId(tag);
-      await this.setTagId(tag);
+  async parseSelector(selector: Selector): Promise<IdSelector[]> {
+    if (selector[0] && !Array.isArray(selector[0])) {
+      selector = [selector] as DataTag[][];
     }
 
-    return tags.map((tag) => <number>tag.id);
+    if (selector[0][0] === undefined) {
+      throw new Error("Selection is empty");
+    }
+
+    if (typeof selector[0][0] === "number") {
+      return selector as IdSelector[];
+    }
+
+    if (
+      selector[0][0].category !== undefined &&
+      selector[0][0].value !== undefined
+    ) {
+      const tagIdSelector = <number[][]>[];
+      for (const dataTag of selector) {
+        const tagIds = await this.getTagIds(dataTag as DataTag[]);
+        tagIdSelector.push(tagIds);
+      }
+
+      return tagIdSelector as IdSelector[];
+    }
+
+    throw new Error("Invalid selector.");
+  }
+
+  async getTagIds(tags: DataTag[]): Promise<number[]> {
+    tags = await this.getTags(tags);
+
+    return tags.map((tag) => tag.id);
   }
 
   async getTags(tags: DataTag[]): Promise<DataTag[]> {
@@ -517,18 +610,23 @@ export default class Query {
     tag.id = tagItem.id;
   }
 
-  setResult(result: any): void {
+  setResult(result: DataMergeResult): void {
+    this.visibleKeys.row = [];
+    this.visibleKeys.column = [];
+    this.result.body = [];
+
     for (const r in result) {
       const cols = <ResultColumn[]>[];
       this.visibleKeys.row.push(r);
 
-      for (const c in result[r]) {
+      const row = result[r];
+      for (const c in row) {
         this.visibleKeys.column.push(c);
 
         cols.push({
           key: c,
-          value: result[r][c],
-          getPoint: Query.getPointCb(result[r][c]),
+          value: row[c],
+          getPoint: Query.getPointCb(row[c]),
         });
       }
 
@@ -585,7 +683,14 @@ export default class Query {
   static getTagCb(point: DataPoint) {
     return (categoryId: number): DataTag | undefined => {
       if (point.tags) {
-        return point.tags.find((meta) => meta.categoryId === categoryId);
+        return (
+          point.tags.find((meta) => meta.categoryId === categoryId) || {
+            value: undefined,
+            category: undefined,
+            categoryId: categoryId,
+            id: undefined,
+          }
+        );
       }
     };
   }
@@ -629,7 +734,7 @@ export default class Query {
     try {
       for (const transform of transformations) {
         if (transform.cb && typeof transform.cb === "function") {
-          await transform.cb(this.result, this.points);
+          await transform.cb(this.result, this.result.modelizer, this.points);
         }
       }
     } catch (e) {
