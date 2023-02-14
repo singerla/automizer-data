@@ -8,6 +8,7 @@ import {
   StoreSummary,
 } from "./types/types";
 import crypto from "crypto";
+import { vd } from './helper';
 
 export class Store {
   prisma: PrismaClient;
@@ -120,7 +121,9 @@ export class Store {
     const newTag = await this.prisma.tag.create({
       data: {
         name: name,
-        categoryId: catId,
+        category: {
+          connect: { id: catId },
+        },
       },
     });
     this.tags.push(newTag);
@@ -163,6 +166,10 @@ export class Store {
       );
 
       if (!existingTag) {
+        if(!tag.value) {
+          console.log(tag)
+          throw "Can't add tag!"
+        }
         let newTag = await this.createTag(tag.value, <number>tag.categoryId);
         tag.id = newTag.id;
       } else {
