@@ -160,16 +160,29 @@ export default class Query {
     if (this.useModelizer) {
       this.result.modelizer = new Modelizer(this.options.modelizer);
       this.result.modelizer.addPoints(this.points);
-      this.result.getFromModelizer = () => {
-        const tmpResult = this.fromModelizer(this.result);
+      this.result.toModelizer = (result) => this.toModelizer(result)
+      this.result.fromModelizer = (modelizer: Modelizer) => {
+        const tmpResult = this.fromModelizer(modelizer);
         this.setResult(tmpResult);
       };
     }
   }
 
-  fromModelizer(result): DataMergeResult {
+  toModelizer(result: Result): Modelizer {
+    const modelizer = new Modelizer(this.options.modelizer)
+    result.body.forEach(row => {
+      row.cols.forEach(col => {
+        col.value.forEach(point => {
+          modelizer.addPoint(point)
+        })
+      })
+    })
+    return modelizer
+  }
+
+  fromModelizer(modelizer: Modelizer): DataMergeResult {
     const body = <DataMergeResult>{};
-    result.modelizer.processRows((modelRow) => {
+    modelizer.processRows((modelRow) => {
       const cols = {};
       modelRow.each((cell) => {
         cell.points = cell.points || [];

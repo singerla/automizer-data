@@ -256,7 +256,8 @@ export type Result = {
   isValid: () => boolean;
   body: ResultRow[];
   modelizer: Modelizer;
-  getFromModelizer: () => void;
+  fromModelizer: (modelizer: Modelizer) => void;
+  toModelizer: (result: Result) => Modelizer;
   info: ResultInfo;
   transform: TransformResult;
 };
