@@ -8,7 +8,7 @@ import {
   StoreSummary,
 } from "./types/types";
 import crypto from "crypto";
-import { vd } from './helper';
+import { vd } from "./helper";
 
 export class Store {
   prisma: PrismaClient;
@@ -16,6 +16,7 @@ export class Store {
   options: StoreOptions | undefined;
   query: Query;
   categories: Category[];
+  sheetKeys: string[];
   tags: Tag[];
   importId: number;
   status: StatusTracker;
@@ -43,6 +44,7 @@ export class Store {
 
     this.importId = 0;
     this.categories = [];
+    this.sheetKeys = <string[]>[];
     this.tags = [];
     this.status = {
       current: 0,
@@ -166,9 +168,9 @@ export class Store {
       );
 
       if (!existingTag) {
-        if(!tag.value) {
-          console.log(tag)
-          throw "Can't add tag!"
+        if (!tag.value) {
+          console.log(tag);
+          throw "Can't add tag!";
         }
         let newTag = await this.createTag(tag.value, <number>tag.categoryId);
         tag.id = newTag.id;
@@ -182,7 +184,11 @@ export class Store {
     const tagIds = datasheet.tags.map((tag) => {
       return { id: tag.id };
     });
-    const newSheet = await this.prisma.sheet.create({
+
+    const { rowKey, columnKey, tagKey, sheetKey } =
+      this.getSheetKeys(datasheet);
+
+    const sheetData = {
       data: {
         columns: JSON.stringify(datasheet.columns),
         rows: JSON.stringify(datasheet.rows),
@@ -194,9 +200,15 @@ export class Store {
         import: {
           connect: { id: this.importId },
         },
-        ...this.getSheetKeys(datasheet),
+        rowKey,
+        columnKey,
+        tagKey,
       },
-    });
+    };
+
+    await this.dedupSheets(tagKey, rowKey, sheetData);
+
+    const newSheet = await this.prisma.sheet.create(sheetData);
 
     if (newSheet.id) {
       datasheet.id = newSheet.id;
@@ -209,16 +221,53 @@ export class Store {
     return newSheet;
   }
 
-  getSheetKeys(datasheet: Datasheet) {
-    return {
-      rowKey: this.createHash(datasheet.rows),
-      columnKey: this.createHash(datasheet.columns),
-      tagKey: this.createHash(datasheet.tags.map((tag: any) => tag.id)),
-    };
+  async dedupSheets(tagKey, sheetKey, sheetData) {
+    if (!this.sheetKeys.includes(tagKey)) {
+      this.sheetKeys.push(tagKey);
+    } else {
+      const addCounterTags = <DataTag[]>[
+        {
+          category: "iSheetKey",
+          value: sheetKey.substring(0,16),
+        },
+      ];
+      await this.addCategoryIdToTags(addCounterTags);
+      await this.addTagIdsToTags(addCounterTags);
+
+      sheetData.data.tags.connect.push({ id: addCounterTags[0].id });
+      sheetData.data.tagKey = this.getTagKey(sheetData.data.tags.connect);
+
+      console.log("Duplicate sheet key: ");
+      console.log(sheetData);
+    }
   }
 
-  createHash(arr: string[]): string {
+  getSheetKeys(datasheet: Datasheet) {
+    const keys = {
+      rowKey: this.createHashFromArray(datasheet.rows),
+      columnKey: this.createHashFromArray(datasheet.columns),
+      tagKey: this.getTagKey(datasheet.tags),
+      sheetKey: null,
+    };
+    keys.sheetKey = this.createHashFromObject(keys);
+    return keys;
+  }
+
+  getTagKey(tags): string {
+    return this.createHashFromArray(tags.map((tag: any) => tag.id));
+  }
+
+  createHashFromObject(obj: Object): string {
+    const str = JSON.stringify(obj);
+    return this.createHash(str);
+  }
+
+  createHashFromArray(arr: string[]): string {
     const str = arr.join("|");
+    return this.createHash(str);
+  }
+
+  createHash(str: string): string {
     const sha256Hasher = crypto.createHmac("sha256", "123");
     const hash = sha256Hasher.update(str).digest("hex");
     return hash;
