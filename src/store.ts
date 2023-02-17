@@ -1,4 +1,5 @@
-import { Category, PrismaClient, Sheet, Tag } from "./client";
+import { Category, PrismaClient, Prisma, Sheet, Tag } from "./client";
+
 import Query from "./query";
 import {
   Datasheet,
@@ -10,13 +11,20 @@ import {
 import crypto from "crypto";
 import { vd } from "./helper";
 
+type CreateSheetData = Prisma.SheetCreateArgs["data"] & {
+  tags: {
+    connect: CreateSheetTagsConnect
+  }
+};
+type CreateSheetTagsConnect = Prisma.Enumerable<Prisma.TagWhereUniqueInput>
+
 export class Store {
   prisma: PrismaClient;
   summary: StoreSummary;
   options: StoreOptions | undefined;
   query: Query;
   categories: Category[];
-  sheetKeys: string[];
+  sheetKeys: Record<string, number>;
   tags: Tag[];
   importId: number;
   status: StatusTracker;
@@ -44,7 +52,7 @@ export class Store {
 
     this.importId = 0;
     this.categories = [];
-    this.sheetKeys = <string[]>[];
+    this.sheetKeys = {};
     this.tags = [];
     this.status = {
       current: 0,
@@ -136,11 +144,93 @@ export class Store {
     await this.addCategoryIdToTags(datasheet.tags);
     await this.addTagIdsToTags(datasheet.tags);
 
+    const sheetData = this.createSheetData(datasheet);
+    await this.dedupTagKeys(sheetData);
+
     if (this.options?.replaceExisting) {
-      await this.deleteExistingDatasheets(datasheet);
+      await this.deleteExistingDatasheets(sheetData);
     }
 
-    await this.createSheet(datasheet);
+    await this.createSheet(datasheet, sheetData);
+  }
+
+  createSheetData(datasheet: Datasheet): CreateSheetData {
+    const tagIds = datasheet.tags.map((tag) => {
+      return { id: tag.id };
+    });
+
+    const { rowKey, columnKey, tagKey, sheetKey } =
+      this.getSheetKeys(datasheet);
+
+    const createSheetData = <CreateSheetData>{
+      columns: JSON.stringify(datasheet.columns),
+      rows: JSON.stringify(datasheet.rows),
+      data: JSON.stringify(datasheet.data),
+      meta: JSON.stringify(datasheet.meta),
+      tags: {
+        connect: tagIds,
+      },
+      import: {
+        connect: { id: this.importId },
+      },
+      rowKey,
+      columnKey,
+      tagKey,
+    };
+
+    return createSheetData;
+  }
+
+  async deleteExistingDatasheets(createSheetData: CreateSheetData) {
+    const ids = await this.prisma.sheet.deleteMany({
+      where: {
+        tagKey: createSheetData.tagKey,
+      },
+    });
+    this.summary.deleted.push(ids.count);
+  }
+
+  async createSheet(datasheet: Datasheet, createSheetData: CreateSheetData) {
+    const newSheet = await this.prisma.sheet.create({
+      data: createSheetData,
+    });
+
+    if (newSheet.id) {
+      datasheet.id = newSheet.id;
+      this.summary.ids.push(datasheet.id);
+    } else {
+      console.error(datasheet);
+      throw "Could not store datasheet.";
+    }
+    return newSheet;
+  }
+
+  async dedupTagKeys(sheetData: CreateSheetData) {
+    const tagKey = sheetData.tagKey;
+    if (!this.sheetKeys[tagKey]) {
+      this.sheetKeys[tagKey] = 1;
+    } else {
+      this.sheetKeys[tagKey] += 1;
+      const addCounterTags = <DataTag[]>[
+        {
+          category: "iSheetKey",
+          value: "Sheet " + String(this.sheetKeys[tagKey]),
+        },
+      ];
+      await this.addCategoryIdToTags(addCounterTags);
+      await this.addTagIdsToTags(addCounterTags);
+
+      const connectTags = [
+        Object.values(sheetData.tags.connect),
+        { id: addCounterTags[0].id }
+      ] as CreateSheetTagsConnect
+
+      sheetData.tags.connect = connectTags;
+      sheetData.tagKey = this.getTagKey(sheetData.tags.connect);
+
+      console.log("Duplicate sheet key: ");
+      console.log(sheetData);
+    }
   }
 
   async addCategoryIdToTags(tags: DataTag[]): Promise<void> {
@@ -180,68 +270,6 @@ export class Store {
     }
   }
 
-  async createSheet(datasheet: Datasheet): Promise<Sheet> {
-    const tagIds = datasheet.tags.map((tag) => {
-      return { id: tag.id };
-    });
-
-    const { rowKey, columnKey, tagKey, sheetKey } =
-      this.getSheetKeys(datasheet);
-
-    const sheetData = {
-      data: {
-        columns: JSON.stringify(datasheet.columns),
-        rows: JSON.stringify(datasheet.rows),
-        data: JSON.stringify(datasheet.data),
-        meta: JSON.stringify(datasheet.meta),
-        tags: {
-          connect: tagIds,
-        },
-        import: {
-          connect: { id: this.importId },
-        },
-        rowKey,
-        columnKey,
-        tagKey,
-      },
-    };
-
-    await this.dedupSheets(tagKey, rowKey, sheetData);
-
-    const newSheet = await this.prisma.sheet.create(sheetData);
-
-    if (newSheet.id) {
-      datasheet.id = newSheet.id;
-      this.summary.ids.push(datasheet.id);
-    } else {
-      console.error(datasheet);
-      throw "Could not store datasheet.";
-    }
-
-    return newSheet;
-  }
-
-  async dedupSheets(tagKey, sheetKey, sheetData) {
-    if (!this.sheetKeys.includes(tagKey)) {
-      this.sheetKeys.push(tagKey);
-    } else {
-      const addCounterTags = <DataTag[]>[
-        {
-          category: "iSheetKey",
-          value: sheetKey.substring(0,16),
-        },
-      ];
-      await this.addCategoryIdToTags(addCounterTags);
-      await this.addTagIdsToTags(addCounterTags);
-
-      sheetData.data.tags.connect.push({ id: addCounterTags[0].id });
-      sheetData.data.tagKey = this.getTagKey(sheetData.data.tags.connect);
-
-      console.log("Duplicate sheet key: ");
-      console.log(sheetData);
-    }
-  }
-
   getSheetKeys(datasheet: Datasheet) {
     const keys = {
       rowKey: this.createHashFromArray(datasheet.rows),
@@ -271,15 +299,5 @@ export class Store {
     const sha256Hasher = crypto.createHmac("sha256", "123");
     const hash = sha256Hasher.update(str).digest("hex");
     return hash;
-  }
-
-  async deleteExistingDatasheets(datasheet: Datasheet) {
-    const keys = this.getSheetKeys(datasheet);
-    const ids = await this.prisma.sheet.deleteMany({
-      where: {
-        tagKey: keys.tagKey,
-      },
-    });
-    this.summary.deleted.push(ids.count);
   }
 }

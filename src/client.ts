@@ -1,8 +1,9 @@
-import { PrismaClient, Category, Sheet, Tag } from '@prisma/client'
+import { PrismaClient, Prisma, Category, Sheet, Tag } from '@prisma/client'
 
 export {
-  PrismaClient,
+  Prisma, PrismaClient,
 }
+
 export type {
   Category, Sheet, Tag
 }
