@@ -221,7 +221,7 @@ export class Store {
       await this.addTagIdsToTags(addCounterTags);
 
       const connectTags = [
-        Object.values(sheetData.tags.connect),
+          ...Object.values(sheetData.tags.connect),
         { id: addCounterTags[0].id }
       ] as CreateSheetTagsConnect
 
