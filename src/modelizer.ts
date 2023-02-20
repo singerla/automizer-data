@@ -419,7 +419,6 @@ export default class Modelizer {
         };
       }),
     };
-    console.dir(contents, { depth: 10 });
   }
 
   #filterCellKeys(keys: Key[], mode: KeyMode) {
