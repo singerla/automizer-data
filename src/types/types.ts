@@ -228,6 +228,8 @@ export type DataPointSortation = {
 
 export type DataGridTransformation = {
   cb?: (result: Result, mod: Modelizer, points: DataPoint[]) => void;
+  modelize?: (args: any) => void;
+  condition?: (args: any) => boolean;
   section: DataPointTarget;
 };
 

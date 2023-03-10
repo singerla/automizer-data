@@ -160,7 +160,7 @@ export default class Query {
     if (this.useModelizer) {
       this.result.modelizer = new Modelizer(this.options.modelizer);
       this.result.modelizer.addPoints(this.points);
-      this.result.toModelizer = (result) => this.toModelizer(result)
+      this.result.toModelizer = (result) => this.toModelizer(result);
       this.result.fromModelizer = (modelizer: Modelizer) => {
         const tmpResult = this.fromModelizer(modelizer);
         this.setResult(tmpResult);
@@ -169,15 +169,16 @@ export default class Query {
   }
 
   toModelizer(result: Result): Modelizer {
-    const modelizer = new Modelizer(this.options.modelizer)
-    result.body.forEach(row => {
-      row.cols.forEach(col => {
-        col.value.forEach(point => {
-          modelizer.addPoint(point)
-        })
-      })
-    })
-    return modelizer
+    const modelizer = new Modelizer(this.options.modelizer, this);
+    modelizer.strict = false;
+    result.body.forEach((row, r) => {
+      row.cols.forEach((col, c) => {
+        const newCell = modelizer.setCell(row.key, col.key);
+        newCell.points = col.value;
+        newCell.setValue(col.value[0].value);
+      });
+    });
+    return modelizer;
   }
 
   fromModelizer(modelizer: Modelizer): DataMergeResult {
@@ -748,6 +749,24 @@ export default class Query {
       for (const transform of transformations) {
         if (transform.cb && typeof transform.cb === "function") {
           await transform.cb(this.result, this.result.modelizer, this.points);
+        }
+
+        if (transform.modelize && typeof transform.modelize === "function") {
+          const modelizer = this.toModelizer(this.result);
+
+          if (
+            transform.condition &&
+            typeof transform.condition === "function"
+          ) {
+            if (transform.condition(modelizer) !== true) {
+              continue;
+            }
+          }
+
+          await transform.modelize(modelizer);
+
+          const tmpResult = this.fromModelizer(modelizer);
+          this.setResult(tmpResult);
         }
       }
     } catch (e) {

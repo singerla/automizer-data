@@ -36,8 +36,11 @@ export default class Result {
   tags: any[];
   metaParams: MetaParam;
   points: DataPoint[];
+  query: Query;
 
   constructor(query: Query) {
+    this.query = query;
+
     this.result = query.result;
     this.inputKeys = query.inputKeys;
     this.keys = query.keys;

@@ -38,7 +38,10 @@ export default class Modelizer {
    */
   strict: boolean;
 
-  constructor(options?: ModelizerOptions) {
+  // The parent class for this Modelizer instance
+  query: Query;
+
+  constructor(options?: ModelizerOptions, query?: Query) {
     this.strict = options?.strict !== undefined ? options?.strict : true;
     if (options?.points) {
       this.addPoints(options.points);
@@ -47,6 +50,7 @@ export default class Modelizer {
       row: [],
       col: [],
     };
+    this.query = query;
   }
 
   /**
@@ -104,6 +108,21 @@ export default class Modelizer {
         cb(cell, r, c, rowKey, colKey);
       });
     });
+    return this;
+  }
+
+  /**
+   * Pass a callback to run on each row or column by given mode.
+   * @param mode KeyMode is either 'row' or 'column'
+   * @param cb The callback to run on each row
+   */
+  processByMode(mode: KeyMode, cb: ProcessRowCb | ProcessColumnCb): this {
+    switch (mode) {
+      case "row":
+        return this.processRows(cb);
+      case "col":
+        return this.processColumns(cb);
+    }
     return this;
   }
 
@@ -300,18 +319,28 @@ export default class Modelizer {
 
   /**
    * Update a Cell object at the given keys or create one.
-   * In strict mode, Modelizer will throw an error.
+   * In strict mode, Modelizer will throw an error when there are no matching keys.
    * @param rowKey Set a numeric or string value to address the target row
    * @param colKey Set a numeric or string value to address the target column
-   * @param cell Set a numeric or string value to address the target column
+   * @param cell Optionally set a numeric or string value to address the target column
    * @returns {Cell}
    */
-  setCell(rowKey: Key, colKey: Key, cell: Cell): Cell {
+  setCell(rowKey: Key, colKey: Key, cell?: Cell): Cell {
     const r = this.#parseCellKey(rowKey, "row");
-    const c = this.#parseCellKey(colKey, "row");
+    const c = this.#parseCellKey(colKey, "col");
 
     this.#initializeCell(r, c);
-    this.#table[r][c] = cell;
+
+    if (cell) {
+      const targetCell = _.cloneDeep(cell);
+      if (typeof rowKey === "string") {
+        targetCell.rowKey = rowKey;
+      }
+      if (typeof colKey === "string") {
+        targetCell.colKey = colKey;
+      }
+      this.#table[r][c] = targetCell;
+    }
 
     return this.#table[r][c];
   }
@@ -457,7 +486,21 @@ export default class Modelizer {
       this.#table.forEach((row, r) => {
         const cols = [];
         ids.forEach((id) => {
-          cols.push(row[id]);
+          if (row[id]) {
+            cols.push(row[id]);
+          } else {
+            if (this.strict === true) {
+              this.#handleError(
+                "Sortation of cols failed at col id: " +
+                  id +
+                  ". " +
+                  "Available col keys are " +
+                  Object.keys(row).join(" | ")
+              );
+            }
+            this.#initializeCell(r, id);
+            cols.push(this.#table[r][id]);
+          }
         });
         this.#table[r] = cols;
       });
@@ -466,12 +509,46 @@ export default class Modelizer {
     if (mode === "row") {
       const filteredRows = [];
       ids.forEach((id) => {
+        if (!this.#table[id]) {
+          if (this.strict === true) {
+            this.#handleError(
+              "Sortation of rows failed at row id: " +
+                id +
+                ". " +
+                "Available keys are " +
+                Object.keys(this.#table).join(" | ")
+            );
+          }
+          this.#initializeRow(id);
+        }
+
         filteredRows.push(this.#table[id]);
       });
       this.#table = filteredRows;
     }
 
     return this;
+  }
+
+  /**
+   * Transpose the result by switching rows and columns.
+   */
+  transpose() {
+    const sortRows = this.getKeys("col");
+    const sortCols = this.getKeys("row");
+
+    this.process((cell) => {
+      const rowKey = cell.rowKey;
+      const colKey = cell.colKey;
+      cell.points.forEach((point) => {
+        point.row = rowKey;
+        point.column = colKey;
+      });
+      this.setCell(colKey, rowKey, cell);
+    });
+
+    this.sort("row", sortRows);
+    this.sort("col", sortCols);
   }
 
   /**
