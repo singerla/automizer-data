@@ -8,6 +8,7 @@ import ResultInfo from "../helper/resultInfo";
 import TransformResult from "../helper/transformResult";
 import Modelizer from "../modelizer";
 import { ModelizerOptions } from "./modelizer-types";
+import Query from "../query";
 
 export type PrismaId = number;
 
@@ -228,7 +229,7 @@ export type DataPointSortation = {
 
 export type DataGridTransformation = {
   cb?: (result: Result, mod: Modelizer, points: DataPoint[]) => void;
-  modelize?: (args: any) => void;
+  modelize?: (args: any, query?: Query) => void;
   condition?: (args: any) => boolean;
   section: DataPointTarget;
 };

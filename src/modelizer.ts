@@ -197,6 +197,13 @@ export default class Modelizer {
     this.#keys[mode] = keys;
   }
 
+  #updateKey(mode: KeyMode, index: number, key: string): void {
+    if (!this.#keys[mode][index]) {
+      this.#handleError("Can't update key at index " + index);
+    }
+    this.#keys[mode][index] = key;
+  }
+
   #getKey(key: Key, mode: KeyMode): string {
     const id = this.#parseCellKey(key, mode);
     return this.#getKeys(mode)[id];
@@ -238,6 +245,11 @@ export default class Modelizer {
     const cells = this.#getRowCells(rowId);
     const modelRow = {
       key: this.#getKey(rowId, "row"),
+      updateKey: (newKey: string) => {
+        this.#updateKey("row", rowId, newKey);
+        cells.forEach((cell) => (cell.rowKey = newKey));
+        return modelRow;
+      },
       id: rowId,
       cells: cells,
       each: (cb: ModelEachCb) => {
@@ -267,13 +279,18 @@ export default class Modelizer {
    */
   getColumn(c: Key): ModelColumn {
     const colId = this.#parseCellKey(c, "col");
-    const column = this.#getColumnCells(colId);
+    const cells = this.#getColumnCells(colId);
     const modelColumn = {
       key: this.#getKey(colId, "col"),
+      updateKey: (newKey: string) => {
+        this.#updateKey("col", colId, newKey);
+        cells.forEach((cell) => (cell.colKey = newKey));
+        return modelColumn;
+      },
       id: colId,
-      cells: column,
+      cells: cells,
       each: (cb: ModelEachCb) => {
-        column.forEach((cell) => cb(cell));
+        cells.forEach((cell) => cb(cell));
         return modelColumn;
       },
       collect: (): CellValue[] => {

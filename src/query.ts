@@ -763,7 +763,7 @@ export default class Query {
             }
           }
 
-          await transform.modelize(modelizer);
+          await transform.modelize(modelizer, this);
 
           const tmpResult = this.fromModelizer(modelizer);
           this.setResult(tmpResult);

@@ -128,6 +128,11 @@ export interface ModelRow {
    */
   setCell: (c: Key, cell: Cell) => ModelRow;
   /**
+   * Update the key of current row. This will also update the row label.
+   * @param newKey
+   */
+  updateKey: (newKey: string) => ModelRow;
+  /**
    * Log contents of the current row to console.
    */
   dump: (s1?: number, s2?: number) => void;
@@ -175,6 +180,11 @@ export interface ModelColumn {
    * @param cell
    */
   setCell: (r: Key, cell: Cell) => ModelColumn;
+  /**
+   * Update the key of current column. This will also update the column label.
+   * @param newKey
+   */
+  updateKey: (newKey: string) => ModelColumn;
   /**
    * Log contents of the current column to console.
    * @param s1 Width of first column
