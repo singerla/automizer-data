@@ -24,7 +24,9 @@ export const getTagGroupsByCategory = (selectionTags: Tag[]): PrismaId[][] => {
     if (!groups[tag.categoryId]) {
       groups[tag.categoryId] = [];
     }
-    groups[tag.categoryId].push(tag.id);
+    if (!groups[tag.categoryId].includes(tag.id)) {
+      groups[tag.categoryId].push(tag.id);
+    }
   });
   return Object.values(groups);
 };
