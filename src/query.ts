@@ -493,35 +493,15 @@ export default class Query {
   }
 
   async merge() {
-    let rows = this.checkForCallback(this.grid.row, this.keys, this.points);
-    let columns = this.checkForCallback(
-      this.grid.column,
-      this.keys,
-      this.points
-    );
-
-    let points = <DataPoint[][]>[];
     let result = <DataMergeResult>{};
 
-    rows?.forEach((rowCb, r) => {
-      let rowCbResult = rowCb(this.points);
-      points[r] = rowCbResult.points;
-
-      let rowKey = rowCbResult.label;
-      result[rowKey] = {};
-      columns.forEach((columnCb, c) => {
-        let cellPoints = columnCb(points[r]);
-
-        let colKey = cellPoints.label;
-        result[rowKey][colKey] = this.grid.cell(cellPoints.points);
-      });
+    this.points.forEach((point) => {
+      result[point.row] = result[point.row] || {};
+      result[point.row][point.column] = result[point.row][point.column] || [];
+      result[point.row][point.column].push(point);
     });
 
     this.setResult(result);
-
-    if (this.grid.sort) {
-      await this.sortResult(this.grid.sort);
-    }
 
     if (this.grid.transform) {
       await this.transformResult(this.grid.transform);
