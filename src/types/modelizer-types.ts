@@ -204,7 +204,7 @@ export type CellValue = string | number | null | undefined;
 export type Key = string | number;
 /**
  * There are "row" or "col" dimensions. "row" will go from left to right, while
- * "col" will go from to to bottom, both starting with zero.
+ * "col" will go from top to bottom, both starting by zero.
  */
 export type KeyMode = "row" | "col";
 /**

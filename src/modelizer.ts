@@ -33,8 +33,8 @@ export default class Modelizer {
   };
   /**
    * If strict mode is 'true', no keys will be added automatically.
-   * In lax mode, every string running through #parseCellKey will create
-   * a new entry, if not existing.
+   * In lax mode, any non-existing string passing #parseCellKey will create
+   * a new entry.
    */
   strict: boolean;
 
