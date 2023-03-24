@@ -238,7 +238,7 @@ export default class Modelizer {
   /**
    * Retreive a row model object for the given row selector.
    * @param r Pass a number or a string to select the target row.
-   * @return {{cells: Cell[], getCell: (c: Key) => Cell, setCellValue: (c: Key, value: CellValue) => ModelRow, dump: (s1: any, s2: any) => void, setCell: (c: Key, cell: Cell) => ModelRow, each: (cb: ModelEachCb) => {cells: Cell[], getCell: (c: Key) => Cell, setCellValue: (c: Key, value: CellValue) => ModelRow, dump: (s1: any, s2: any) => void, setCell: (c: Key, cell: Cell) => ModelRow, each: (cb: ModelEachCb) => any}}}
+   * @return A model row object containing all cells.
    */
   getRow(r: Key): ModelRow {
     const rowId = this.#parseCellKey(r, "row");

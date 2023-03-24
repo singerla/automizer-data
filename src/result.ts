@@ -21,8 +21,6 @@ import {
   TextStyle,
 } from "pptx-automizer";
 import Query from "./query";
-import { vd } from "./helper";
-import Modelizer from "./modelizer";
 
 export default class Result {
   result: ResultType;
