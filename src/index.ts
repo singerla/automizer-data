@@ -3,6 +3,7 @@ import { PrismaClient } from "./client";
 import Query from "./query";
 import Points from "./points";
 import Result from "./result";
+import Modelizer from "./modelizer";
 
 import { Store } from "./store";
 import { Parser } from "./parser/parser";
@@ -99,8 +100,9 @@ export type {
   ModArgsCalcSum,
   Selector,
   IdSelector,
+  QueryOptions,
 };
 export { Query, Parser, Gesstabs, Generic, Store, filter, cell };
-export { Points, Result };
+export { Points, Result, Modelizer };
 export { getNestedClause, getTagGroupsByCategory };
 export { PrismaClient };
