@@ -85,6 +85,7 @@ export type QueryOptions = {
   prisma?: PrismaClient;
   useModelizer?: boolean;
   modelizer?: ModelizerOptions;
+  maxSheets?: number;
 };
 
 export type SelectionValidator = {

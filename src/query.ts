@@ -53,6 +53,7 @@ export default class Query {
   nonGreedySelector: boolean;
   useModelizer: boolean;
   options: QueryOptions;
+  maxSheets: number = 150;
 
   constructor(prisma: PrismaClient | any) {
     this.prisma = prisma;
@@ -87,6 +88,7 @@ export default class Query {
       column: all("column"),
       cell: value(),
     };
+
     query.setGrid(grid).setOptions(options);
 
     const selector = options.selector || [[]];
@@ -109,7 +111,9 @@ export default class Query {
     if (options?.useModelizer) {
       this.useModelizer = options?.useModelizer;
     }
+
     options.merge = typeof options.merge === "boolean" ? options.merge : true;
+    options.maxSheets = options.maxSheets ?? this.maxSheets;
 
     this.options = options;
 
@@ -233,7 +237,14 @@ export default class Query {
       include: {
         tags: true,
       },
+      skip: 0,
+      take: this.maxSheets,
     });
+
+    if (sheets.length === this.maxSheets) {
+      // throw "Too many sheets. Add more tags to selection.";
+      return [];
+    }
 
     if (this.nonGreedySelector && sheets.length) {
       sheets = this.filterSheets(sheets);
@@ -263,7 +274,7 @@ export default class Query {
   }
 
   /*
-   * Filters sheets with least tag count by categoryId.
+   * Filters sheets with the least tag count by categoryId.
    * This will prevent mixing sheets with different set of tags.
    */
   filterSheets(sheets: Sheets): Sheets {
@@ -474,10 +485,6 @@ export default class Query {
     }
 
     return this;
-  }
-
-  clone() {
-    return _.cloneDeep(this);
   }
 
   async parseSelector(selector: Selector): Promise<IdSelector[]> {
