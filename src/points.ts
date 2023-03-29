@@ -1,29 +1,15 @@
 import { vd } from "./helper";
 import {
-  AggregatePoints,
   DataPoint,
-  DataPointMeta,
   DataPointTarget,
-  ModArgsAddToNew,
-  ModArgsCalcDifference,
-  ModArgsCalcSum,
   ModArgsExclude,
-  ModArgsFilterNested,
-  NestedParentValue,
-  RenameLabel,
-  ResultCell,
-} from "./types/types";
-import {
   ModArgsFilter,
-  ModArgsStringTolabel,
-  ModArgsTagTolabel,
-  ModArgsAddToOthers,
-  ModArgsAddMeta,
   ModArgsMap,
   ModArgsRename,
-  ModArgsTranspose,
+  ModArgsStringTolabel,
+  ModArgsTagTolabel,
+  RenameLabel,
 } from "./types/types";
-import TransformResult from "./helper/transformResult";
 
 export default class Points {
   points: DataPoint[];
@@ -71,14 +57,6 @@ export default class Points {
       if (point.origin && point.origin[0]) return point.origin[0];
     }
     return point;
-  }
-
-  createDataPoint(
-    rowKey?: string,
-    colKey?: string,
-    value?: ResultCell
-  ): DataPoint {
-    return TransformResult.createDataPoint(rowKey, colKey, value);
   }
 
   exclude(args: ModArgsExclude): void {

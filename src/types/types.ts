@@ -5,7 +5,6 @@ import { Parser } from "../parser/parser";
 import ResultClass from "../result";
 import { ChartValueStyle, TableRowStyle } from "pptx-automizer";
 import ResultInfo from "../helper/resultInfo";
-import TransformResult from "../helper/transformResult";
 import Modelizer from "../modelizer";
 import { ModelizerOptions } from "./modelizer-types";
 import Query from "../query";
@@ -230,7 +229,7 @@ export type DataPointSortation = {
 export type DataGridTransformation = {
   cb?: (result: Result, mod: Modelizer, points: DataPoint[]) => void;
   modelize?: (args: any, query?: Query) => void;
-  condition?: (args: any) => boolean;
+  condition?: (args: any) => Promise<boolean>;
   section: DataPointTarget;
 };
 
@@ -262,7 +261,6 @@ export type Result = {
   fromModelizer: (modelizer: Modelizer) => void;
   toModelizer: (result: Result) => Modelizer;
   info: ResultInfo;
-  transform: TransformResult;
 };
 
 export type Tagger = {

@@ -1,6 +1,4 @@
-import { DataPoint, Result, ResultColumn, ResultRow } from "./types/types";
-import TransformResult from "./helper/transformResult";
-import { vd } from "./helper";
+import { DataPoint } from "./types/types";
 import { Query } from "./index";
 import _ from "lodash";
 import {
@@ -428,7 +426,7 @@ export default class Modelizer {
       getPoint: (i?: number) => {
         i = cell.points[i] ? i : 0;
         if (!cell.points || !cell.points[i]) {
-          cell.points[i] = TransformResult.createDataPoint();
+          cell.points[i] = Query.createDataPoint();
         }
         return cell.points[i];
       },

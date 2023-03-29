@@ -1,39 +1,35 @@
-import { Tag } from "./client";
-import { PrismaClient } from "./client";
-import { getNestedClause, vd } from "./helper";
+import { PrismaClient, Tag } from "./client";
+import { getNestedClause } from "./helper";
 
 import {
-  Datasheet,
-  DataTag,
-  Sheets,
-  DataGrid,
-  DataPoint,
-  Result,
-  ResultRow,
+  CategoryCount,
   CellKeys,
-  DataPointFilter,
+  DataGrid,
+  DataGridTransformation,
+  DataMergeResult,
+  DataPoint,
+  DataPointMeta,
   DataPointModifier,
   DataPointSortation,
-  QueryResultKeys,
-  DataGridTransformation,
-  Selector,
-  NestedParentValue,
-  RawResultMeta,
-  DataPointMeta,
-  SelectionValidator,
-  QueryOptions,
-  ResultColumn,
-  ResultCell,
-  CategoryCount,
-  DataMergeResult,
+  Datasheet,
+  DataTag,
   IdSelector,
+  NestedParentValue,
+  QueryOptions,
+  RawResultMeta,
+  Result,
+  ResultCell,
+  ResultColumn,
+  ResultRow,
+  SelectionValidator,
+  Selector,
+  Sheets,
 } from "./types/types";
 
 import Points from "./points";
 
 import _ from "lodash";
 import ResultInfo from "./helper/resultInfo";
-import TransformResult from "./helper/transformResult";
 import Modelizer from "./modelizer";
 import { all } from "./filter";
 import { value } from "./cell";
@@ -126,7 +122,7 @@ export default class Query {
 
   async get(selector: Selector): Promise<Query> {
     const tagIds = await this.parseSelector(selector).catch(() => {
-      throw new Error("Parse Selector failed");
+      throw "Parse Selector failed";
     });
 
     await this.processTagIds(tagIds);
@@ -192,11 +188,7 @@ export default class Query {
           points[0].value = cell.value;
         } else {
           points.push(
-            TransformResult.createDataPoint(
-              modelRow.key,
-              cell.colKey,
-              cell.value
-            )
+            Query.createDataPoint(modelRow.key, cell.colKey, cell.value)
           );
         }
         cols[cell.colKey] = points;
@@ -227,34 +219,8 @@ export default class Query {
     });
   }
 
-  async getSheets(tagStrings: DataTag[]): Promise<Sheets> {
-    const dataTags = await this.getTags(tagStrings);
-    const tags = <Tag[]>[];
-    dataTags.forEach((dataTag) => {
-      const tag = <Tag>{
-        id: dataTag.id,
-        name: dataTag.value,
-        categoryId: dataTag.categoryId,
-      };
-      tags.push(tag);
-    });
-    return this.findSheets(tags);
-  }
-
   async getSheetsByTags(tags: Tag[]): Promise<Sheets> {
     const sheets = await this.findSheets(tags);
-    return sheets;
-  }
-
-  async getSheetsById(ids: number[]): Promise<Sheets> {
-    const selectionTags = await this.prisma.tag.findMany({
-      where: {
-        id: {
-          in: ids,
-        },
-      },
-    });
-    const sheets = await this.findSheets(selectionTags);
     return sheets;
   }
 
@@ -514,23 +480,13 @@ export default class Query {
     return _.cloneDeep(this);
   }
 
-  checkForCallback(
-    cb: any,
-    keys: CellKeys,
-    points: DataPoint[]
-  ): DataPointFilter[] {
-    const cbResult = typeof cb === "function" ? cb(keys, points) : cb;
-
-    return cbResult;
-  }
-
   async parseSelector(selector: Selector): Promise<IdSelector[]> {
     if (selector[0] && !Array.isArray(selector[0])) {
       selector = [selector] as DataTag[][];
     }
 
     if (selector[0][0] === undefined) {
-      throw new Error("Selection is empty");
+      throw "Selection is empty";
     }
 
     if (typeof selector[0][0] === "number") {
@@ -550,7 +506,7 @@ export default class Query {
       return tagIdSelector as IdSelector[];
     }
 
-    throw new Error("Invalid selector.");
+    throw "Invalid selector.";
   }
 
   async getTagIds(tags: DataTag[]): Promise<number[]> {
@@ -638,9 +594,30 @@ export default class Query {
       return false;
     };
     this.result.info = new ResultInfo(this.result);
-    this.result.transform = new TransformResult(this.result);
-
     this.visibleKeys.column = [...new Set(this.visibleKeys.column)];
+  }
+
+  static createDataPoint(
+    rowKey?: string,
+    colKey?: string,
+    value?: ResultCell
+  ): DataPoint {
+    const point = <DataPoint>{
+      tags: [],
+      meta: [],
+      row: rowKey || "n/a createDataPoint",
+      column: colKey || "n/a createDataPoint",
+      value: value || null,
+      getMeta: () => undefined,
+      setMeta: () => undefined,
+      getTag: () => undefined,
+    };
+
+    point.getMeta = Query.getMetaCb(point);
+    point.setMeta = Query.setMetaCb(point);
+    point.getTag = Query.getTagCb(point);
+
+    return point;
   }
 
   static getPointCb(points: DataPoint[]) {
@@ -726,31 +703,34 @@ export default class Query {
       return;
     }
     try {
-      for (const transform of transformations) {
-        if (transform.cb && typeof transform.cb === "function") {
-          await transform.cb(this.result, this.result.modelizer, this.points);
-        }
-
-        if (transform.modelize && typeof transform.modelize === "function") {
-          const modelizer = this.toModelizer(this.result);
-
-          if (
-            transform.condition &&
-            typeof transform.condition === "function"
-          ) {
-            if (transform.condition(modelizer) !== true) {
-              continue;
-            }
-          }
-
-          await transform.modelize(modelizer, this);
-
-          const tmpResult = this.fromModelizer(modelizer);
-          this.setResult(tmpResult);
-        }
-      }
+      const modelizer = this.toModelizer(this.result);
+      await this.applyTransformations(transformations, modelizer);
+      this.setResult(this.fromModelizer(modelizer));
     } catch (e) {
       throw e;
     }
+  }
+
+  async applyTransformations(
+    transformations: DataGridTransformation[],
+    modelizer: Modelizer
+  ) {
+    for (const transform of transformations) {
+      if (transform.modelize && typeof transform.modelize === "function") {
+        const apply = await this.checkCondition(transform, modelizer);
+        if (apply) {
+          await transform.modelize(modelizer, this);
+        }
+      }
+    }
+  }
+
+  async checkCondition(transform, modelizer): Promise<boolean> {
+    if (transform.condition && typeof transform.condition === "function") {
+      if ((await transform.condition(modelizer)) !== true) {
+        return false;
+      }
+    }
+    return true;
   }
 }
