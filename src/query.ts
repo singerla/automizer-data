@@ -2,6 +2,7 @@ import { PrismaClient, Tag } from "./client";
 import { getNestedClause } from "./helper";
 
 import {
+  CachedObject,
   CategoryCount,
   CellKeys,
   DataGrid,
@@ -21,14 +22,11 @@ import {
   ResultCell,
   ResultColumn,
   ResultRow,
-  SelectionValidator,
   Selector,
   Sheets,
 } from "./types/types";
 
 import Points from "./points";
-
-import _ from "lodash";
 import ResultInfo from "./helper/resultInfo";
 import Modelizer from "./modelizer";
 import { all } from "./filter";
@@ -47,11 +45,9 @@ export default class Query {
   };
   points: DataPoint[];
   grid: DataGrid;
-  selectionValidator: SelectionValidator;
   result: Result;
-  tags: any[];
-  nonGreedySelector: boolean;
-  useModelizer: boolean;
+  tags: Tag[][] = [];
+  nonGreedySelector: number[] = [];
   options: QueryOptions;
   maxSheets: number = 150;
 
@@ -70,109 +66,95 @@ export default class Query {
     };
     this.points = <DataPoint[]>[];
     this.grid = <DataGrid>{};
-    this.selectionValidator = <SelectionValidator>() => true;
     this.allSheets = <Datasheet[]>[];
-    this.tags = <any>[];
-    this.nonGreedySelector = true;
-    this.useModelizer = false;
 
     return this;
   }
 
   static run(options: QueryOptions): Promise<Query> {
     const prisma = options.prisma || new PrismaClient();
-    const query = new Query(prisma);
-
-    const grid = options.grid || {
-      row: all("row"),
-      column: all("column"),
-      cell: value(),
-    };
-
-    query.setGrid(grid).setOptions(options);
+    const query = new Query(prisma).setOptions(options);
 
     const selector = options.selector || [[]];
 
     return query.get(selector);
   }
 
-  setGrid(grid: DataGrid): this {
-    this.grid = grid;
-    return this;
-  }
-
   setOptions(options?: QueryOptions): this {
-    if (options?.selectionValidator) {
-      this.setSelectionValidator(options.selectionValidator);
-    }
     if (options?.nonGreedySelector) {
       this.nonGreedySelector = options?.nonGreedySelector;
     }
-    if (options?.useModelizer) {
-      this.useModelizer = options?.useModelizer;
-    }
 
-    options.merge = typeof options.merge === "boolean" ? options.merge : true;
     options.maxSheets = options.maxSheets ?? this.maxSheets;
 
+    this.grid = options.grid || {
+      modify: [],
+      transform: [],
+    };
     this.options = options;
 
     return this;
-  }
-
-  setSelectionValidator(validator: SelectionValidator): void {
-    this.selectionValidator = validator;
   }
 
   async get(selector: Selector): Promise<Query> {
     const tagIds = await this.parseSelector(selector).catch(() => {
       throw "Parse Selector failed";
     });
-
     await this.processTagIds(tagIds);
 
     this.setDataPointKeys(this.points, "keys");
-    if (this.options.merge) {
-      await this.merge().catch((e) => {
-        throw e;
-      });
-    }
+
+    await this.merge().catch((e) => {
+      throw e;
+    });
+
     return this;
   }
 
-  getModelizer(): Modelizer {
-    return this.result.modelizer;
+  setFromCache(cached: CachedObject) {
+    this.options.cache;
+
+    this.sheets = cached.sheets;
+    this.allSheets = this.sheets;
+    this.keys = cached.keys;
+    this.inputKeys = cached.inputKeys;
+    this.tags = cached.tags;
   }
 
   async processTagIds(allTagIds): Promise<void> {
     for (const level in allTagIds) {
       const tagIds = allTagIds[level];
-      const selectionTags = await this.getTagInfo(tagIds);
-      const isValid = this.selectionValidator(selectionTags);
+      const isNonGreedy = this.nonGreedySelector.includes(Number(level));
 
-      if (isValid) {
-        this.tags.push(selectionTags);
-        const sheets = await this.getSheetsByTags(selectionTags);
-        this.processSheets(sheets, Number(level));
+      if (this.options.cache.exists(tagIds, isNonGreedy)) {
+        this.setFromCache(this.options.cache.get(tagIds, isNonGreedy));
+        continue;
       }
-    }
 
-    if (this.useModelizer) {
-      this.result.modelizer = new Modelizer(this.options.modelizer);
-      this.result.modelizer.addPoints(this.points);
-      this.result.toModelizer = (result) => this.toModelizer(result);
-      this.result.fromModelizer = (modelizer: Modelizer) => {
-        const tmpResult = this.fromModelizer(modelizer);
-        this.setResult(tmpResult);
-      };
+      const selectionTags = await this.getTagInfo(tagIds);
+      this.tags.push(selectionTags);
+      let sheets = await this.findSheets(selectionTags);
+
+      if (sheets.length && isNonGreedy) {
+        sheets = this.filterSheets(sheets);
+      }
+
+      this.processSheets(sheets, Number(level));
+
+      this.options.cache.set(tagIds, isNonGreedy, {
+        sheets: this.sheets,
+        keys: this.keys,
+        inputKeys: this.inputKeys,
+        tags: this.tags,
+      });
     }
   }
 
   toModelizer(result: Result): Modelizer {
-    const modelizer = new Modelizer(this.options.modelizer, this);
+    const modelizer = new Modelizer({}, this);
     modelizer.strict = false;
-    result.body.forEach((row, r) => {
-      row.cols.forEach((col, c) => {
+    result.body.forEach((row) => {
+      row.cols.forEach((col) => {
         const newCell = modelizer.setCell(row.key, col.key);
         newCell.points = col.value;
         newCell.setValue(col.value[0].value);
@@ -223,11 +205,6 @@ export default class Query {
     });
   }
 
-  async getSheetsByTags(tags: Tag[]): Promise<Sheets> {
-    const sheets = await this.findSheets(tags);
-    return sheets;
-  }
-
   async findSheets(tags: Tag[]): Promise<Sheets> {
     let clause = getNestedClause(tags);
     if (!clause) return [];
@@ -244,10 +221,6 @@ export default class Query {
     if (sheets.length === this.maxSheets) {
       // throw "Too many sheets. Add more tags to selection.";
       return [];
-    }
-
-    if (this.nonGreedySelector && sheets.length) {
-      sheets = this.filterSheets(sheets);
     }
 
     return sheets;
@@ -270,7 +243,6 @@ export default class Query {
         meta: JSON.parse(sheet.meta),
       };
     });
-    this.allSheets.push(...this.sheets);
   }
 
   /*
@@ -488,10 +460,6 @@ export default class Query {
   }
 
   async parseSelector(selector: Selector): Promise<IdSelector[]> {
-    if (selector[0] && !Array.isArray(selector[0])) {
-      selector = [selector] as DataTag[][];
-    }
-
     if (selector[0][0] === undefined) {
       throw "Selection is empty";
     }
@@ -500,20 +468,16 @@ export default class Query {
       return selector as IdSelector[];
     }
 
-    if (
-      selector[0][0].category !== undefined &&
-      selector[0][0].value !== undefined
-    ) {
-      const tagIdSelector = <number[][]>[];
-      for (const dataTag of selector) {
-        const tagIds = await this.getTagIds(dataTag as DataTag[]);
-        tagIdSelector.push(tagIds);
-      }
-
-      return tagIdSelector as IdSelector[];
-    }
-
     throw "Invalid selector.";
+  }
+
+  async parseLiteralSelector(selector): Promise<Selector> {
+    const tagIdSelector = <number[][]>[];
+    for (const dataTag of selector) {
+      const tagIds = await this.getTagIds(dataTag as DataTag[]);
+      tagIdSelector.push(tagIds);
+    }
+    return tagIdSelector as IdSelector[];
   }
 
   async getTagIds(tags: DataTag[]): Promise<number[]> {
@@ -671,38 +635,6 @@ export default class Query {
         );
       }
     };
-  }
-
-  filterColumns(columns: number | number[]): Query {
-    let targetColumns = <number[]>[];
-    targetColumns = typeof columns !== "object" ? [columns] : columns;
-
-    this.result.body.forEach((row, r) => {
-      if (row.cols) {
-        this.result.body[r].cols = row.cols.filter((col, c) => {
-          return targetColumns.indexOf(c) >= 0;
-        });
-      }
-    });
-
-    return this;
-  }
-
-  sort(cb: any): Query {
-    this.result.body.sort((a, b) => cb(a, b));
-    return this;
-  }
-
-  async sortResult(sortation: DataPointSortation[]) {
-    try {
-      for (const sort of sortation) {
-        if (sort.cb && typeof sort.cb === "function") {
-          await sort.cb(this.result, this.points);
-        }
-      }
-    } catch (e) {
-      throw e;
-    }
   }
 
   async transformResult(transformations: DataGridTransformation[]) {

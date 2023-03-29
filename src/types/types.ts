@@ -6,7 +6,6 @@ import ResultClass from "../result";
 import { ChartValueStyle, TableRowStyle } from "pptx-automizer";
 import ResultInfo from "../helper/resultInfo";
 import Modelizer from "../modelizer";
-import { ModelizerOptions } from "./modelizer-types";
 import Query from "../query";
 
 export type PrismaId = number;
@@ -75,21 +74,27 @@ export type StatusTracker = {
   increment: () => void;
 };
 
-export type QueryOptions = {
-  selector: Selector;
-  selectionValidator?: SelectionValidator;
-  enableSelectionValidator?: boolean;
-  nonGreedySelector?: boolean;
-  grid?: DataGrid;
-  merge?: boolean;
-  prisma?: PrismaClient;
-  useModelizer?: boolean;
-  modelizer?: ModelizerOptions;
-  maxSheets?: number;
+export type CachedObject = {
+  key?: string;
+  sheets: Datasheet[];
+  keys: CellKeys;
+  inputKeys: CellKeys;
+  tags: Tag[][];
 };
 
-export type SelectionValidator = {
-  (tags: Tag[]): boolean;
+export interface ICache {
+  exists: (selector: Selector, isNonGreedy: boolean) => boolean;
+  get: (selector: Selector, isNonGreedy: boolean) => CachedObject;
+  set: (selector: Selector, isNonGreedy: boolean, data: CachedObject) => void;
+}
+
+export type QueryOptions = {
+  selector: Selector;
+  nonGreedySelector?: number[];
+  grid?: DataGrid;
+  prisma?: PrismaClient;
+  maxSheets?: number;
+  cache?: ICache;
 };
 
 export type CategoryCount = {
@@ -98,7 +103,7 @@ export type CategoryCount = {
 };
 
 export type IdSelector = PrismaId[];
-export type Selector = DataTag[] | DataTag[][] | IdSelector[];
+export type Selector = IdSelector[];
 
 export type NestedClause = {
   tags: {
@@ -191,13 +196,8 @@ export type DataGridCategories = {
 };
 
 export type DataGrid = {
-  row: DataPointFilter[] | DataGridCategories;
-  column: DataPointFilter[] | DataGridCategories;
-  cell: DataResultCellFilter;
   modify?: DataPointModifier[];
-  sort?: DataPointSortation[];
   transform?: DataGridTransformation[];
-  options?: QueryOptions;
 };
 
 export type ResultCellInfo = {
