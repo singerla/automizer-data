@@ -111,7 +111,7 @@ export default class Query {
     return this;
   }
 
-  setFromCache(cached: CachedObject) {
+  setFromCache(cached: CachedObject): DataPoint[] {
     this.options.cache;
 
     this.sheets = cached.sheets;
@@ -119,6 +119,8 @@ export default class Query {
     this.keys = cached.keys;
     this.inputKeys = cached.inputKeys;
     this.tags = cached.tags;
+
+    return cached.datapoints;
   }
 
   async processTagIds(allTagIds): Promise<void> {
@@ -126,27 +128,36 @@ export default class Query {
       const tagIds = allTagIds[level];
       const isNonGreedy = this.nonGreedySelector.includes(Number(level));
 
-      if (this.options.cache.exists(tagIds, isNonGreedy)) {
-        this.setFromCache(this.options.cache.get(tagIds, isNonGreedy));
-        continue;
+      let datapoints = <DataPoint[]>[];
+      if (this.options.cache?.exists(tagIds, isNonGreedy)) {
+        datapoints = this.setFromCache(
+          this.options.cache.get(tagIds, isNonGreedy)
+        );
+      } else {
+        const selectionTags = await this.getTagInfo(tagIds);
+        this.tags.push(selectionTags);
+        let sheets = await this.findSheets(selectionTags);
+
+        if (sheets.length && isNonGreedy) {
+          sheets = this.filterSheets(sheets);
+        }
+
+        datapoints = this.processSheets(sheets, Number(level));
+
+        this.options.cache?.set(tagIds, isNonGreedy, {
+          datapoints: datapoints,
+          sheets: this.sheets,
+          keys: this.keys,
+          inputKeys: this.inputKeys,
+          tags: this.tags,
+        });
       }
 
-      const selectionTags = await this.getTagInfo(tagIds);
-      this.tags.push(selectionTags);
-      let sheets = await this.findSheets(selectionTags);
-
-      if (sheets.length && isNonGreedy) {
-        sheets = this.filterSheets(sheets);
-      }
-
-      this.processSheets(sheets, Number(level));
-
-      this.options.cache.set(tagIds, isNonGreedy, {
-        sheets: this.sheets,
-        keys: this.keys,
-        inputKeys: this.inputKeys,
-        tags: this.tags,
-      });
+      const modifiedDataPoints = this.modifyDataPoints(
+        datapoints,
+        Number(level)
+      );
+      this.pushDataPoints(modifiedDataPoints);
     }
   }
 
@@ -190,9 +201,8 @@ export default class Query {
       this.parseSheets(sheets);
       this.setDataPoints(dataPoints);
       this.setDataPointKeys(dataPoints, "inputKeys");
-      this.modifyDataPoints(dataPoints, level);
     }
-    this.pushDataPoints(dataPoints);
+    return dataPoints;
   }
 
   async getTagInfo(tagIds: number[]): Promise<Tag[]> {
@@ -375,7 +385,7 @@ export default class Query {
     });
   }
 
-  modifyDataPoints(dataPoints: DataPoint[], level: number): void {
+  modifyDataPoints(dataPoints: DataPoint[], level: number): DataPoint[] {
     const modifiers = this.getDatapointModifiersByLevel(level);
     const points = new Points(dataPoints);
     modifiers.forEach((modifier) => {
@@ -391,6 +401,7 @@ export default class Query {
         });
       }
     });
+    return dataPoints;
   }
 
   getDatapointModifiersByLevel(level: number): DataPointModifier[] {

@@ -106,3 +106,5 @@ export { Query, Parser, Gesstabs, Generic, Store, filter, cell };
 export { Points, Result, Modelizer };
 export { getNestedClause, getTagGroupsByCategory };
 export { PrismaClient };
+import { CachedObject, ICache } from "./types/types";
+export type { CachedObject, ICache };

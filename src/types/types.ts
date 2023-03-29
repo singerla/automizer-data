@@ -76,6 +76,7 @@ export type StatusTracker = {
 
 export type CachedObject = {
   key?: string;
+  datapoints: DataPoint[];
   sheets: Datasheet[];
   keys: CellKeys;
   inputKeys: CellKeys;
