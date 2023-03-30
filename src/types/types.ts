@@ -133,7 +133,6 @@ export type DataPoint = {
   column: string;
   value: ResultCell;
   meta?: DataPointMeta[];
-  origin?: DataPoint[];
   mode?: string;
   style?: TableRowStyle | ChartValueStyle;
   getMeta: (key: string) => DataPointMeta | undefined;

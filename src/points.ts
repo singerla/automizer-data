@@ -31,13 +31,11 @@ export default class Points {
       let points;
       if (key === "row" || key === "column") {
         points = this.points.filter((point) => {
-          const targetPoint = this.getTargetPoint(point, origin);
-          return values.includes(targetPoint[key]);
+          return values.includes(point[key]);
         });
       } else {
         points = this.points.filter((point) => {
-          const targetPoint = this.getTargetPoint(point, origin);
-          return targetPoint.tags.find(
+          return point.tags.find(
             (tag) =>
               tag.categoryId === Number(key) && values.includes(tag.value)
           );
@@ -50,13 +48,6 @@ export default class Points {
       return points;
     }
     return this.points;
-  }
-
-  getTargetPoint(point: DataPoint, origin?: boolean): DataPoint {
-    if (origin === true) {
-      if (point.origin && point.origin[0]) return point.origin[0];
-    }
-    return point;
   }
 
   exclude(args: ModArgsExclude): void {
@@ -91,28 +82,29 @@ export default class Points {
 
   addStringToLabel(args: ModArgsStringTolabel, points?: DataPoint[]): void {
     const { value, target } = args;
+    const targetLabelKey = target;
+
     this.targetPoints(points).forEach((point) => {
-      this.pushPointOrigin(point);
-      point[target] += value;
+      point[targetLabelKey] = point[target] + value;
     });
   }
 
   addTagToLabel(args: ModArgsTagTolabel, points?: DataPoint[]): void {
     const { categoryId, target } = args;
     const glue = !args.glue ? " " : args.glue;
+    const targetLabelKey = target;
 
     this.targetPoints(points).forEach((point) => {
-      this.pushPointOrigin(point);
       const tag = point.tags.find((tag) => tag.categoryId === categoryId);
       const value = tag?.value ? tag?.value : "n/a addTagToLabel";
-      point[target] += glue + value;
+
+      point[targetLabelKey] = point[target] + glue + value;
     });
   }
 
   map(args: ModArgsMap, points?: DataPoint[]): void {
     const { source, target } = args;
     this.targetPoints(points).forEach((point) => {
-      this.pushPointOrigin(point);
       if (source === "row" || source === "column") {
         point[target] = point[source];
       } else {
@@ -125,7 +117,6 @@ export default class Points {
   rename(args: ModArgsRename, points?: DataPoint[]): void {
     const { renameStack } = args;
     this.targetPoints(points).forEach((point) => {
-      this.pushPointOrigin(point);
       renameStack.forEach((rename) => {
         if (rename.isPattern && rename.isPattern === true) {
           rename.cb = (label: string): string => {
@@ -176,12 +167,6 @@ export default class Points {
 
   push(addPoints: DataPoint[]) {
     this.points.push(...addPoints);
-  }
-
-  pushPointOrigin(point: DataPoint) {
-    point.origin = !point.origin
-      ? [{ ...point }]
-      : [...point.origin, { ...point }];
   }
 
   dump(points?: DataPoint[]) {

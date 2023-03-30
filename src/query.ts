@@ -1,5 +1,6 @@
 import { PrismaClient, Tag } from "./client";
 import { getNestedClause } from "./helper";
+import _ from "lodash";
 
 import {
   CachedObject,
@@ -11,7 +12,6 @@ import {
   DataPoint,
   DataPointMeta,
   DataPointModifier,
-  DataPointSortation,
   Datasheet,
   DataTag,
   IdSelector,
@@ -29,8 +29,6 @@ import {
 import Points from "./points";
 import ResultInfo from "./helper/resultInfo";
 import Modelizer from "./modelizer";
-import { all } from "./filter";
-import { value } from "./cell";
 
 export default class Query {
   prisma: PrismaClient | any;
@@ -111,16 +109,14 @@ export default class Query {
     return this;
   }
 
-  setFromCache(cached: CachedObject): DataPoint[] {
-    this.options.cache;
-
+  fromCache(cached: CachedObject): DataPoint[] {
     this.sheets = cached.sheets;
     this.allSheets = this.sheets;
     this.keys = cached.keys;
     this.inputKeys = cached.inputKeys;
     this.tags = cached.tags;
 
-    return cached.datapoints;
+    return _.cloneDeep(cached.datapoints);
   }
 
   async processTagIds(allTagIds): Promise<void> {
@@ -130,7 +126,7 @@ export default class Query {
 
       let datapoints = <DataPoint[]>[];
       if (this.options.cache?.exists(tagIds, isNonGreedy)) {
-        datapoints = this.setFromCache(
+        datapoints = this.fromCache(
           this.options.cache.get(tagIds, isNonGreedy)
         );
       } else {
@@ -145,7 +141,7 @@ export default class Query {
         datapoints = this.processSheets(sheets, Number(level));
 
         this.options.cache?.set(tagIds, isNonGreedy, {
-          datapoints: datapoints,
+          datapoints: _.cloneDeep(datapoints),
           sheets: this.sheets,
           keys: this.keys,
           inputKeys: this.inputKeys,
@@ -456,9 +452,12 @@ export default class Query {
     let result = <DataMergeResult>{};
 
     this.points.forEach((point) => {
-      result[point.row] = result[point.row] || {};
-      result[point.row][point.column] = result[point.row][point.column] || [];
-      result[point.row][point.column].push(point);
+      const rowKey = point.row;
+      const columnKey = point.column;
+
+      result[rowKey] = result[rowKey] || {};
+      result[rowKey][columnKey] = result[rowKey][columnKey] || [];
+      result[rowKey][columnKey].push(point);
     });
 
     this.setResult(result);
