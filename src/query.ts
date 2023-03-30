@@ -109,16 +109,6 @@ export default class Query {
     return this;
   }
 
-  fromCache(cached: CachedObject): DataPoint[] {
-    this.sheets = cached.sheets;
-    this.allSheets = this.sheets;
-    this.keys = cached.keys;
-    this.inputKeys = cached.inputKeys;
-    this.tags = cached.tags;
-
-    return _.cloneDeep(cached.datapoints);
-  }
-
   async processTagIds(allTagIds): Promise<void> {
     for (const level in allTagIds) {
       const tagIds = allTagIds[level];
@@ -142,10 +132,10 @@ export default class Query {
 
         this.options.cache?.set(tagIds, isNonGreedy, {
           datapoints: _.cloneDeep(datapoints),
-          sheets: this.sheets,
-          keys: this.keys,
-          inputKeys: this.inputKeys,
-          tags: this.tags,
+          sheets: _.cloneDeep(this.sheets),
+          keys: _.cloneDeep(this.keys),
+          inputKeys: _.cloneDeep(this.inputKeys),
+          tags: _.cloneDeep(this.tags),
         });
       }
 
@@ -155,6 +145,15 @@ export default class Query {
       );
       this.pushDataPoints(modifiedDataPoints);
     }
+  }
+
+  fromCache(cached: CachedObject): DataPoint[] {
+    this.sheets = _.cloneDeep(cached.sheets);
+    this.keys = _.cloneDeep(cached.keys);
+    this.inputKeys = _.cloneDeep(cached.inputKeys);
+    this.tags = _.cloneDeep(cached.tags);
+
+    return _.cloneDeep(cached.datapoints);
   }
 
   toModelizer(result: Result): Modelizer {
