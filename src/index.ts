@@ -45,6 +45,7 @@ import {
   ParserOptions,
   QueryOptions,
   RawResultInfo,
+  Result as ResultType,
   ResultCell,
   ResultColumn,
   ResultRow,
@@ -101,10 +102,12 @@ export type {
   Selector,
   IdSelector,
   QueryOptions,
+  ResultType,
 };
 export { Query, Parser, Gesstabs, Generic, Store, filter, cell };
 export { Points, Result, Modelizer };
 export { getNestedClause, getTagGroupsByCategory };
 export { PrismaClient };
+
 import { CachedObject, ICache } from "./types/types";
 export type { CachedObject, ICache };

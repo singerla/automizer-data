@@ -460,6 +460,7 @@ export default class Query {
     });
 
     this.setResult(result);
+    this.result.modelizer = this.toModelizer(this.result);
 
     if (this.grid.transform) {
       await this.transformResult(this.grid.transform);
@@ -480,7 +481,7 @@ export default class Query {
     throw "Invalid selector.";
   }
 
-  async parseLiteralSelector(selector): Promise<Selector> {
+  async parseDataTagSelector(selector: DataTag[][]): Promise<Selector> {
     const tagIdSelector = <number[][]>[];
     for (const dataTag of selector) {
       const tagIds = await this.getTagIds(dataTag as DataTag[]);
@@ -651,9 +652,8 @@ export default class Query {
       return;
     }
     try {
-      const modelizer = this.toModelizer(this.result);
-      await this.applyTransformations(transformations, modelizer);
-      this.setResult(this.fromModelizer(modelizer));
+      await this.applyTransformations(transformations, this.result.modelizer);
+      this.setResult(this.fromModelizer(this.result.modelizer));
     } catch (e) {
       throw e;
     }

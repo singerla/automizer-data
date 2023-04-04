@@ -198,6 +198,7 @@ export type DataGridCategories = {
 export type DataGrid = {
   modify?: DataPointModifier[];
   transform?: DataGridTransformation[];
+  options?: Record<string, any>;
 };
 
 export type ResultCellInfo = {
@@ -259,8 +260,6 @@ export type Result = {
   isValid: () => boolean;
   body: ResultRow[];
   modelizer: Modelizer;
-  fromModelizer: (modelizer: Modelizer) => void;
-  toModelizer: (result: Result) => Modelizer;
   info: ResultInfo;
 };
 
