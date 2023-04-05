@@ -1,21 +1,77 @@
 import { vd } from "./helper";
 import {
   DataPoint,
+  DataPointMeta,
   DataPointTarget,
+  Datasheet,
+  DataTag,
   ModArgsExclude,
   ModArgsFilter,
   ModArgsMap,
   ModArgsRename,
   ModArgsStringTolabel,
   ModArgsTagTolabel,
+  NestedParentValue,
+  RawResultMeta,
   RenameLabel,
 } from "./types/types";
+import { CellValue } from "./types/modelizer-types";
 
 export default class Points {
   points: DataPoint[];
 
   constructor(points: DataPoint[]) {
     this.points = points;
+  }
+
+  static dataPointFactory(
+    rowKey?: string,
+    colKey?: string,
+    tags?: DataTag[],
+    meta?: DataPointMeta[],
+    value?: CellValue
+  ) {
+    const point = <DataPoint>{
+      row: rowKey,
+      column: colKey,
+      value: value,
+      tags: tags,
+      meta: meta,
+      setMeta: (key: string, value: any): DataPoint =>
+        Points.setMetaCb(point, key, value),
+      getMeta: (key: string): DataPointMeta | undefined =>
+        Points.getMetaCb(point, key),
+      getTag: (categoryId: number): DataTag | undefined =>
+        Points.getTagCb(point, categoryId),
+    };
+    return point;
+  }
+
+  static getMetaCb(point: DataPoint, key: string): DataPointMeta | undefined {
+    if (point.meta) {
+      return point.meta.find((meta) => meta.key === key);
+    }
+  }
+
+  static setMetaCb(point: DataPoint, key: string, value): DataPoint {
+    point.meta.push({
+      key: key,
+      value: value,
+    });
+    return point;
+  }
+
+  static getTagCb(point: DataPoint, categoryId: number): DataTag | undefined {
+    if (point.tags) {
+      return (
+        point.tags.find((meta) => meta.categoryId === categoryId) || {
+          value: undefined,
+          category: undefined,
+          categoryId: categoryId,
+          id: undefined,
+        }
+      );
+    }
   }
 
   targetPoints(points?: DataPoint[]): DataPoint[] {
@@ -171,5 +227,86 @@ export default class Points {
 
   dump(points?: DataPoint[]) {
     vd(this.targetPoints(points));
+  }
+
+  static getDataPointMeta(
+    sheet: Datasheet,
+    r: number,
+    c: number
+  ): DataPointMeta[] {
+    const pointMeta = <DataPointMeta[]>[];
+
+    sheet.meta.forEach((metaContent: RawResultMeta) => {
+      if (metaContent?.key === "nested") {
+        Points.pushPointNestedMeta(metaContent, pointMeta, sheet, r, c);
+      } else if (metaContent?.data) {
+        if (Points.metaHasRows(metaContent?.data)) {
+          Points.pushPointMeta(
+            pointMeta,
+            metaContent.key,
+            metaContent.data[r][c]
+          );
+        } else {
+          Points.pushPointMeta(pointMeta, metaContent.key, metaContent.data[c]);
+        }
+      }
+
+      if (metaContent?.info && metaContent.label === sheet.rows[r]) {
+        this.pushPointInfo(metaContent, pointMeta, sheet, r, c);
+      }
+    });
+
+    return pointMeta;
+  }
+
+  static pushPointInfo(
+    metaContent: RawResultMeta,
+    pointMeta: DataPointMeta[],
+    sheet: Datasheet,
+    r: number,
+    c: number
+  ) {
+    const hasMetaContent = metaContent.info?.find(
+      (meta) => meta.value === sheet.columns[c]
+    );
+    if (hasMetaContent && hasMetaContent.info) {
+      Points.pushPointMeta(pointMeta, hasMetaContent.info, hasMetaContent.key);
+    }
+  }
+
+  static pushPointNestedMeta(
+    metaContent: RawResultMeta,
+    pointMeta: DataPointMeta[],
+    sheet: any,
+    r: number,
+    c: number
+  ) {
+    if (metaContent.label === sheet.rows[r]) {
+      const parentValues = <NestedParentValue[]>[];
+      metaContent.data.forEach((parentLabel) => {
+        const parentRow = sheet.rows.indexOf(parentLabel);
+        parentValues.push({
+          label: parentLabel,
+          value: sheet.data[parentRow][c],
+        });
+        if (parentLabel === metaContent.label) {
+          Points.pushPointMeta(pointMeta, "isParent", true);
+        } else {
+          Points.pushPointMeta(pointMeta, "isChild", true);
+        }
+      });
+      Points.pushPointMeta(pointMeta, metaContent.key, parentValues);
+    }
+  }
+
+  static metaHasRows(metaData: any): boolean {
+    return metaData[0] && Array.isArray(metaData[0]);
+  }
+
+  static pushPointMeta(pointMeta: DataPointMeta[], key: string, value: any) {
+    pointMeta.push({
+      key: key,
+      value: value,
+    });
   }
 }

@@ -2,11 +2,12 @@ import { PrismaClient, Sheet, Tag } from "../client";
 import { Gesstabs } from "../parser/gesstabs";
 import { Generic } from "../index";
 import { Parser } from "../parser/parser";
-import ResultClass from "../result";
+import ResultClass from "../convert";
 import { ChartValueStyle, TableRowStyle } from "pptx-automizer";
 import ResultInfo from "../helper/resultInfo";
 import Modelizer from "../modelizer";
 import Query from "../query";
+import { InputKeys } from "./modelizer-types";
 
 export type PrismaId = number;
 
@@ -74,13 +75,19 @@ export type StatusTracker = {
   increment: () => void;
 };
 
+export type RawResult = {
+  dataPoints: DataPoint[];
+  usedTags: Tag[][];
+  usedDatasheets: Datasheet[];
+};
+
 export type CachedObject = {
   key?: string;
   datapoints: DataPoint[];
   sheets: Datasheet[];
-  keys: CellKeys;
-  inputKeys: CellKeys;
-  tags: Tag[][];
+  tags: Tag[];
+  // keys: CellKeys;
+  // inputKeys: CellKeys;
 };
 
 export interface ICache {
@@ -90,7 +97,8 @@ export interface ICache {
 }
 
 export type QueryOptions = {
-  selector: Selector;
+  selector?: Selector;
+  dataTagSelector?: DataTagSelector;
   nonGreedySelector?: number[];
   grid?: DataGrid;
   prisma?: PrismaClient;
@@ -105,6 +113,7 @@ export type CategoryCount = {
 
 export type IdSelector = PrismaId[];
 export type Selector = IdSelector[];
+export type DataTagSelector = DataTag[][];
 
 export type NestedClause = {
   tags: {
@@ -128,10 +137,10 @@ export type DataTag = {
 };
 
 export type DataPoint = {
-  tags: DataTag[];
   row: string;
   column: string;
   value: ResultCell;
+  tags: DataTag[];
   meta?: DataPointMeta[];
   mode?: string;
   style?: TableRowStyle | ChartValueStyle;
@@ -159,12 +168,14 @@ export type Sheets = (Sheet & {
 })[];
 
 export type QueryResult = {
-  result: string;
-  sheets: string;
-  tags: string;
-  keys: string;
-  inputKeys: string;
-  visibleKeys: string;
+  modelizer: Modelizer;
+  sheets: Datasheet[];
+  tags: Tag[][];
+  inputKeys: InputKeys;
+  visibleKeys: {
+    row: string[];
+    column: string[];
+  };
 };
 
 export type QueryResultKeys = {
@@ -247,13 +258,13 @@ export type ResultColumn = {
   key: string;
   value: DataPoint[];
   style?: TableRowStyle | ChartValueStyle;
-  getPoint: (index?: number) => DataPoint;
+  getPoint?: (index?: number) => DataPoint;
 };
 
 export type ResultRow = {
   key: string;
   cols: ResultColumn[];
-  getColumn: (colId: number) => ResultColumn;
+  getColumn?: (colId: number) => ResultColumn;
 };
 
 export type Result = {

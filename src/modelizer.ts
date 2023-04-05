@@ -1,12 +1,14 @@
-import { DataPoint } from "./types/types";
+import { DataPoint, DataTag } from "./types/types";
 import { Query } from "./index";
 import _ from "lodash";
 import {
   AddPointsOptions,
   Cell,
   CellValue,
+  InputKeys,
   Key,
   KeyMode,
+  Keys,
   ModelColumn,
   ModelEachCb,
   ModelizerOptions,
@@ -16,6 +18,7 @@ import {
   RenderTableCb,
   Table,
 } from "./types/modelizer-types";
+import Points from "./points";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -24,10 +27,25 @@ import {
  * and modelized.
  */
 export default class Modelizer {
-  #table: Table = [];
-  readonly #keys: {
-    row: string[];
-    col: string[];
+  /**
+   * Stores all row keys, column keys and tags before any modification is
+   * applied. Useful to compare the original values with output.
+   * @private
+   */
+  readonly #inputKeys: InputKeys = {
+    row: [],
+    column: [],
+    nested: [],
+    category: [],
+  };
+  /**
+   * Stores all keys for the current set of rows and columns.
+   * Represents the current edges of #table.
+   * @private
+   */
+  readonly #keys: Keys = {
+    row: [],
+    col: [],
   };
   /**
    * If strict mode is 'true', no keys will be added automatically.
@@ -35,19 +53,16 @@ export default class Modelizer {
    * a new entry.
    */
   strict: boolean;
-
   // The parent class for this Modelizer instance
   query: Query;
+
+  #table: Table = [];
 
   constructor(options?: ModelizerOptions, query?: Query) {
     this.strict = options?.strict !== undefined ? options?.strict : true;
     if (options?.points) {
       this.addPoints(options.points);
     }
-    this.#keys = {
-      row: [],
-      col: [],
-    };
     this.query = query;
   }
 
@@ -84,6 +99,8 @@ export default class Modelizer {
     const r = this.addRow(rowKey);
     const c = this.addColumn(colKey);
     const cell = this.pushCellPoints(r, c, point);
+
+    this.#addInputKeys(rowKey, colKey, point);
 
     if (options?.value) {
       const value = options.value(point);
@@ -158,6 +175,15 @@ export default class Modelizer {
   }
 
   /**
+   * Retreive all untouched unique row and column keys and tags from all
+   * DataPoints. Object keys are 'row', 'col' and each used categoryId.
+   * @returns InputKeys Object with section keys and array of strings values.
+   */
+  getInputKeys(): InputKeys {
+    return this.#inputKeys;
+  }
+
+  /**
    * Pass a string key to append a new row with that name.
    * @param key
    * @returns {number} Column index of the created row.
@@ -205,6 +231,40 @@ export default class Modelizer {
   #getKey(key: Key, mode: KeyMode): string {
     const id = this.#parseCellKey(key, mode);
     return this.#getKeys(mode)[id];
+  }
+
+  #addInputKeys(row: string, col: string, point: DataPoint) {
+    if (!this.#inputKeys.row.includes(row)) {
+      this.#inputKeys.row.push(row);
+    }
+
+    if (!this.#inputKeys.column.includes(col)) {
+      this.#inputKeys.column.push(col);
+    }
+
+    point.tags.forEach((tag) => {
+      this.#addInputCategoryKey(tag);
+    });
+
+    const isNestedParent = point.getMeta("isParent");
+    if (isNestedParent && !this.#inputKeys.nested.includes(row)) {
+      this.#inputKeys.nested.push(row);
+    }
+  }
+
+  #addInputCategoryKey(tag: DataTag) {
+    let categoryKeys = this.#inputKeys.category.find(
+      (keys) => keys.categoryId === tag.categoryId
+    );
+
+    if (!categoryKeys) {
+      this.#inputKeys.category.push({
+        categoryId: tag.categoryId,
+        keys: [tag.value],
+      });
+    } else if (!categoryKeys.keys.includes(tag.value)) {
+      categoryKeys.keys.push(tag.value);
+    }
   }
 
   /**
@@ -426,7 +486,7 @@ export default class Modelizer {
       getPoint: (i?: number) => {
         i = cell.points[i] ? i : 0;
         if (!cell.points || !cell.points[i]) {
-          cell.points[i] = Query.createDataPoint();
+          cell.points[i] = Points.dataPointFactory();
         }
         return cell.points[i];
       },

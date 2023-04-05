@@ -2,7 +2,7 @@ import { PrismaClient } from "./client";
 
 import Query from "./query";
 import Points from "./points";
-import Result from "./result";
+import Convert from "./convert";
 import Modelizer from "./modelizer";
 
 import { Store } from "./store";
@@ -105,7 +105,7 @@ export type {
   ResultType,
 };
 export { Query, Parser, Gesstabs, Generic, Store, filter, cell };
-export { Points, Result, Modelizer };
+export { Points, Convert, Modelizer };
 export { getNestedClause, getTagGroupsByCategory };
 export { PrismaClient };
 

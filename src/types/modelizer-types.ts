@@ -4,6 +4,24 @@ export type ModelizerOptions = {
   strict?: boolean;
   points?: DataPoint[];
 };
+
+export type InputKeys = {
+  row: string[];
+  column: string[];
+  nested: string[];
+  category: InputCategoryKeys[];
+};
+
+export type InputCategoryKeys = {
+  categoryId: number;
+  keys: string[];
+};
+
+export type Keys = {
+  row: string[];
+  col: string[];
+};
+
 /**
  * A Table is a set of rows.
  */

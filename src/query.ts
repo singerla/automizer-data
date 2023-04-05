@@ -1,5 +1,5 @@
 import { PrismaClient, Tag } from "./client";
-import { getNestedClause } from "./helper";
+import { getNestedClause, vd } from "./helper";
 import _ from "lodash";
 
 import {
@@ -14,9 +14,13 @@ import {
   DataPointModifier,
   Datasheet,
   DataTag,
+  DataTagSelector,
+  ICache,
   IdSelector,
   NestedParentValue,
   QueryOptions,
+  QueryResult,
+  RawResult,
   RawResultMeta,
   Result,
   ResultCell,
@@ -27,7 +31,6 @@ import {
 } from "./types/types";
 
 import Points from "./points";
-import ResultInfo from "./helper/resultInfo";
 import Modelizer from "./modelizer";
 
 export default class Query {
@@ -45,13 +48,19 @@ export default class Query {
   grid: DataGrid;
   result: Result;
   tags: Tag[][] = [];
-  nonGreedySelector: number[] = [];
   options: QueryOptions;
-  maxSheets: number = 150;
+
+  modelizer: Modelizer;
+
+  private selector: Selector = [[]];
+  private dataTagSelector: DataTagSelector = [[]];
+
+  private nonGreedySelector: number[] = [];
+  private maxSheets: number = 150;
+  private cache: ICache;
 
   constructor(prisma: PrismaClient | any) {
     this.prisma = prisma;
-    this.sheets = [];
     this.inputKeys = <CellKeys>{};
     this.keys = <CellKeys>{};
     this.visibleKeys = {
@@ -69,136 +78,177 @@ export default class Query {
     return this;
   }
 
-  static run(options: QueryOptions): Promise<Query> {
+  static run(options: QueryOptions): Promise<QueryResult> {
     const prisma = options.prisma || new PrismaClient();
     const query = new Query(prisma).setOptions(options);
 
-    const selector = options.selector || [[]];
-
-    return query.get(selector);
+    return query.compute();
   }
 
-  setOptions(options?: QueryOptions): this {
-    if (options?.nonGreedySelector) {
-      this.nonGreedySelector = options?.nonGreedySelector;
-    }
-
-    options.maxSheets = options.maxSheets ?? this.maxSheets;
-
+  setOptions(options: QueryOptions): this {
+    this.maxSheets = options.maxSheets ?? this.maxSheets;
     this.grid = options.grid || {
       modify: [],
       transform: [],
+      options: {},
     };
-    this.options = options;
+    this.nonGreedySelector =
+      options.nonGreedySelector || this.nonGreedySelector;
+    this.cache = options.cache;
+
+    this.dataTagSelector = options.dataTagSelector;
+    this.selector = options.selector || this.selector;
 
     return this;
   }
 
-  async get(selector: Selector): Promise<Query> {
+  async compute(): Promise<QueryResult> {
+    if (this.dataTagSelector) {
+      this.selector = await this.convertDataTagSelector(this.dataTagSelector);
+    }
+
+    const selector = this.selector;
     const tagIds = await this.parseSelector(selector).catch(() => {
       throw "Parse Selector failed";
     });
-    await this.processTagIds(tagIds);
 
-    this.setDataPointKeys(this.points, "keys");
+    const points = await this.processTagIds(tagIds);
+    // this.setDataPointKeys(points, "keys");
 
-    await this.merge().catch((e) => {
-      throw e;
-    });
+    const modelizer = new Modelizer(
+      {
+        points,
+      },
+      this
+    );
 
-    return this;
+    if (this.grid.transform) {
+      await this.transformResult(this.grid.transform, modelizer);
+    }
+
+    return {
+      modelizer,
+      sheets: this.sheets,
+      tags: this.tags,
+      inputKeys: modelizer.getInputKeys(),
+      visibleKeys: {
+        row: modelizer.getKeys("row"),
+        column: modelizer.getKeys("col"),
+      },
+    };
   }
 
-  async processTagIds(allTagIds): Promise<void> {
+  async getRawResult(allTagIds): Promise<RawResult> {
+    const modifiedDataPoints = <DataPoint[]>[];
+    const usedTags: Tag[][] = [];
+    const usedDatasheets = <Datasheet[]>[];
+    const usedDatapoints = <DataPoint[]>[];
+
     for (const level in allTagIds) {
       const tagIds = allTagIds[level];
       const isNonGreedy = this.nonGreedySelector.includes(Number(level));
 
       let datapoints = <DataPoint[]>[];
-      if (this.options.cache?.exists(tagIds, isNonGreedy)) {
-        datapoints = this.fromCache(
-          this.options.cache.get(tagIds, isNonGreedy)
+      let dataSheets = <Datasheet[]>[];
+      let selectionTags = <Tag[]>[];
+
+      if (this.cache?.exists(tagIds, isNonGreedy)) {
+        const cachedObject = this.fromCache(
+          this.cache.get(tagIds, isNonGreedy)
         );
+        selectionTags = cachedObject.tags;
+        dataSheets = cachedObject.sheets;
+        datapoints = cachedObject.datapoints;
       } else {
-        const selectionTags = await this.getTagInfo(tagIds);
-        this.tags.push(selectionTags);
-        let sheets = await this.findSheets(selectionTags);
+        selectionTags = await this.getTagInfo(tagIds);
+        let sheets = await this.findSheets(selectionTags, isNonGreedy);
 
-        if (sheets.length && isNonGreedy) {
-          sheets = this.filterSheets(sheets);
-        }
+        dataSheets = this.parseSheets(sheets);
+        datapoints = this.extractDataPoints(dataSheets);
 
-        datapoints = this.processSheets(sheets, Number(level));
+        // this.setDataPointKeys(dataPoints, "inputKeys");
 
-        this.options.cache?.set(tagIds, isNonGreedy, {
-          datapoints: _.cloneDeep(datapoints),
-          sheets: _.cloneDeep(this.sheets),
-          keys: _.cloneDeep(this.keys),
-          inputKeys: _.cloneDeep(this.inputKeys),
-          tags: _.cloneDeep(this.tags),
-        });
+        this.cache?.set(
+          tagIds,
+          isNonGreedy,
+          _.cloneDeep({
+            datapoints: datapoints,
+            sheets: dataSheets,
+            tags: selectionTags,
+          })
+        );
       }
 
-      const modifiedDataPoints = this.modifyDataPoints(
-        datapoints,
-        Number(level)
+      usedDatapoints.push(...datapoints);
+      usedTags.push(selectionTags);
+      usedDatasheets.push(...dataSheets);
+
+      modifiedDataPoints.push(
+        ...this.modifyDataPoints(datapoints, Number(level))
       );
-      this.pushDataPoints(modifiedDataPoints);
     }
+
+    return {
+      dataPoints: modifiedDataPoints,
+      usedTags,
+      usedDatasheets,
+    };
   }
 
-  fromCache(cached: CachedObject): DataPoint[] {
-    this.sheets = _.cloneDeep(cached.sheets);
-    this.keys = _.cloneDeep(cached.keys);
-    this.inputKeys = _.cloneDeep(cached.inputKeys);
-    this.tags = _.cloneDeep(cached.tags);
+  fromCache(cached: CachedObject): CachedObject {
+    // this.sheets = _.cloneDeep(cached.sheets);
+    // this.keys = _.cloneDeep(cached.keys);
+    // this.inputKeys = _.cloneDeep(cached.inputKeys);
+    // this.tags = _.cloneDeep(cached.tags);
 
-    return _.cloneDeep(cached.datapoints);
+    return _.cloneDeep(cached);
   }
 
-  toModelizer(result: Result): Modelizer {
-    const modelizer = new Modelizer({}, this);
-    modelizer.strict = false;
-    result.body.forEach((row) => {
-      row.cols.forEach((col) => {
-        const newCell = modelizer.setCell(row.key, col.key);
-        newCell.points = col.value;
-        newCell.setValue(col.value[0].value);
-      });
-    });
-    return modelizer;
-  }
+  // toModelizer(result: Result): Modelizer {
+  //   const modelizer = new Modelizer({}, this);
+  //   modelizer.strict = false;
+  //   result.body.forEach((row) => {
+  //     row.cols.forEach((col) => {
+  //       const newCell = modelizer.setCell(row.key, col.key);
+  //       newCell.points = col.value;
+  //       newCell.setValue(col.value[0].value);
+  //     });
+  //   });
+  //   return modelizer;
+  // }
 
-  fromModelizer(modelizer: Modelizer): DataMergeResult {
-    const body = <DataMergeResult>{};
-    modelizer.processRows((modelRow) => {
-      const cols = {};
-      modelRow.each((cell) => {
-        cell.points = cell.points || [];
-        const points = cell.points;
-        if (points[0]) {
-          points[0].value = cell.value;
-        } else {
-          points.push(
-            Query.createDataPoint(modelRow.key, cell.colKey, cell.value)
-          );
-        }
-        cols[cell.colKey] = points;
-      });
-      body[modelRow.key] = cols;
-    });
-    return body;
-  }
+  // fromModelizer(modelizer: Modelizer): DataMergeResult {
+  //   const body = <DataMergeResult>{};
+  //   modelizer.processRows((modelRow) => {
+  //     const cols = {};
+  //     modelRow.each((cell) => {
+  //       cell.points = cell.points || [];
+  //       const points = cell.points;
+  //       if (points[0]) {
+  //         points[0].value = cell.value;
+  //       } else {
+  //         points.push(
+  //           Query.createDataPoint(modelRow.key, cell.colKey, cell.value)
+  //         );
+  //       }
+  //       cols[cell.colKey] = points;
+  //     });
+  //     body[modelRow.key] = cols;
+  //   });
+  //   return body;
+  // }
 
-  processSheets(sheets: Sheets, level: number) {
-    const dataPoints = <DataPoint[]>[];
-    if (sheets.length > 0) {
-      this.parseSheets(sheets);
-      this.setDataPoints(dataPoints);
-      this.setDataPointKeys(dataPoints, "inputKeys");
-    }
-    return dataPoints;
-  }
+  // processSheets(sheets: Sheets, level: number) {
+  //   const dataPoints = <DataPoint[]>[];
+  //   if (sheets.length > 0) {
+  //     const dataSheets = this.parseSheets(sheets);
+  //     const dataSheetPoints = this.extractDataPoints(dataSheets);
+  //     dataPoints.push(...dataSheetPoints);
+  //
+  //     // this.setDataPointKeys(dataPoints, "inputKeys");
+  //   }
+  //   return dataPoints;
+  // }
 
   async getTagInfo(tagIds: number[]): Promise<Tag[]> {
     return this.prisma.tag.findMany({
@@ -210,7 +260,7 @@ export default class Query {
     });
   }
 
-  async findSheets(tags: Tag[]): Promise<Sheets> {
+  async findSheets(tags: Tag[], isNonGreedy: boolean): Promise<Sheets> {
     let clause = getNestedClause(tags);
     if (!clause) return [];
 
@@ -228,11 +278,15 @@ export default class Query {
       return [];
     }
 
+    if (sheets.length && isNonGreedy) {
+      return this.filterSheets(sheets);
+    }
+
     return sheets;
   }
 
-  parseSheets(sheets: Sheets) {
-    this.sheets = sheets.map((sheet) => {
+  parseSheets(sheets: Sheets): Datasheet[] {
+    const dataSheets = sheets.map((sheet) => {
       return <Datasheet>{
         id: sheet.id,
         tags: sheet.tags.map((tag) => {
@@ -248,6 +302,7 @@ export default class Query {
         meta: JSON.parse(sheet.meta),
       };
     });
+    return dataSheets;
   }
 
   /*
@@ -278,106 +333,24 @@ export default class Query {
     );
   }
 
-  setDataPoints(dataPoints: DataPoint[]): DataPoint[] {
-    this.sheets.forEach((sheet) => {
+  extractDataPoints(sheets: Datasheet[]): DataPoint[] {
+    const dataPoints = <DataPoint[]>[];
+    sheets.forEach((sheet) => {
       sheet.data.forEach((points, r) => {
         points.forEach((value: ResultCell, c: number) => {
-          const dataPoint = <DataPoint>{
-            tags: sheet.tags,
-            row: sheet.rows[r],
-            column: sheet.columns[c],
-            value: value,
-            meta: this.getDataPointMeta(sheet, r, c),
-            setMeta: () => undefined,
-            getMeta: () => undefined,
-            getTag: () => undefined,
-          };
-          dataPoint.getMeta = Query.getMetaCb(dataPoint);
-          dataPoint.setMeta = Query.setMetaCb(dataPoint);
-          dataPoint.getTag = Query.getTagCb(dataPoint);
-
-          dataPoints.push(dataPoint);
+          dataPoints.push(
+            Points.dataPointFactory(
+              sheet.rows[r],
+              sheet.columns[c],
+              sheet.tags,
+              Points.getDataPointMeta(sheet, r, c),
+              value
+            )
+          );
         });
       });
     });
     return dataPoints;
-  }
-
-  getDataPointMeta(sheet: Datasheet, r: number, c: number): DataPointMeta[] {
-    const pointMeta = <DataPointMeta[]>[];
-
-    sheet.meta.forEach((metaContent: any) => {
-      if (metaContent?.key === "nested") {
-        this.pushPointNestedMeta(metaContent, pointMeta, sheet, r, c);
-      } else if (metaContent?.data) {
-        if (this.metaHasRows(metaContent?.data)) {
-          this.pushPointMeta(
-            pointMeta,
-            metaContent.key,
-            metaContent.data[r][c]
-          );
-        } else {
-          this.pushPointMeta(pointMeta, metaContent.key, metaContent.data[c]);
-        }
-      }
-
-      if (metaContent?.info && metaContent.label === sheet.rows[r]) {
-        this.pushPointInfo(metaContent, pointMeta, sheet, r, c);
-      }
-    });
-
-    return pointMeta;
-  }
-
-  pushPointInfo(
-    metaContent: RawResultMeta,
-    pointMeta: DataPointMeta[],
-    sheet: Datasheet,
-    r: number,
-    c: number
-  ) {
-    const hasMetaContent = metaContent.info?.find(
-      (meta) => meta.value === sheet.columns[c]
-    );
-    if (hasMetaContent && hasMetaContent.info) {
-      this.pushPointMeta(pointMeta, hasMetaContent.info, hasMetaContent.key);
-    }
-  }
-
-  pushPointNestedMeta(
-    metaContent: any,
-    pointMeta: any,
-    sheet: any,
-    r: number,
-    c: number
-  ) {
-    if (metaContent.label === sheet.rows[r]) {
-      const parentValues = <NestedParentValue[]>[];
-      metaContent.data.forEach((parentLabel: string) => {
-        const parentRow = sheet.rows.indexOf(parentLabel);
-        parentValues.push({
-          label: parentLabel,
-          value: sheet.data[parentRow][c],
-        });
-        if (parentLabel === metaContent.label) {
-          this.pushPointMeta(pointMeta, "isParent", true);
-        } else {
-          this.pushPointMeta(pointMeta, "isChild", true);
-        }
-      });
-      this.pushPointMeta(pointMeta, metaContent.key, parentValues);
-    }
-  }
-
-  metaHasRows(metaData: any): boolean {
-    return metaData[0] && Array.isArray(metaData[0]);
-  }
-
-  pushPointMeta(pointMeta: DataPointMeta[], key: string, value: any) {
-    pointMeta.push({
-      key: key,
-      value: value,
-    });
   }
 
   modifyDataPoints(dataPoints: DataPoint[], level: number): DataPoint[] {
@@ -396,7 +369,8 @@ export default class Query {
         });
       }
     });
-    return dataPoints;
+
+    return points.points;
   }
 
   getDatapointModifiersByLevel(level: number): DataPointModifier[] {
@@ -411,32 +385,16 @@ export default class Query {
     return modifiers;
   }
 
-  pushDataPoints(dataPoints: DataPoint[]): void {
-    this.points.push(...dataPoints);
-  }
-
   setDataPointKeys(dataPoints: DataPoint[], mode: "keys" | "inputKeys") {
     dataPoints.forEach((point: DataPoint, c: number) => {
       this.addKey("row", point.row, mode);
       this.addKey("column", point.column, mode);
-      this.addNestedKeys(point, mode);
       point.tags.forEach((tag: DataTag) => {
         if (tag.categoryId) {
           this.addKey(String(tag.categoryId), tag.value, mode);
         }
       });
     });
-  }
-
-  addNestedKeys(point: DataPoint, mode: "keys" | "inputKeys") {
-    const hasNestedMeta = point?.meta?.find(
-      (meta: any) => meta.key === "nested"
-    );
-    if (hasNestedMeta && Array.isArray(hasNestedMeta.value)) {
-      hasNestedMeta?.value?.forEach((nested: NestedParentValue) => {
-        this.addKey("nested", nested.label, mode);
-      });
-    }
   }
 
   addKey(category: string, value: string, mode: "keys" | "inputKeys") {
@@ -447,26 +405,32 @@ export default class Query {
     this[mode][category][value] = true;
   }
 
-  async merge() {
-    let result = <DataMergeResult>{};
+  async merge(): Promise<Modelizer> {
+    // let result = <DataMergeResult>{};
+    //
+    // this.points.forEach((point) => {
+    //   const rowKey = point.row;
+    //   const columnKey = point.column;
+    //
+    //   result[rowKey] = result[rowKey] || {};
+    //   result[rowKey][columnKey] = result[rowKey][columnKey] || [];
+    //   result[rowKey][columnKey].push(point);
+    // });
+    //
+    // this.setResult(result);
 
-    this.points.forEach((point) => {
-      const rowKey = point.row;
-      const columnKey = point.column;
-
-      result[rowKey] = result[rowKey] || {};
-      result[rowKey][columnKey] = result[rowKey][columnKey] || [];
-      result[rowKey][columnKey].push(point);
-    });
-
-    this.setResult(result);
-    this.result.modelizer = this.toModelizer(this.result);
+    const modelizer = new Modelizer(
+      {
+        points: this.points,
+      },
+      this
+    );
 
     if (this.grid.transform) {
-      await this.transformResult(this.grid.transform);
+      await this.transformResult(this.grid.transform, modelizer);
     }
 
-    return this;
+    return modelizer;
   }
 
   async parseSelector(selector: Selector): Promise<IdSelector[]> {
@@ -481,7 +445,7 @@ export default class Query {
     throw "Invalid selector.";
   }
 
-  async parseDataTagSelector(selector: DataTag[][]): Promise<Selector> {
+  async convertDataTagSelector(selector: DataTagSelector): Promise<Selector> {
     const tagIdSelector = <number[][]>[];
     for (const dataTag of selector) {
       const tagIds = await this.getTagIds(dataTag as DataTag[]);
@@ -541,119 +505,89 @@ export default class Query {
     tag.id = tagItem.id;
   }
 
-  setResult(result: DataMergeResult): void {
-    this.visibleKeys.row = [];
-    this.visibleKeys.column = [];
-    this.result.body = [];
+  // setResult(result: DataMergeResult): void {
+  //   this.visibleKeys.row = [];
+  //   this.visibleKeys.column = [];
+  //   this.result.body = [];
+  //
+  //   for (const r in result) {
+  //     const cols = <ResultColumn[]>[];
+  //     this.visibleKeys.row.push(r);
+  //
+  //     const row = result[r];
+  //     for (const c in row) {
+  //       this.visibleKeys.column.push(c);
+  //
+  //       cols.push({
+  //         key: c,
+  //         value: row[c],
+  //         getPoint: Query.getPointCb(row[c]),
+  //       });
+  //     }
+  //
+  //     this.result.body.push({
+  //       key: r,
+  //       cols: cols,
+  //       getColumn: Query.getColumnCb(cols),
+  //     });
+  //   }
+  //
+  //   this.result.isValid = (): boolean => {
+  //     if (this.result.body && this.result.body[0] && this.result.body[0].cols) {
+  //       return true;
+  //     }
+  //     return false;
+  //   };
+  //   this.result.info = new ResultInfo(this.result);
+  //   this.visibleKeys.column = [...new Set(this.visibleKeys.column)];
+  // }
 
-    for (const r in result) {
-      const cols = <ResultColumn[]>[];
-      this.visibleKeys.row.push(r);
+  // static createDataPoint(
+  //   rowKey?: string,
+  //   colKey?: string,
+  //   value?: ResultCell
+  // ): DataPoint {
+  //   const point = <DataPoint>{
+  //     tags: [],
+  //     meta: [],
+  //     row: rowKey || "n/a createDataPoint",
+  //     column: colKey || "n/a createDataPoint",
+  //     value: value || null,
+  //     getMeta: () => undefined,
+  //     setMeta: () => undefined,
+  //     getTag: () => undefined,
+  //   };
+  //
+  //   point.getMeta = Query.getMetaCb(point);
+  //   point.setMeta = Query.setMetaCb(point);
+  //   point.getTag = Query.getTagCb(point);
+  //
+  //   return point;
+  // }
+  //
+  // static getPointCb(points: DataPoint[]) {
+  //   return (index?: number): DataPoint => {
+  //     const point = points[index || 0];
+  //     return point;
+  //   };
+  // }
+  //
+  // static getColumnCb(cols: ResultColumn[]) {
+  //   return (colId?: number): ResultColumn => {
+  //     return cols[colId || 0];
+  //   };
+  // }
 
-      const row = result[r];
-      for (const c in row) {
-        this.visibleKeys.column.push(c);
+  async transformResult(
+    transformations: DataGridTransformation[],
+    modelizer: Modelizer
+  ) {
+    // if (!this.result.isValid()) {
+    //   return;
+    // }
 
-        cols.push({
-          key: c,
-          value: row[c],
-          getPoint: Query.getPointCb(row[c]),
-        });
-      }
-
-      this.result.body.push({
-        key: r,
-        cols: cols,
-        getColumn: Query.getColumnCb(cols),
-      });
-    }
-
-    this.result.isValid = (): boolean => {
-      if (this.result.body && this.result.body[0] && this.result.body[0].cols) {
-        return true;
-      }
-      return false;
-    };
-    this.result.info = new ResultInfo(this.result);
-    this.visibleKeys.column = [...new Set(this.visibleKeys.column)];
-  }
-
-  static createDataPoint(
-    rowKey?: string,
-    colKey?: string,
-    value?: ResultCell
-  ): DataPoint {
-    const point = <DataPoint>{
-      tags: [],
-      meta: [],
-      row: rowKey || "n/a createDataPoint",
-      column: colKey || "n/a createDataPoint",
-      value: value || null,
-      getMeta: () => undefined,
-      setMeta: () => undefined,
-      getTag: () => undefined,
-    };
-
-    point.getMeta = Query.getMetaCb(point);
-    point.setMeta = Query.setMetaCb(point);
-    point.getTag = Query.getTagCb(point);
-
-    return point;
-  }
-
-  static getPointCb(points: DataPoint[]) {
-    return (index?: number): DataPoint => {
-      const point = points[index || 0];
-      return point;
-    };
-  }
-
-  static getColumnCb(cols: ResultColumn[]) {
-    return (colId?: number): ResultColumn => {
-      return cols[colId || 0];
-    };
-  }
-
-  static getMetaCb(point: DataPoint) {
-    return (key: string): DataPointMeta | undefined => {
-      if (point.meta) {
-        return point.meta.find((meta) => meta.key === key);
-      }
-    };
-  }
-
-  static setMetaCb(point: DataPoint) {
-    return (key: string, value: any): DataPoint => {
-      point.meta.push({
-        key: key,
-        value: value,
-      });
-      return point;
-    };
-  }
-
-  static getTagCb(point: DataPoint) {
-    return (categoryId: number): DataTag | undefined => {
-      if (point.tags) {
-        return (
-          point.tags.find((meta) => meta.categoryId === categoryId) || {
-            value: undefined,
-            category: undefined,
-            categoryId: categoryId,
-            id: undefined,
-          }
-        );
-      }
-    };
-  }
-
-  async transformResult(transformations: DataGridTransformation[]) {
-    if (!this.result.isValid()) {
-      return;
-    }
     try {
-      await this.applyTransformations(transformations, this.result.modelizer);
-      this.setResult(this.fromModelizer(this.result.modelizer));
+      await this.applyTransformations(transformations, modelizer);
     } catch (e) {
       throw e;
     }
