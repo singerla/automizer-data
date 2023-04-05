@@ -18,7 +18,7 @@ const run = async () => {
     ],
   ];
 
-  const query = await Query.run({ dataTagSelector });
+  const queryResult = await Query.run({ dataTagSelector });
 
   // query.modelizer.getRow(2).getCell(1).getPoint().style = <TableRowStyle>{
   //   background: {
@@ -26,13 +26,14 @@ const run = async () => {
   //     value: "cccccc",
   //   },
   // };
-  const toSeriesCategories = new Convert(query).toSeriesCategories();
-  const toVerticalLines = new Convert(query).toVerticalLines();
-  const toCombo = new Convert(query).toCombo();
-  const toScatter = new Convert(query).toScatter();
-  const toBubbles = new Convert(query).toBubbles();
-  const toTable = new Convert(query).toTable();
-  const toResultRows = new Convert(query).toResultRows();
+
+  const toSeriesCategories = queryResult.convert().toSeriesCategories();
+  const toVerticalLines = queryResult.convert().toVerticalLines();
+  const toCombo = queryResult.convert().toCombo();
+  const toScatter = queryResult.convert().toScatter();
+  const toBubbles = queryResult.convert().toBubbles();
+  const toTable = queryResult.convert().toTable();
+  const toResultRows = queryResult.convert().toResultRows();
 
   vd(toSeriesCategories);
 

@@ -1,16 +1,4 @@
-import {
-  CellKeys,
-  DataPoint,
-  Datasheet,
-  MetaParam,
-  QueryResult,
-  QueryResultKeys,
-  RawRow,
-  Result as ResultType,
-  ResultCell,
-  ResultColumn,
-  ResultRow,
-} from "./types/types";
+import { ResultColumn, ResultRow } from "./types/types";
 import {
   ChartBubble,
   ChartCategory,
@@ -20,23 +8,15 @@ import {
   TableData,
   TableRow,
   TableRowStyle,
-  TextStyle,
 } from "pptx-automizer";
-import Query from "./query";
-import { vd } from "./helper";
 import Modelizer from "./modelizer";
-import {
-  Cell,
-  ModelColumn,
-  ModelRow,
-  ProcessRowCb,
-} from "./types/modelizer-types";
+import { Cell, ModelRow, ProcessRowCb } from "./types/modelizer-types";
 
 export default class Convert {
   modelizer: Modelizer;
 
-  constructor(query: QueryResult) {
-    this.modelizer = query.modelizer;
+  constructor(modelizer: Modelizer) {
+    this.modelizer = modelizer;
   }
 
   getSeries = (): ChartSeries[] => {
@@ -130,10 +110,10 @@ export default class Convert {
     this.#forEachRow((row, r) => {
       categories.push({
         label: row.key,
-        values: row.cells.map((col: any) => {
+        values: row.cells.map((cell) => {
           return {
-            x: Number(col.value[0].value),
-            y: Number(col.value[1].value),
+            x: Number(cell.getPoint(0).value),
+            y: Number(cell.getPoint(1).value),
           };
         }),
         styles: this.#extractPointStyle<ChartValueStyle>(row),

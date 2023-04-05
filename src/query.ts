@@ -15,7 +15,6 @@ import {
   Datasheet,
   DataTag,
   DataTagSelector,
-  ICache,
   IdSelector,
   NestedParentValue,
   QueryOptions,
@@ -28,10 +27,12 @@ import {
   ResultRow,
   Selector,
   Sheets,
+  ICache,
 } from "./types/types";
 
 import Points from "./points";
 import Modelizer from "./modelizer";
+import Convert from "./convert";
 
 export default class Query {
   prisma: PrismaClient | any;
@@ -112,7 +113,7 @@ export default class Query {
       throw "Parse Selector failed";
     });
 
-    const points = await this.processTagIds(tagIds);
+    const { points, sheets, tags } = await this.getRawResult(tagIds);
     // this.setDataPointKeys(points, "keys");
 
     const modelizer = new Modelizer(
@@ -128,9 +129,11 @@ export default class Query {
 
     return {
       modelizer,
-      sheets: this.sheets,
-      tags: this.tags,
+      sheets,
+      tags,
       inputKeys: modelizer.getInputKeys(),
+      convert: () => new Convert(modelizer),
+      isValid: () => !!modelizer.getFirstPoint(),
       visibleKeys: {
         row: modelizer.getKeys("row"),
         column: modelizer.getKeys("col"),
@@ -161,12 +164,8 @@ export default class Query {
         datapoints = cachedObject.datapoints;
       } else {
         selectionTags = await this.getTagInfo(tagIds);
-        let sheets = await this.findSheets(selectionTags, isNonGreedy);
-
-        dataSheets = this.parseSheets(sheets);
+        dataSheets = await this.findSheets(selectionTags, isNonGreedy);
         datapoints = this.extractDataPoints(dataSheets);
-
-        // this.setDataPointKeys(dataPoints, "inputKeys");
 
         this.cache?.set(
           tagIds,
@@ -189,9 +188,9 @@ export default class Query {
     }
 
     return {
-      dataPoints: modifiedDataPoints,
-      usedTags,
-      usedDatasheets,
+      points: modifiedDataPoints,
+      tags: usedTags,
+      sheets: usedDatasheets,
     };
   }
 
@@ -260,7 +259,7 @@ export default class Query {
     });
   }
 
-  async findSheets(tags: Tag[], isNonGreedy: boolean): Promise<Sheets> {
+  async findSheets(tags: Tag[], isNonGreedy: boolean): Promise<Datasheet[]> {
     let clause = getNestedClause(tags);
     if (!clause) return [];
 
@@ -279,10 +278,10 @@ export default class Query {
     }
 
     if (sheets.length && isNonGreedy) {
-      return this.filterSheets(sheets);
+      sheets = this.filterSheets(sheets);
     }
 
-    return sheets;
+    return this.parseSheets(sheets);
   }
 
   parseSheets(sheets: Sheets): Datasheet[] {

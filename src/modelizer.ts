@@ -325,6 +325,7 @@ export default class Modelizer {
       setCell: (c: Key, cell: Cell) => this.setCell(r, c, cell).getRow(),
       setCellValue: (c: Key, value: CellValue) =>
         this.setCellValue(r, c, value).getRow(),
+      style: {},
       dump: (s1, s2) => this.dump(s1, s2, [r], []),
     };
     return modelRow;
@@ -362,6 +363,7 @@ export default class Modelizer {
       setCell: (r: number, cell: Cell) => this.setCell(r, c, cell).getColumn(),
       setCellValue: (r: number, value: CellValue) =>
         this.setCellValue(r, c, value).getColumn(),
+      style: {},
       dump: (s1, s2) => this.dump(s1, s2, [], [c]),
     };
     return modelColumn;

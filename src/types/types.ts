@@ -8,6 +8,7 @@ import ResultInfo from "../helper/resultInfo";
 import Modelizer from "../modelizer";
 import Query from "../query";
 import { InputKeys } from "./modelizer-types";
+import Convert from "../convert";
 
 export type PrismaId = number;
 
@@ -76,9 +77,9 @@ export type StatusTracker = {
 };
 
 export type RawResult = {
-  dataPoints: DataPoint[];
-  usedTags: Tag[][];
-  usedDatasheets: Datasheet[];
+  points: DataPoint[];
+  tags: Tag[][];
+  sheets: Datasheet[];
 };
 
 export type CachedObject = {
@@ -172,6 +173,8 @@ export type QueryResult = {
   sheets: Datasheet[];
   tags: Tag[][];
   inputKeys: InputKeys;
+  convert: () => Convert;
+  isValid: () => boolean;
   visibleKeys: {
     row: string[];
     column: string[];

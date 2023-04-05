@@ -53,6 +53,7 @@ import {
   IdSelector,
   StoreOptions,
   Tagger,
+  QueryResult,
 } from "./types/types";
 
 const cell = {
@@ -103,6 +104,7 @@ export type {
   IdSelector,
   QueryOptions,
   ResultType,
+  QueryResult,
 };
 export { Query, Parser, Gesstabs, Generic, Store, filter, cell };
 export { Points, Convert, Modelizer };

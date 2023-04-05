@@ -32,20 +32,19 @@ test("Query demo data, cache it and retrieve it from cache.", async () => {
     selector: [[5, 1]],
     cache,
   });
-
-  vd(cache.buffer.length);
+  expect(cache.buffer.length).toBe(1);
 
   await Query.run({
     selector: [[5, 1]],
     cache,
   });
-  vd(cache.buffer.length);
+  expect(cache.buffer.length).toBe(1);
 
   await Query.run({
     selector: [[2, 3]],
     cache,
   });
-  vd(cache.buffer.length);
+  expect(cache.buffer.length).toBe(2);
 
   // expect(chartData.series.length).toBe(4);
   // expect(chartData.categories.length).toBe(3);
