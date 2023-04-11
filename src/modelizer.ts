@@ -29,7 +29,7 @@ import Points from "./points";
 export default class Modelizer {
   /**
    * Stores all row keys, column keys and tags before any modification is
-   * applied. Useful to compare the original values with output.
+   * applied. Useful to compare the original values and output.
    * @private
    */
   readonly #inputKeys: InputKeys = {
@@ -128,7 +128,7 @@ export default class Modelizer {
 
   /**
    * Pass a callback to run on each row or column by given mode.
-   * @param mode KeyMode is either 'row' or 'column'
+   * @param mode KeyMode is either 'row' or 'col'
    * @param cb The callback to run on each row
    */
   processByMode(mode: KeyMode, cb: ProcessRowCb | ProcessColumnCb): this {
@@ -276,7 +276,7 @@ export default class Modelizer {
    */
   setCellValue(r: Key, c: Key, value: CellValue): Cell {
     const targetCell = this.getCell(r, c);
-    targetCell.value = value;
+    targetCell.setValue(value);
     return targetCell;
   }
 
@@ -497,10 +497,15 @@ export default class Modelizer {
         cell.points.push(point);
       },
       getValue: () => cell.value || cell.getPoint(0).value,
-      setValue: (value: CellValue) => (cell.value = value),
+      setValue: (value: CellValue) => {
+        const point = cell.getPoint();
+        point.value = value;
+        return cell;
+      },
       getRow: () => this.getRow(cell.row),
       getColumn: () => this.getColumn(cell.col),
-      toNumber: () => Number(cell.getValue()),
+      toNumber: () =>
+        cell.getValue() !== undefined ? Number(cell.getValue()) : 0,
       dump: () => this.#dumpCell(cell),
     };
 

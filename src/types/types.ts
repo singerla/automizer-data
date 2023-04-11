@@ -230,23 +230,20 @@ export type DataResultCellFilter = {
   (points: DataPoint[]): DataPoint[];
 };
 
-export type DataPointModifier = {
+export type DataPointModifier = SortableModification & {
   applyToLevel?: number[];
-  executionOrder?: number;
   cb?: any;
   callbacks?: any[];
 };
 
-export type DataPointSortation = {
-  cb?: any;
-  section: DataPointTarget;
-};
-
-export type DataGridTransformation = {
-  cb?: (result: Result, mod: Modelizer, points: DataPoint[]) => void;
+export type DataGridTransformation = SortableModification & {
   modelize?: (args: any, query?: Query) => void;
   condition?: (args: any) => Promise<boolean>;
-  section: DataPointTarget;
+};
+
+export type SortableModification = {
+  executionOrder?: number;
+  name?: string;
 };
 
 export type CellKey = {

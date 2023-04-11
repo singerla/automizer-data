@@ -23,7 +23,6 @@ import {
   DataPointFilter,
   DataPointMeta,
   DataPointModifier,
-  DataPointSortation,
   DataResultCellFilter,
   DataTag,
   ModArgsAddMeta,
@@ -82,7 +81,6 @@ export type {
 };
 export type {
   ModifierCommandArgument,
-  DataPointSortation,
   DataPoint,
   DataPointModifier,
   ModArgsCustom,

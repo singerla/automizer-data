@@ -84,7 +84,7 @@ export interface Cell {
    * Set current value of cell. The cell value will be used as final output.
    * @param value
    */
-  setValue: (value: CellValue) => void;
+  setValue: (value: CellValue) => Cell;
   /**
    * Retreive all neighbour cells from left to right of the current cell,
    * including the current cell.
