@@ -292,7 +292,19 @@ export default class Modelizer {
     targetCell.points.push(point);
     return targetCell;
   }
-
+  /**
+   * Retreive a rows- or columns-model object for the given selector.
+   * @param mode Pass 'row' or 'col'.
+   * @param key Pass a number or a string to select the target row/column.
+   * @return A model row/column object containing all cells.
+   */
+  getByMode(mode: KeyMode, key: Key): ModelRow | ModelColumn {
+    if (mode === "row") {
+      return this.getRow(key);
+    } else {
+      return this.getColumn(key);
+    }
+  }
   /**
    * Retreive a row model object for the given row selector.
    * @param r Pass a number or a string to select the target row.

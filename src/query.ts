@@ -119,6 +119,7 @@ export default class Query {
     const modelizer = new Modelizer(
       {
         points,
+        strict: false,
       },
       this
     );
@@ -404,23 +405,11 @@ export default class Query {
     this[mode][category][value] = true;
   }
 
-  async merge(): Promise<Modelizer> {
-    // let result = <DataMergeResult>{};
-    //
-    // this.points.forEach((point) => {
-    //   const rowKey = point.row;
-    //   const columnKey = point.column;
-    //
-    //   result[rowKey] = result[rowKey] || {};
-    //   result[rowKey][columnKey] = result[rowKey][columnKey] || [];
-    //   result[rowKey][columnKey].push(point);
-    // });
-    //
-    // this.setResult(result);
-
+  async merge(points): Promise<Modelizer> {
     const modelizer = new Modelizer(
       {
-        points: this.points,
+        points: points,
+        strict: false,
       },
       this
     );
