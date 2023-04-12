@@ -388,7 +388,7 @@ export default class Modelizer {
   }
 
   #parseCellKeys(keys: Key[], mode: KeyMode): number[] {
-    if (!keys) return [];
+    if (!keys || keys.map === undefined) return [];
     return keys.map((key) => this.#parseCellKey(key, mode));
   }
 

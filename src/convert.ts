@@ -237,7 +237,7 @@ export default class Convert {
       }
 
       row.cells.forEach((cell, c) => {
-        tableRow.push(cell.value);
+        tableRow.push(cell.getValue());
       });
 
       tableRowStyles.push(...this.#extractPointStyle<TableRowStyle>(row));

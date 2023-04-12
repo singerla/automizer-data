@@ -1,5 +1,5 @@
 import { PrismaClient, Tag } from "./client";
-import { getNestedClause, vd } from "./helper";
+import { getNestedClause } from "./helper";
 import _ from "lodash";
 
 import {
@@ -8,26 +8,21 @@ import {
   CellKeys,
   DataGrid,
   DataGridTransformation,
-  DataMergeResult,
   DataPoint,
-  DataPointMeta,
   DataPointModifier,
   Datasheet,
   DataTag,
   DataTagSelector,
+  ICache,
   IdSelector,
-  NestedParentValue,
   QueryOptions,
   QueryResult,
   RawResult,
-  RawResultMeta,
   Result,
   ResultCell,
-  ResultColumn,
   ResultRow,
   Selector,
   Sheets,
-  ICache,
 } from "./types/types";
 
 import Points from "./points";
