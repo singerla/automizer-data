@@ -33,6 +33,7 @@ import {
 import Points from "./points";
 import Modelizer from "./modelizer";
 import Convert from "./convert";
+import Keys from "./keys";
 
 export default class Query {
   prisma: PrismaClient | any;
@@ -113,8 +114,7 @@ export default class Query {
       throw "Parse Selector failed";
     });
 
-    const { points, sheets, tags } = await this.getRawResult(tagIds);
-    // this.setDataPointKeys(points, "keys");
+    const { points, sheets, tags, inputKeys } = await this.getRawResult(tagIds);
 
     const modelizer = new Modelizer(
       {
@@ -132,7 +132,7 @@ export default class Query {
       modelizer,
       sheets,
       tags,
-      inputKeys: modelizer.getInputKeys(),
+      inputKeys: inputKeys.getInputKeys(),
       convert: () => new Convert(modelizer),
       isValid: () => !!modelizer.getFirstPoint(),
       visibleKeys: {
@@ -147,6 +147,8 @@ export default class Query {
     const usedTags: Tag[][] = [];
     const usedDatasheets = <Datasheet[]>[];
     const usedDatapoints = <DataPoint[]>[];
+
+    const inputKeys = new Keys();
 
     for (const level in allTagIds) {
       const tagIds = allTagIds[level];
@@ -179,16 +181,19 @@ export default class Query {
         );
       }
 
+      inputKeys.addPoints(datapoints);
+
       usedDatapoints.push(...datapoints);
       usedTags.push(selectionTags);
       usedDatasheets.push(...dataSheets);
 
-      modifiedDataPoints.push(
-        ...this.modifyDataPoints(datapoints, Number(level))
-      );
+      const pointsCls = this.modifyDataPoints(datapoints, Number(level));
+
+      modifiedDataPoints.push(...pointsCls.points);
     }
 
     return {
+      inputKeys,
       points: modifiedDataPoints,
       tags: usedTags,
       sheets: usedDatasheets,
@@ -196,59 +201,8 @@ export default class Query {
   }
 
   fromCache(cached: CachedObject): CachedObject {
-    // this.sheets = _.cloneDeep(cached.sheets);
-    // this.keys = _.cloneDeep(cached.keys);
-    // this.inputKeys = _.cloneDeep(cached.inputKeys);
-    // this.tags = _.cloneDeep(cached.tags);
-
     return _.cloneDeep(cached);
   }
-
-  // toModelizer(result: Result): Modelizer {
-  //   const modelizer = new Modelizer({}, this);
-  //   modelizer.strict = false;
-  //   result.body.forEach((row) => {
-  //     row.cols.forEach((col) => {
-  //       const newCell = modelizer.setCell(row.key, col.key);
-  //       newCell.points = col.value;
-  //       newCell.setValue(col.value[0].value);
-  //     });
-  //   });
-  //   return modelizer;
-  // }
-
-  // fromModelizer(modelizer: Modelizer): DataMergeResult {
-  //   const body = <DataMergeResult>{};
-  //   modelizer.processRows((modelRow) => {
-  //     const cols = {};
-  //     modelRow.each((cell) => {
-  //       cell.points = cell.points || [];
-  //       const points = cell.points;
-  //       if (points[0]) {
-  //         points[0].value = cell.value;
-  //       } else {
-  //         points.push(
-  //           Query.createDataPoint(modelRow.key, cell.colKey, cell.value)
-  //         );
-  //       }
-  //       cols[cell.colKey] = points;
-  //     });
-  //     body[modelRow.key] = cols;
-  //   });
-  //   return body;
-  // }
-
-  // processSheets(sheets: Sheets, level: number) {
-  //   const dataPoints = <DataPoint[]>[];
-  //   if (sheets.length > 0) {
-  //     const dataSheets = this.parseSheets(sheets);
-  //     const dataSheetPoints = this.extractDataPoints(dataSheets);
-  //     dataPoints.push(...dataSheetPoints);
-  //
-  //     // this.setDataPointKeys(dataPoints, "inputKeys");
-  //   }
-  //   return dataPoints;
-  // }
 
   async getTagInfo(tagIds: number[]): Promise<Tag[]> {
     return this.prisma.tag.findMany({
@@ -353,7 +307,7 @@ export default class Query {
     return dataPoints;
   }
 
-  modifyDataPoints(dataPoints: DataPoint[], level: number): DataPoint[] {
+  modifyDataPoints(dataPoints: DataPoint[], level: number): Points {
     const modifiers = this.getDatapointModifiersByLevel(level);
     const points = new Points(dataPoints);
     modifiers.forEach((modifier) => {
@@ -370,7 +324,7 @@ export default class Query {
       }
     });
 
-    return points.points;
+    return points;
   }
 
   getDatapointModifiersByLevel(level: number): DataPointModifier[] {
@@ -383,42 +337,6 @@ export default class Query {
       }
     });
     return modifiers;
-  }
-
-  setDataPointKeys(dataPoints: DataPoint[], mode: "keys" | "inputKeys") {
-    dataPoints.forEach((point: DataPoint, c: number) => {
-      this.addKey("row", point.row, mode);
-      this.addKey("column", point.column, mode);
-      point.tags.forEach((tag: DataTag) => {
-        if (tag.categoryId) {
-          this.addKey(String(tag.categoryId), tag.value, mode);
-        }
-      });
-    });
-  }
-
-  addKey(category: string, value: string, mode: "keys" | "inputKeys") {
-    if (!this[mode][category]) {
-      this[mode][category] = {};
-    }
-
-    this[mode][category][value] = true;
-  }
-
-  async merge(points): Promise<Modelizer> {
-    const modelizer = new Modelizer(
-      {
-        points: points,
-        strict: false,
-      },
-      this
-    );
-
-    if (this.grid.transform) {
-      await this.transformResult(this.grid.transform, modelizer);
-    }
-
-    return modelizer;
   }
 
   async parseSelector(selector: Selector): Promise<IdSelector[]> {
@@ -493,87 +411,10 @@ export default class Query {
     tag.id = tagItem.id;
   }
 
-  // setResult(result: DataMergeResult): void {
-  //   this.visibleKeys.row = [];
-  //   this.visibleKeys.column = [];
-  //   this.result.body = [];
-  //
-  //   for (const r in result) {
-  //     const cols = <ResultColumn[]>[];
-  //     this.visibleKeys.row.push(r);
-  //
-  //     const row = result[r];
-  //     for (const c in row) {
-  //       this.visibleKeys.column.push(c);
-  //
-  //       cols.push({
-  //         key: c,
-  //         value: row[c],
-  //         getPoint: Query.getPointCb(row[c]),
-  //       });
-  //     }
-  //
-  //     this.result.body.push({
-  //       key: r,
-  //       cols: cols,
-  //       getColumn: Query.getColumnCb(cols),
-  //     });
-  //   }
-  //
-  //   this.result.isValid = (): boolean => {
-  //     if (this.result.body && this.result.body[0] && this.result.body[0].cols) {
-  //       return true;
-  //     }
-  //     return false;
-  //   };
-  //   this.result.info = new ResultInfo(this.result);
-  //   this.visibleKeys.column = [...new Set(this.visibleKeys.column)];
-  // }
-
-  // static createDataPoint(
-  //   rowKey?: string,
-  //   colKey?: string,
-  //   value?: ResultCell
-  // ): DataPoint {
-  //   const point = <DataPoint>{
-  //     tags: [],
-  //     meta: [],
-  //     row: rowKey || "n/a createDataPoint",
-  //     column: colKey || "n/a createDataPoint",
-  //     value: value || null,
-  //     getMeta: () => undefined,
-  //     setMeta: () => undefined,
-  //     getTag: () => undefined,
-  //   };
-  //
-  //   point.getMeta = Query.getMetaCb(point);
-  //   point.setMeta = Query.setMetaCb(point);
-  //   point.getTag = Query.getTagCb(point);
-  //
-  //   return point;
-  // }
-  //
-  // static getPointCb(points: DataPoint[]) {
-  //   return (index?: number): DataPoint => {
-  //     const point = points[index || 0];
-  //     return point;
-  //   };
-  // }
-  //
-  // static getColumnCb(cols: ResultColumn[]) {
-  //   return (colId?: number): ResultColumn => {
-  //     return cols[colId || 0];
-  //   };
-  // }
-
   async transformResult(
     transformations: DataGridTransformation[],
     modelizer: Modelizer
   ) {
-    // if (!this.result.isValid()) {
-    //   return;
-    // }
-
     try {
       await this.applyTransformations(transformations, modelizer);
     } catch (e) {

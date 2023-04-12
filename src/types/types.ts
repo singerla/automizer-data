@@ -9,6 +9,7 @@ import Modelizer from "../modelizer";
 import Query from "../query";
 import { InputKeys } from "./modelizer-types";
 import Convert from "../convert";
+import Keys from "../keys";
 
 export type PrismaId = number;
 
@@ -80,6 +81,7 @@ export type RawResult = {
   points: DataPoint[];
   tags: Tag[][];
   sheets: Datasheet[];
+  inputKeys: Keys;
 };
 
 export type CachedObject = {

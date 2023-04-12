@@ -28,17 +28,6 @@ import Points from "./points";
  */
 export default class Modelizer {
   /**
-   * Stores all row keys, column keys and tags before any modification is
-   * applied. Useful to compare the original values and output.
-   * @private
-   */
-  readonly #inputKeys: InputKeys = {
-    row: [],
-    column: [],
-    nested: [],
-    category: [],
-  };
-  /**
    * Stores all keys for the current set of rows and columns.
    * Represents the current edges of #table.
    * @private
@@ -99,8 +88,6 @@ export default class Modelizer {
     const r = this.addRow(rowKey);
     const c = this.addColumn(colKey);
     const cell = this.pushCellPoints(r, c, point);
-
-    this.#addInputKeys(rowKey, colKey, point);
 
     if (options?.value) {
       const value = options.value(point);
@@ -175,15 +162,6 @@ export default class Modelizer {
   }
 
   /**
-   * Retreive all untouched unique row and column keys and tags from all
-   * DataPoints. Object keys are 'row', 'col' and each used categoryId.
-   * @returns InputKeys Object with section keys and array of strings values.
-   */
-  getInputKeys(): InputKeys {
-    return this.#inputKeys;
-  }
-
-  /**
    * Pass a string key to append a new row with that name.
    * @param key
    * @returns {number} Column index of the created row.
@@ -231,40 +209,6 @@ export default class Modelizer {
   #getKey(key: Key, mode: KeyMode): string {
     const id = this.#parseCellKey(key, mode);
     return this.#getKeys(mode)[id];
-  }
-
-  #addInputKeys(row: string, col: string, point: DataPoint) {
-    if (!this.#inputKeys.row.includes(row)) {
-      this.#inputKeys.row.push(row);
-    }
-
-    if (!this.#inputKeys.column.includes(col)) {
-      this.#inputKeys.column.push(col);
-    }
-
-    point.tags.forEach((tag) => {
-      this.#addInputCategoryKey(tag);
-    });
-
-    const isNestedParent = point.getMeta("isParent");
-    if (isNestedParent && !this.#inputKeys.nested.includes(row)) {
-      this.#inputKeys.nested.push(row);
-    }
-  }
-
-  #addInputCategoryKey(tag: DataTag) {
-    let categoryKeys = this.#inputKeys.category.find(
-      (keys) => keys.categoryId === tag.categoryId
-    );
-
-    if (!categoryKeys) {
-      this.#inputKeys.category.push({
-        categoryId: tag.categoryId,
-        keys: [tag.value],
-      });
-    } else if (!categoryKeys.keys.includes(tag.value)) {
-      categoryKeys.keys.push(tag.value);
-    }
   }
 
   /**

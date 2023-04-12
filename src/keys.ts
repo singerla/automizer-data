@@ -1,0 +1,66 @@
+import { DataPoint, DataTag } from "./types/types";
+import { InputKeys } from "./types/modelizer-types";
+
+export default class Keys {
+  points: DataPoint[] = [];
+  /**
+   * Stores all row keys, column keys and tags before any modification is
+   * applied. Useful to compare the original values and output.
+   * @private
+   */
+  readonly #inputKeys: InputKeys = {
+    row: [],
+    column: [],
+    nested: [],
+    category: [],
+  };
+
+  addPoints(points: DataPoint[]) {
+    points.forEach((point) => {
+      this.#addPoint(point);
+    });
+  }
+
+  /**
+   * Retreive all untouched unique row and column keys and tags from all
+   * DataPoints. Object keys are 'row', 'col' and each used categoryId.
+   * @returns InputKeys Object with section keys and array of strings values.
+   */
+  getInputKeys(): InputKeys {
+    return this.#inputKeys;
+  }
+
+  #addPoint(point: DataPoint) {
+    if (!this.#inputKeys.row.includes(point.row)) {
+      this.#inputKeys.row.push(point.row);
+    }
+
+    if (!this.#inputKeys.column.includes(point.column)) {
+      this.#inputKeys.column.push(point.column);
+    }
+
+    point.tags.forEach((tag) => {
+      this.#addInputCategoryKey(tag);
+    });
+
+    const isNestedParent = point.getMeta("isParent");
+    if (isNestedParent && !this.#inputKeys.nested.includes(point.row)) {
+      this.#inputKeys.nested.push(point.row);
+    }
+  }
+
+  #addInputCategoryKey(tag: DataTag) {
+    let categoryKeys = this.#inputKeys.category.find(
+      (keys) => keys.categoryId === tag.categoryId
+    );
+
+    if (!categoryKeys) {
+      this.#inputKeys.category.push({
+        categoryId: tag.categoryId,
+        keys: [tag.value],
+      });
+    } else if (!categoryKeys.keys.includes(tag.value)) {
+      categoryKeys.keys.push(tag.value);
+    }
+  }
+}

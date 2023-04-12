@@ -15,7 +15,7 @@ import {
   RawResultMeta,
   RenameLabel,
 } from "./types/types";
-import { CellValue } from "./types/modelizer-types";
+import { CellValue, InputKeys } from "./types/modelizer-types";
 
 export default class Points {
   points: DataPoint[];
