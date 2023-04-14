@@ -19,6 +19,7 @@ import {
   Table,
 } from "./types/modelizer-types";
 import Points from "./points";
+import Style from "./style";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -46,6 +47,9 @@ export default class Modelizer {
   query: Query;
 
   #table: Table = [];
+
+  readonly #rows: ModelRow[] = [];
+  readonly #columns: ModelColumn[] = [];
 
   constructor(options?: ModelizerOptions, query?: Query) {
     this.strict = options?.strict !== undefined ? options?.strict : true;
@@ -256,9 +260,15 @@ export default class Modelizer {
    */
   getRow(r: Key): ModelRow {
     const rowId = this.#parseCellKey(r, "row");
+    const key = this.#getKey(rowId, "row");
+    const exists = this.#rows.find((row) => row.key === key);
+    if (exists) {
+      return exists;
+    }
+
     const cells = this.#getRowCells(rowId);
     const modelRow = {
-      key: this.#getKey(rowId, "row"),
+      key: key,
       updateKey: (newKey: string) => {
         this.#updateKey("row", rowId, newKey);
         cells.forEach((cell) => (cell.rowKey = newKey));
@@ -281,22 +291,33 @@ export default class Modelizer {
       setCell: (c: Key, cell: Cell) => this.setCell(r, c, cell).getRow(),
       setCellValue: (c: Key, value: CellValue) =>
         this.setCellValue(r, c, value).getRow(),
-      style: {},
+      style: new Style(),
       dump: (s1, s2) => this.dump(s1, s2, [r], []),
     };
+
+    this.#rows.push(modelRow);
+
     return modelRow;
   }
 
   /**
-   * Retreive a column model object for the given column selector.
+   * Retrieve a column model object for the given column selector.
    * @param c Pass a number or a string to select the target column.
    * @return {ModelColumn} A model column object containing all cells.
    */
   getColumn(c: Key): ModelColumn {
     const colId = this.#parseCellKey(c, "col");
+    const key = this.#getKey(colId, "col");
+
+    const exists = this.#columns.find((col) => col.key === key);
+    if (exists) {
+      return exists;
+    }
+
     const cells = this.#getColumnCells(colId);
+
     const modelColumn = {
-      key: this.#getKey(colId, "col"),
+      key: key,
       updateKey: (newKey: string) => {
         this.#updateKey("col", colId, newKey);
         cells.forEach((cell) => (cell.colKey = newKey));
@@ -319,9 +340,12 @@ export default class Modelizer {
       setCell: (r: number, cell: Cell) => this.setCell(r, c, cell).getColumn(),
       setCellValue: (r: number, value: CellValue) =>
         this.setCellValue(r, c, value).getColumn(),
-      style: {},
+      style: new Style(),
       dump: (s1, s2) => this.dump(s1, s2, [], [c]),
     };
+
+    this.#columns.push(modelColumn);
+
     return modelColumn;
   }
 

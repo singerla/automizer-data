@@ -1,5 +1,6 @@
 import { DataPoint } from "./types";
 import { ChartValueStyle, TableRowStyle } from "pptx-automizer/dist";
+import Style from "../style";
 
 export type ModelizerOptions = {
   strict?: boolean;
@@ -154,7 +155,7 @@ export interface ModelRow {
   /**
    * Holds a style to pass it to pptx automizer later.
    */
-  style: ChartValueStyle | TableRowStyle;
+  style: Style;
   /**
    * Log contents of the current row to console.
    */
@@ -211,7 +212,7 @@ export interface ModelColumn {
   /**
    * Holds a style to pass it to pptx automizer later.
    */
-  style: ChartValueStyle | TableRowStyle;
+  style: Style;
   /**
    * Log contents of the current column to console.
    * @param s1 Width of first column

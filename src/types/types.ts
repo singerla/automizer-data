@@ -175,7 +175,7 @@ export type QueryResult = {
   sheets: Datasheet[];
   tags: Tag[][];
   inputKeys: InputKeys;
-  convert: () => Convert;
+  convert: (modelizer?: Modelizer) => Convert;
   isValid: () => boolean;
   visibleKeys: {
     row: string[];

@@ -21,9 +21,11 @@ export default class Convert {
 
   getSeries = (): ChartSeries[] => {
     return this.#getFirstRow().cells.map((col) => {
+      const column = this.modelizer.getColumn(col.colKey);
+      const seriesStyle = column.style.get();
       return {
         label: col.colKey,
-        style: col.getPoint().style,
+        style: seriesStyle,
       };
     });
   };

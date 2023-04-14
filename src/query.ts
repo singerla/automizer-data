@@ -128,7 +128,7 @@ export default class Query {
       sheets,
       tags,
       inputKeys: inputKeys.getInputKeys(),
-      convert: () => new Convert(modelizer),
+      convert: (tmpModelizer?) => new Convert(tmpModelizer || modelizer),
       isValid: () => !!modelizer.getFirstPoint(),
       visibleKeys: {
         row: modelizer.getKeys("row"),
