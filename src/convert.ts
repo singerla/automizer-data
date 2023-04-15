@@ -152,7 +152,7 @@ export default class Convert {
     };
   }
 
-  toLabels(): TableData {
+  toRowLabels(): TableData {
     const body = [];
     this.#forEachRow((row, r) => {
       body.push({
@@ -164,10 +164,6 @@ export default class Convert {
     return {
       body,
     };
-  }
-
-  toRowLabels(): TableData {
-    return this.toLabels();
   }
 
   toColumnLabels(): TableData {
