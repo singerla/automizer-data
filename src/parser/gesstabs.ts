@@ -1,23 +1,15 @@
 import {
-  RawResultData,
-  DataTag,
-  RawColumnSlice,
-  ParserOptions,
-  RawTable,
   Datasheet,
-  RawRow,
-  StoreSummary,
-  ResultCell,
-  RawResultMeta,
-  RawResultNestedItem,
-  RawResultNestedParent,
+  ParserOptions,
+  RawResultData,
   RawResultInfo,
+  RawResultMeta,
+  RawResultNestedParent,
+  RawRow,
 } from "../types/types";
-import { Store } from "./../store";
 
 import xlsx from "node-xlsx";
 import { Parser } from "./parser";
-import { vd } from "../helper";
 
 const csv = require("csv-parser");
 const fs = require("fs");
@@ -48,9 +40,12 @@ export class Gesstabs extends Parser {
     this.file = path.basename(file);
     const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file));
     const data = workSheetsFromBuffer[0].data;
-    console.log("File rows count: " + String(data.length));
+
     this.autoDetectConfig(data);
+
     console.log("Table separator: " + this.tableSeparator);
+    console.log("File rows count: " + String(data.length));
+
     data.forEach((row) => {
       this.parseSections(<RawRow>row);
     });
