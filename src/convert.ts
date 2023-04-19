@@ -9,8 +9,8 @@ import {
   TableRow,
   TableRowStyle,
 } from "pptx-automizer";
-import Modelizer from "./modelizer";
-import { Cell, ModelRow, ProcessRowCb } from "./types/modelizer-types";
+import Modelizer from "./modelizer/modelizer";
+import { Cell, Model, ProcessRowCb } from "./modelizer/modelizer-types";
 
 export default class Convert {
   modelizer: Modelizer;
@@ -21,10 +21,10 @@ export default class Convert {
 
   getSeries = (): ChartSeries[] => {
     return this.#getFirstRow().cells.map((col) => {
-      const column = this.modelizer.getColumn(col.colKey);
+      const column = this.modelizer.getColumn(col.columnKey);
       const seriesStyle = column.style.get();
       return {
-        label: col.colKey,
+        label: col.columnKey,
         style: seriesStyle,
       };
     });
@@ -38,7 +38,7 @@ export default class Convert {
     this.modelizer.processRows(cb);
   }
 
-  #toCategory(row: ModelRow) {
+  #toCategory(row: Model) {
     return {
       label: row.key,
       values: row.cells.map((column) => column.toNumber()),
@@ -171,7 +171,7 @@ export default class Convert {
     let styles = <any>[];
     const firstRow = this.#getFirstRow();
     if (firstRow) {
-      series = firstRow.cells.map((col) => col.colKey);
+      series = firstRow.cells.map((col) => col.columnKey);
       styles = this.#extractPointStyle<TableRowStyle>(firstRow);
     }
 
@@ -217,7 +217,7 @@ export default class Convert {
       if (params?.showRowLabels) {
         header.push("");
       }
-      header.push(...firstRow.cells.map((col) => col.colKey));
+      header.push(...firstRow.cells.map((col) => col.columnKey));
 
       body.push({
         values: header,
@@ -260,7 +260,7 @@ export default class Convert {
       };
       row.cells.forEach((cell) => {
         const resultCol = <ResultColumn>{
-          key: cell.colKey,
+          key: cell.columnKey,
           value: cell.points,
         };
         bodyRow.cols.push(resultCol);
@@ -270,7 +270,7 @@ export default class Convert {
     return body;
   }
 
-  #extractPointStyle<T>(row: ModelRow): T[] {
+  #extractPointStyle<T>(row: Model): T[] {
     const styles = <T[]>[];
 
     row.cells.forEach((cell: Cell) => {

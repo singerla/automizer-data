@@ -1,7 +1,5 @@
-import { Query, Convert, Selector } from "./index";
+import { Query } from "./index";
 import { vd } from "./helper";
-import { CachedObject, CellKeys, Datasheet } from "./types/types";
-import { Tag } from "./client";
 import { TableRowStyle } from "pptx-automizer/dist";
 
 const run = async () => {
@@ -20,12 +18,12 @@ const run = async () => {
 
   const queryResult = await Query.run({ dataTagSelector });
 
-  // query.modelizer.getRow(2).getCell(1).getPoint().style = <TableRowStyle>{
-  //   background: {
-  //     type: "srgbClr",
-  //     value: "cccccc",
-  //   },
-  // };
+  queryResult.modelizer.getRow(2).getCell(1).getPoint().style = <TableRowStyle>{
+    background: {
+      type: "srgbClr",
+      value: "cccccc",
+    },
+  };
 
   const toSeriesCategories = queryResult.convert().toSeriesCategories();
   const toVerticalLines = queryResult.convert().toVerticalLines();
@@ -35,12 +33,20 @@ const run = async () => {
   const toTable = queryResult.convert().toTable();
   const toResultRows = queryResult.convert().toResultRows();
 
-  vd(toSeriesCategories);
+  queryResult.modelizer.dump();
 
-  // vd(query.modelizer.getKeys("row"));
-  // vd(query.modelizer.getInputKeys());
+  queryResult.modelizer.sort("row", ["answer 3"]);
+  queryResult.modelizer.sort("column", ["Total"]);
+  queryResult.modelizer.sort("column", ["40-69"]);
 
-  // query.modelizer.dump();
+  queryResult.modelizer.dump();
+
+  // vd(toResultRows);
+
+  vd(queryResult.modelizer.getKeys("row"));
+  vd(queryResult.inputKeys);
+
+  queryResult.modelizer.dump();
 };
 
 run()

@@ -3,7 +3,7 @@ import { PrismaClient } from "./client";
 import Query from "./query";
 import Points from "./points";
 import Convert from "./convert";
-import Modelizer from "./modelizer";
+import Modelizer from "./modelizer/modelizer";
 
 import { Store } from "./store";
 import { Parser } from "./parser/parser";

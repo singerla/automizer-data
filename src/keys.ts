@@ -1,5 +1,5 @@
 import { DataPoint, DataTag } from "./types/types";
-import { InputKeys } from "./types/modelizer-types";
+import { InputKeys } from "./modelizer/modelizer-types";
 
 export default class Keys {
   points: DataPoint[] = [];

@@ -1,28 +1,25 @@
-import { Query, Result } from "../src";
-import { filterBy, filterByDataTag } from "../src/filter";
-import { value } from "../src/cell";
-import { vd } from "../src/helper";
+import { Query } from "../src";
+import { DataTagSelector } from "../src/types/types";
 
 test("Use modelizer to add a difference column.", async () => {
-  const selector = [
-    {
-      category: "variable",
-      value: "Q12",
-    },
-    {
-      category: "subgroup",
-      value: "Gender",
-    },
+  const selector = <DataTagSelector>[
+    [
+      {
+        category: "variable",
+        value: "Q12",
+      },
+      {
+        category: "subgroup",
+        value: "Gender",
+      },
+    ],
   ];
 
   const query = await Query.run({
-    selector,
-    useModelizer: true,
-    modelizer: {
-      strict: false,
-    },
+    dataTagSelector: selector,
   });
-  const mod = query.getModelizer();
+
+  const mod = query.modelizer;
 
   mod.getColumn("Difference").each((cell) => {
     const totalCell = cell.getRow().getCell("Total").toNumber();

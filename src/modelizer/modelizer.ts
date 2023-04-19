@@ -1,25 +1,24 @@
-import { DataPoint, DataTag } from "./types/types";
-import { Query } from "./index";
+import { DataPoint } from "../types/types";
+import { Query } from "../index";
 import _ from "lodash";
 import {
   AddPointsOptions,
   Cell,
   CellValue,
-  InputKeys,
   Key,
   KeyMode,
   Keys,
-  ModelColumn,
+  Model,
   ModelEachCb,
   ModelizerOptions,
-  ModelRow,
   ProcessColumnCb,
   ProcessRowCb,
   RenderTableCb,
-  Table,
-} from "./types/modelizer-types";
-import Points from "./points";
-import Style from "./style";
+  Style,
+} from "./modelizer-types";
+import Points from "../points";
+import { vd } from "../helper";
+import { dumpBody, dumpCell, dumpFooter, dumpHeader, toColSize } from "./dump";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -35,8 +34,12 @@ export default class Modelizer {
    */
   readonly #keys: Keys = {
     row: [],
-    col: [],
+    column: [],
   };
+
+  #rows: Model[] = [];
+  #columns: Model[] = [];
+
   /**
    * If strict mode is 'true', no keys will be added automatically.
    * In lax mode, any non-existing string passing #parseCellKey will create
@@ -46,10 +49,7 @@ export default class Modelizer {
   // The parent class for this Modelizer instance
   query: Query;
 
-  #table: Table = [];
-
-  readonly #rows: ModelRow[] = [];
-  readonly #columns: ModelColumn[] = [];
+  #cells: Cell[] = [];
 
   constructor(options?: ModelizerOptions, query?: Query) {
     this.strict = options?.strict !== undefined ? options?.strict : true;
@@ -109,7 +109,7 @@ export default class Modelizer {
    */
   process(cb: RenderTableCb): this {
     this.getKeys("row").forEach((rowKey, r) => {
-      this.getKeys("col").forEach((colKey, c) => {
+      this.getKeys("column").forEach((colKey, c) => {
         const cell = this.getCell(r, c);
         cb(cell, r, c, rowKey, colKey);
       });
@@ -126,7 +126,7 @@ export default class Modelizer {
     switch (mode) {
       case "row":
         return this.processRows(cb);
-      case "col":
+      case "column":
         return this.processColumns(cb);
     }
     return this;
@@ -149,7 +149,7 @@ export default class Modelizer {
    * @param cb The callback to run on each column
    */
   processColumns(cb: ProcessColumnCb): this {
-    this.getKeys("col").forEach((colKey, c) => {
+    this.getKeys("column").forEach((colKey, c) => {
       const column = this.getColumn(c);
       cb(column, c, colKey);
     });
@@ -180,7 +180,7 @@ export default class Modelizer {
    * @returns {number} Column index of the created column.
    */
   addColumn(key: string): number {
-    return this.#addKey(key, "col");
+    return this.#addKey(key, "column");
   }
 
   #addKey(key: string, mode: KeyMode): number {
@@ -215,6 +215,13 @@ export default class Modelizer {
     return this.#getKeys(mode)[id];
   }
 
+  setCellValueByMode(mode: KeyMode, k1: Key, k2: Key, value: CellValue): Cell {
+    if (mode === "row") {
+      return this.setCellValue(k1, k2, value);
+    } else {
+      return this.setCellValue(k2, k1, value);
+    }
+  }
   /**
    * Pass a {CellValue} to a target {Cell}.
    * @param r Pass a number or a string to determine the target cell row.
@@ -242,121 +249,105 @@ export default class Modelizer {
   }
   /**
    * Retreive a rows- or columns-model object for the given selector.
-   * @param mode Pass 'row' or 'col'.
+   * @param mode Pass 'row' or 'column'.
    * @param key Pass a number or a string to select the target row/column.
    * @return A model row/column object containing all cells.
    */
-  getByMode(mode: KeyMode, key: Key): ModelRow | ModelColumn {
+  getByMode(mode: KeyMode, key: Key): Model {
     if (mode === "row") {
       return this.getRow(key);
     } else {
       return this.getColumn(key);
     }
   }
+
+  getRow(key: Key): Model {
+    return this.findOrCreateModel(this.#rows, "row", key);
+  }
+
+  getColumn(key: Key): Model {
+    return this.findOrCreateModel(this.#columns, "column", key);
+  }
+
+  findOrCreateModel(models: Model[], mode: KeyMode, key: Key) {
+    const modelKey = this.#getKey(key, mode);
+    const existing = models.find((model) => model.key === modelKey);
+    if (existing) {
+      return existing;
+    }
+
+    const model = this.createModel(modelKey, mode);
+    models.push(model);
+    return model;
+  }
+
   /**
    * Retreive a row model object for the given row selector.
-   * @param r Pass a number or a string to select the target row.
+   * @param key Pass a number or a string to select the target row.
    * @return A model row object containing all cells.
    */
-  getRow(r: Key): ModelRow {
-    const rowId = this.#parseCellKey(r, "row");
-    const key = this.#getKey(rowId, "row");
-    const exists = this.#rows.find((row) => row.key === key);
-    if (exists) {
-      return exists;
-    }
-
-    const cells = this.#getRowCells(rowId);
-    const modelRow = {
+  createModel(key: string, mode: KeyMode): Model {
+    const model: Model = {
       key: key,
-      updateKey: (newKey: string) => {
-        this.#updateKey("row", rowId, newKey);
-        cells.forEach((cell) => (cell.rowKey = newKey));
-        return modelRow;
-      },
-      id: rowId,
-      cells: cells,
+      id: this.#parseCellKey(key, mode),
+      style: this.#style(),
+      cells: this.#filterCells(mode === "row" ? "column" : "row", key),
       each: (cb: ModelEachCb) => {
-        modelRow.cells.forEach((cell) => cb(cell));
-        return modelRow;
+        model.cells.forEach((cell) => cb(cell));
+        return model;
       },
       collect: (): CellValue[] => {
         const values = [];
-        modelRow.each((cell) => {
+        model.each((cell) => {
           values.push(cell.toNumber());
         });
         return values;
       },
-      getCell: (c: Key) => this.getCell(r, c),
-      setCell: (c: Key, cell: Cell) => this.setCell(r, c, cell).getRow(),
-      setCellValue: (c: Key, value: CellValue) =>
-        this.setCellValue(r, c, value).getRow(),
-      style: new Style(),
-      dump: (s1, s2) => this.dump(s1, s2, [r], []),
-    };
-
-    this.#rows.push(modelRow);
-
-    return modelRow;
-  }
-
-  /**
-   * Retrieve a column model object for the given column selector.
-   * @param c Pass a number or a string to select the target column.
-   * @return {ModelColumn} A model column object containing all cells.
-   */
-  getColumn(c: Key): ModelColumn {
-    const colId = this.#parseCellKey(c, "col");
-    const key = this.#getKey(colId, "col");
-
-    const exists = this.#columns.find((col) => col.key === key);
-    if (exists) {
-      return exists;
-    }
-
-    const cells = this.#getColumnCells(colId);
-
-    const modelColumn = {
-      key: key,
+      getCell: (i: Key) => this.getCellByMode(mode, model.id, i),
+      setCell: (i: Key, cell: Cell) => {
+        this.setCellByMode(mode, model.id, i, cell);
+        return model;
+      },
+      setCellValue: (i: Key, value: CellValue) => {
+        this.setCellValueByMode(mode, model.id, i, value);
+        return model;
+      },
       updateKey: (newKey: string) => {
-        this.#updateKey("col", colId, newKey);
-        cells.forEach((cell) => (cell.colKey = newKey));
-        return modelColumn;
+        this.#updateKey(mode, model.id, newKey);
+        model.cells.forEach((cell) => (cell.rowKey = newKey));
+        return model;
       },
-      id: colId,
-      cells: cells,
-      each: (cb: ModelEachCb) => {
-        cells.forEach((cell) => cb(cell));
-        return modelColumn;
-      },
-      collect: (): CellValue[] => {
-        const values = [];
-        modelColumn.each((cell) => {
-          values.push(cell.toNumber());
-        });
-        return values;
-      },
-      getCell: (r: number) => this.getCell(r, c),
-      setCell: (r: number, cell: Cell) => this.setCell(r, c, cell).getColumn(),
-      setCellValue: (r: number, value: CellValue) =>
-        this.setCellValue(r, c, value).getColumn(),
-      style: new Style(),
-      dump: (s1, s2) => this.dump(s1, s2, [], [c]),
+      dump: (s1, s2) =>
+        mode === "row"
+          ? this.dump(s1, s2, [model.id], [])
+          : this.dump(s1, s2, [], [model.id]),
     };
-
-    this.#columns.push(modelColumn);
-
-    return modelColumn;
+    return model;
   }
 
-  #getRowCells(r: number) {
-    return this.getKeys("col").map((colKey, c) => this.getCell(r, c));
-  }
+  #style = (): Style => {
+    const style = {
+      state: {},
+      assign(style) {
+        style.state = {
+          ...style.state,
+          ...style,
+        };
+      },
+      get() {
+        return style.state;
+      },
+    };
+    return style;
+  };
 
-  #getColumnCells(c: number) {
-    return this.getKeys("row").map((rowKey, r) => this.getCell(r, c));
+  getCellByMode(mode: KeyMode, i1: Key, i2: Key): Cell {
+    if (mode === "row") {
+      return this.getCell(i1, i2);
+    } else {
+      return this.getCell(i2, i1);
+    }
   }
-
   /**
    * Retrieve a cell by row and column key.
    * If no cell matches the given keys, a new cell will be created (non-strict).
@@ -367,13 +358,18 @@ export default class Modelizer {
    */
   getCell(r: Key, c: Key): Cell {
     const rowId = this.#parseCellKey(r, "row");
-    const colId = this.#parseCellKey(c, "col");
+    const colId = this.#parseCellKey(c, "column");
 
-    this.#initializeCell(rowId, colId);
-
-    return this.#table[rowId][colId];
+    return this.#findCellByIndex(rowId, colId);
   }
 
+  setCellByMode(mode: KeyMode, k1: Key, k2: Key, cell?: Cell): Cell {
+    if (mode === "row") {
+      return this.setCell(k1, k2, cell);
+    } else {
+      return this.setCell(k2, k1, cell);
+    }
+  }
   /**
    * Update a Cell object at the given keys or create one.
    * In strict mode, Modelizer will throw an error when there are no matching keys.
@@ -384,9 +380,7 @@ export default class Modelizer {
    */
   setCell(rowKey: Key, colKey: Key, cell?: Cell): Cell {
     const r = this.#parseCellKey(rowKey, "row");
-    const c = this.#parseCellKey(colKey, "col");
-
-    this.#initializeCell(r, c);
+    const c = this.#parseCellKey(colKey, "column");
 
     if (cell) {
       const targetCell = _.cloneDeep(cell);
@@ -394,21 +388,60 @@ export default class Modelizer {
         targetCell.rowKey = rowKey;
       }
       if (typeof colKey === "string") {
-        targetCell.colKey = colKey;
+        targetCell.columnKey = colKey;
       }
-      this.#table[r][c] = targetCell;
+
+      this.#pushCells(targetCell);
     }
 
-    return this.#table[r][c];
+    return this.#findCellByIndex(r, c);
   }
 
-  #initializeCell(r: number, c: number): void {
-    this.#initializeRow(r);
-    this.#table[r][c] = this.#table[r][c] || this.#defaultCell(r, c);
+  #pushCells(cell: Cell) {
+    this.#cells.push(cell);
   }
 
-  #initializeRow(r: number): void {
-    this.#table[r] = this.#table[r] || [];
+  #findCellByIndex(r: number, c: number): Cell {
+    const rowKey = this.#getKey(r, "row");
+    const columnKey = this.#getKey(c, "column");
+
+    if (!rowKey || !columnKey) {
+      throw "Valid keys required to find cell at r: " + r + ", c: " + c;
+    }
+
+    return this.#findCellByKeys(rowKey, columnKey);
+  }
+
+  #findCellByKeys(rowKey: string, columnKey: string): Cell {
+    const existingCell = this.#cells.find(
+      (cell) => cell.rowKey === rowKey && cell.columnKey === columnKey
+    );
+
+    if (existingCell) {
+      return existingCell;
+    }
+
+    const createdCell = this.#defaultCell(rowKey, columnKey);
+
+    this.#pushCells(createdCell);
+
+    return createdCell;
+  }
+
+  #filterCells(mode: KeyMode, key: string): Cell[] {
+    const keys = this.getKeys(mode);
+    const cells = [];
+
+    keys.forEach((targetKey) => {
+      const findOrCreateCell =
+        mode === "column"
+          ? this.#findCellByKeys(key, targetKey)
+          : this.#findCellByKeys(targetKey, key);
+
+      cells.push(findOrCreateCell);
+    });
+
+    return cells;
   }
 
   #parseCellKeys(keys: Key[], mode: KeyMode): number[] {
@@ -453,17 +486,15 @@ export default class Modelizer {
    * A cell can have zero or more Datapoints. The first datapoint to be passed
    * to a cell will define the cell value. The cell value can be altered
    * afterwards.
-   * @param r
-   * @param c
-   * @returns {{col: number, colKey: string, getPoint: (i) => DataPoint, getRow: () => ModelRow, points: DataPoint[], getValue: () => number | string, setValue: (value: CellValue) => string | number, getColumn: () => ModelColumn, row: number, dump: () => void, value: undefined, toNumber: () => number, rowKey: string}}
+   * @param rowKey
+   * @param columnKey
+   * @returns {{column: number, colKey: string, getPoint: (i) => DataPoint, getRow: () => ModelRow, points: DataPoint[], getValue: () => number | string, setValue: (value: CellValue) => string | number, getColumn: () => ModelColumn, row: number, dump: () => void, value: undefined, toNumber: () => number, rowKey: string}}
    */
-  #defaultCell(r: number, c: number): Cell {
+  #defaultCell(rowKey: string, columnKey: string): Cell {
     const cell = {
       value: undefined,
-      row: r,
-      col: c,
-      rowKey: this.#getKey(r, "row"),
-      colKey: this.#getKey(c, "col"),
+      rowKey: rowKey,
+      columnKey: columnKey,
       points: <DataPoint[]>[],
       getPoint: (i?: number) => {
         i = cell.points[i] ? i : 0;
@@ -482,34 +513,14 @@ export default class Modelizer {
         point.value = value;
         return cell;
       },
-      getRow: () => this.getRow(cell.row),
-      getColumn: () => this.getColumn(cell.col),
+      getRow: () => this.getRow(rowKey),
+      getColumn: () => this.getColumn(columnKey),
       toNumber: () =>
         cell.getValue() !== undefined ? Number(cell.getValue()) : 0,
-      dump: () => this.#dumpCell(cell),
+      dump: () => dumpCell(cell),
     };
 
     return cell;
-  }
-
-  /**
-   * Log contents of the current cell to console.
-   * @param cell
-   * @private
-   */
-  #dumpCell(cell: Cell): void {
-    const contents = {
-      value: cell.value,
-      row: cell.rowKey + " (" + cell.row + ")",
-      col: cell.colKey + " (" + cell.col + ")",
-      points: cell.points.map((point) => {
-        return {
-          value: point.value,
-          meta: point.meta,
-          tags: point.tags,
-        };
-      }),
-    };
   }
 
   #filterCellKeys(keys: Key[], mode: KeyMode) {
@@ -529,7 +540,7 @@ export default class Modelizer {
   }
 
   /**
-   * Specify "row" or "col" and an array of keys to filter and sort the target
+   * Specify "row" or "column" and an array of keys to filter and sort the target
    * dimension of current table.
    * @param mode
    * @param keys
@@ -544,51 +555,6 @@ export default class Modelizer {
     });
     this.#setKeys(mode, sortedKeys);
 
-    if (mode === "col") {
-      this.#table.forEach((row, r) => {
-        const cols = [];
-        ids.forEach((id) => {
-          if (row[id]) {
-            cols.push(row[id]);
-          } else {
-            if (this.strict === true) {
-              this.#handleError(
-                "Sortation of cols failed at col id: " +
-                  id +
-                  ". " +
-                  "Available col keys are " +
-                  Object.keys(row).join(" | ")
-              );
-            }
-            this.#initializeCell(r, id);
-            cols.push(this.#table[r][id]);
-          }
-        });
-        this.#table[r] = cols;
-      });
-    }
-
-    if (mode === "row") {
-      const filteredRows = [];
-      ids.forEach((id) => {
-        if (!this.#table[id]) {
-          if (this.strict === true) {
-            this.#handleError(
-              "Sortation of rows failed at row id: " +
-                id +
-                ". " +
-                "Available keys are " +
-                Object.keys(this.#table).join(" | ")
-            );
-          }
-          this.#initializeRow(id);
-        }
-
-        filteredRows.push(this.#table[id]);
-      });
-      this.#table = filteredRows;
-    }
-
     return this;
   }
 
@@ -596,12 +562,12 @@ export default class Modelizer {
    * Transpose the result by switching rows and columns.
    */
   transpose() {
-    const sortRows = this.getKeys("col");
+    const sortRows = this.getKeys("column");
     const sortCols = this.getKeys("row");
 
     this.process((cell) => {
       const rowKey = cell.rowKey;
-      const colKey = cell.colKey;
+      const colKey = cell.columnKey;
       cell.points.forEach((point) => {
         point.row = rowKey;
         point.column = colKey;
@@ -610,7 +576,7 @@ export default class Modelizer {
     });
 
     this.sort("row", sortRows);
-    this.sort("col", sortCols);
+    this.sort("column", sortCols);
   }
 
   /**
@@ -628,70 +594,15 @@ export default class Modelizer {
     cols?: Key[],
     renderCell?
   ) {
-    firstColSize = firstColSize || 10;
-    colSize = colSize || 8;
-
-    const strict = this.strict;
-    this.strict = true;
+    firstColSize = firstColSize || 15;
+    colSize = colSize || 10;
 
     const rowKeys = this.#filterCellKeys(rows, "row");
-    const colKeys = this.#filterCellKeys(cols, "col");
+    const colKeys = this.#filterCellKeys(cols, "column");
 
-    this.#dumpHeader(firstColSize, colSize, colKeys);
-    this.#dumpBody(firstColSize, colSize, rowKeys, colKeys, renderCell);
-    this.#dumpFooter(firstColSize, colSize, colKeys);
-
-    this.strict = strict;
-  }
-
-  #dumpHeader(firstColSize: number, colSize: number, colKeys: string[]) {
-    console.log();
-    let header = this.#toColSize("", firstColSize);
-    colKeys.forEach((colKey, c) => {
-      header = header + this.#toColSize(colKey, colSize);
-    });
-    console.log(header);
-  }
-
-  #dumpBody(
-    firstColSize: number,
-    colSize: number,
-    rowKeys: string[],
-    colKeys: string[],
-    renderCell
-  ) {
-    rowKeys.forEach((rowKey, r) => {
-      let row = this.#toColSize(rowKey, firstColSize);
-      colKeys.forEach((colKey, c) => {
-        const cell = this.getCell(rowKey, colKey);
-        const value = renderCell ? renderCell(cell) : cell.getValue();
-        row = row + this.#toColSize(value, colSize);
-      });
-      console.log(row);
-    });
-  }
-
-  #dumpFooter(firstColSize: number, colSize: number, colKeys: string[]) {
-    const line = this.#toColSize(
-      "-",
-      firstColSize + colSize * colKeys.length,
-      "-"
-    );
-    console.log(line);
-  }
-
-  #toColSize(s: string | number, size: number, fill?: string): string {
-    fill = fill || " ";
-    let content = String(s);
-    const right = size - content.length;
-    if (right >= 0) {
-      for (let i = 0; i <= right; i++) {
-        content = content + fill;
-      }
-      return content;
-    }
-
-    return content.slice(0, size + 1);
+    dumpHeader(firstColSize, colSize, colKeys);
+    dumpBody(firstColSize, colSize, rowKeys, colKeys, this.#cells, renderCell);
+    dumpFooter(firstColSize, colSize, colKeys);
   }
 
   #handleError(message: string) {

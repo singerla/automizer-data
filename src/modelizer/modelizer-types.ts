@@ -1,6 +1,10 @@
-import { DataPoint } from "./types";
+import { DataPoint } from "../types/types";
 import { ChartValueStyle, TableRowStyle } from "pptx-automizer/dist";
-import Style from "../style";
+
+export interface Style {
+  assign(style: any): void;
+  get(): any;
+}
 
 export type ModelizerOptions = {
   strict?: boolean;
@@ -21,7 +25,7 @@ export type InputCategoryKeys = {
 
 export type Keys = {
   row: string[];
-  col: string[];
+  column: string[];
 };
 
 /**
@@ -47,23 +51,15 @@ export interface Cell {
    */
   value: CellValue;
   /**
-   * The number of the current row, starting from zero.
-   */
-  row: number;
-  /**
-   * The number of the current column, starting from zero.
-   */
-  col: number;
-  /**
    * The key of the current column,
    * by default given from first point.
    */
   rowKey: string;
   /**
-   * The key of the current row,
+   * The key of the current column,
    * by default given from first point.
    */
-  colKey: string;
+  columnKey: string;
   /**
    * An array of datapoints associated with the current Cell.
    * By default, the first point initializes the cell and passes
@@ -90,12 +86,12 @@ export interface Cell {
    * Retreive all neighbour cells from left to right of the current cell,
    * including the current cell.
    */
-  getRow: () => ModelRow;
+  getRow: () => Model;
   /**
    * Retreive all cells from the same column of the current cell,
    * including the current cell.
    */
-  getColumn: () => ModelColumn;
+  getColumn: () => Model;
   /**
    * Get the current cell value as a number.
    */
@@ -107,9 +103,10 @@ export interface Cell {
 }
 
 /**
- * A ModelRow holds all cells of a row. Each cell can be processed or logged.
+ * A Model holds all cells of a row or a column.
+ * Each cell can be processed or its content can be logged.
  */
-export interface ModelRow {
+export interface Model {
   /**
    * The key of current row as added to rowKeys.
    */
@@ -121,11 +118,11 @@ export interface ModelRow {
   /**
    * Holds an array of all cells of the current row.
    */
-  cells: Row;
+  cells: Cell[];
   /**
    * Apply a callback to each cell of current row.
    */
-  each: (cb: ModelEachCb) => ModelRow;
+  each: (cb: ModelEachCb) => Model;
   /**
    * Retrieve an array of all cell values.
    */
@@ -140,83 +137,24 @@ export interface ModelRow {
    * @param c
    * @param cellValue
    */
-  setCellValue: (c: Key, cellValue: CellValue) => ModelRow;
+  setCellValue: (c: Key, cellValue: CellValue) => Model;
   /**
    * Update an existing cell.
    * @param c
    * @param cell
    */
-  setCell: (c: Key, cell: Cell) => ModelRow;
+  setCell: (c: Key, cell: Cell) => Model;
   /**
    * Update the key of current row. This will also update the row label.
    * @param newKey
    */
-  updateKey: (newKey: string) => ModelRow;
+  updateKey: (newKey: string) => Model;
   /**
    * Holds a style to pass it to pptx automizer later.
    */
   style: Style;
   /**
    * Log contents of the current row to console.
-   */
-  dump: (s1?: number, s2?: number) => void;
-}
-
-/**
- * A ModelColumn holds all cells of a column. Each cell can be processed or
- * logged.
- */
-export interface ModelColumn {
-  /**
-   * The key of current column as added to columnKeys.
-   */
-  key: string;
-  /**
-   * Index of current column, starting from 0.
-   */
-  id: number;
-  /**
-   * Holds an array of all cells of the current column.
-   */
-  cells: Column;
-  /**
-   * Apply a callback to each cell of current column.
-   */
-  each: (cb: ModelEachCb) => ModelColumn;
-  /**
-   * Retrieve a cell from current column by key.
-   * @param r
-   */
-  getCell: (r: Key) => Cell;
-  /**
-   * Retrieve an array of all cell values.
-   */
-  collect: () => CellValue[];
-  /**
-   * Set a cell value by key.
-   * @param r
-   * @param cellValue
-   */
-  setCellValue: (r: Key, cellValue: CellValue) => ModelColumn;
-  /**
-   * Update an existing cell.
-   * @param r
-   * @param cell
-   */
-  setCell: (r: Key, cell: Cell) => ModelColumn;
-  /**
-   * Update the key of current column. This will also update the column label.
-   * @param newKey
-   */
-  updateKey: (newKey: string) => ModelColumn;
-  /**
-   * Holds a style to pass it to pptx automizer later.
-   */
-  style: Style;
-  /**
-   * Log contents of the current column to console.
-   * @param s1 Width of first column
-   * @param s2 Width of body columns
    */
   dump: (s1?: number, s2?: number) => void;
 }
@@ -234,7 +172,7 @@ export type Key = string | number;
  * There are "row" or "col" dimensions. "row" will go from left to right, while
  * "col" will go from top to bottom, both starting by zero.
  */
-export type KeyMode = "row" | "col";
+export type KeyMode = "row" | "column";
 /**
  * A table will be constructed by adding DataPoints.
  */
@@ -254,9 +192,5 @@ export type RenderTableCb = (
   rowKey: Key,
   colKey: Key
 ) => void;
-export type ProcessRowCb = (row: ModelRow, r: number, rowKey: Key) => void;
-export type ProcessColumnCb = (
-  column: ModelColumn,
-  c: number,
-  colKey: Key
-) => void;
+export type ProcessRowCb = (row: Model, r: number, rowKey: Key) => void;
+export type ProcessColumnCb = (column: Model, c: number, colKey: Key) => void;

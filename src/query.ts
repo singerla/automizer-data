@@ -26,7 +26,7 @@ import {
 } from "./types/types";
 
 import Points from "./points";
-import Modelizer from "./modelizer";
+import Modelizer from "./modelizer/modelizer";
 import Convert from "./convert";
 import Keys from "./keys";
 
@@ -132,7 +132,7 @@ export default class Query {
       isValid: () => !!modelizer.getFirstPoint(),
       visibleKeys: {
         row: modelizer.getKeys("row"),
-        column: modelizer.getKeys("col"),
+        column: modelizer.getKeys("column"),
       },
     };
   }

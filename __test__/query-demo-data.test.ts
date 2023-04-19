@@ -15,7 +15,7 @@ test("Select demo data and convert to SeriesCategories", async () => {
   ];
 
   const query = await Query.run({ dataTagSelector });
-  const chartData = new Convert(query).toSeriesCategories();
+  const chartData = query.convert().toSeriesCategories();
 
   expect(chartData.series.length).toBe(4);
   expect(chartData.categories.length).toBe(3);

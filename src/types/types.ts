@@ -5,9 +5,9 @@ import { Parser } from "../parser/parser";
 import ResultClass from "../convert";
 import { ChartValueStyle, TableRowStyle } from "pptx-automizer";
 import ResultInfo from "../helper/resultInfo";
-import Modelizer from "../modelizer";
+import Modelizer from "../modelizer/modelizer";
 import Query from "../query";
-import { InputKeys } from "./modelizer-types";
+import { InputKeys } from "../modelizer/modelizer-types";
 import Convert from "../convert";
 import Keys from "../keys";
 
