@@ -19,33 +19,6 @@ export default class Convert {
     this.modelizer = modelizer;
   }
 
-  getSeries = (): ChartSeries[] => {
-    return this.#getFirstRow().cells.map((col) => {
-      const column = this.modelizer.getColumn(col.columnKey);
-      const seriesStyle = column.style.get();
-      return {
-        label: col.columnKey,
-        style: seriesStyle,
-      };
-    });
-  };
-
-  #getFirstRow() {
-    return this.modelizer.getRow(0);
-  }
-
-  #forEachRow(cb: ProcessRowCb) {
-    this.modelizer.processRows(cb);
-  }
-
-  #toCategory(row: Model) {
-    return {
-      label: row.key,
-      values: row.cells.map((column) => column.toNumber()),
-      styles: this.#extractPointStyle<ChartValueStyle>(row),
-    };
-  }
-
   toSeriesCategories(): ChartData {
     if (this.#getFirstRow()) {
       const series = this.getSeries();
@@ -76,7 +49,7 @@ export default class Convert {
       categories.push({
         label: row.key,
         y: r + yValueOffset,
-        values: row.cells.map((column) => column.toNumber()),
+        values: row.cells().map((column) => column.toNumber()),
       });
     });
 
@@ -94,8 +67,8 @@ export default class Convert {
       categories.push({
         label: row.key,
         y: r + 0.5,
-        values: row.cells.map((column) => column.toNumber()),
-        styles: this.#extractValueStyle(row.cells),
+        values: row.cells().map((column) => column.toNumber()),
+        styles: this.#extractValueStyle(row.cells()),
       });
     });
 
@@ -112,7 +85,7 @@ export default class Convert {
     this.#forEachRow((row, r) => {
       categories.push({
         label: row.key,
-        values: row.cells.map((cell) => {
+        values: row.cells().map((cell) => {
           return {
             x: Number(cell.getPoint(0).value),
             y: Number(cell.getPoint(1).value),
@@ -135,7 +108,7 @@ export default class Convert {
     this.#forEachRow((row, r) => {
       categories.push({
         label: row.key,
-        values: row.cells.map((col: Cell) => {
+        values: row.cells().map((col: Cell) => {
           return <ChartBubble>{
             size: Number(col.getPoint(0).value),
             x: Number(col.getPoint(1).value),
@@ -171,7 +144,7 @@ export default class Convert {
     let styles = <any>[];
     const firstRow = this.#getFirstRow();
     if (firstRow) {
-      series = firstRow.cells.map((col) => col.columnKey);
+      series = firstRow.cells().map((col) => col.columnKey);
       styles = this.#extractPointStyle<TableRowStyle>(firstRow);
     }
 
@@ -217,7 +190,7 @@ export default class Convert {
       if (params?.showRowLabels) {
         header.push("");
       }
-      header.push(...firstRow.cells.map((col) => col.columnKey));
+      header.push(...firstRow.cells().map((col) => col.columnKey));
 
       body.push({
         values: header,
@@ -234,7 +207,7 @@ export default class Convert {
         tableRowStyles.push(null);
       }
 
-      row.cells.forEach((cell, c) => {
+      row.cells().forEach((cell, c) => {
         tableRow.push(cell.getValue());
       });
 
@@ -253,12 +226,13 @@ export default class Convert {
 
   toResultRows(): ResultRow[] {
     const body = <ResultRow[]>[];
+    this.modelizer.dump();
     this.modelizer.processRows((row) => {
       const bodyRow = {
         key: row.key,
         cols: <ResultColumn[]>[],
       };
-      row.cells.forEach((cell) => {
+      row.cells().forEach((cell) => {
         const resultCol = <ResultColumn>{
           key: cell.columnKey,
           value: cell.points,
@@ -270,10 +244,39 @@ export default class Convert {
     return body;
   }
 
+  getSeries = (): ChartSeries[] => {
+    return this.#getFirstRow()
+      .cells()
+      .map((col) => {
+        const column = this.modelizer.getColumn(col.columnKey);
+        const seriesStyle = column.style.get();
+        return {
+          label: col.columnKey,
+          style: seriesStyle,
+        };
+      });
+  };
+
+  #getFirstRow() {
+    return this.modelizer.getRow(0);
+  }
+
+  #forEachRow(cb: ProcessRowCb) {
+    this.modelizer.processRows(cb);
+  }
+
+  #toCategory(row: Model) {
+    return {
+      label: row.key,
+      values: row.cells().map((column) => column.toNumber()),
+      styles: this.#extractPointStyle<ChartValueStyle>(row),
+    };
+  }
+
   #extractPointStyle<T>(row: Model): T[] {
     const styles = <T[]>[];
 
-    row.cells.forEach((cell: Cell) => {
+    row.cells().forEach((cell: Cell) => {
       const firstPoint = cell.getPoint();
       if (firstPoint?.style) {
         styles.push(firstPoint.style as T);

@@ -1,5 +1,4 @@
 import { DataPoint } from "../types/types";
-import { ChartValueStyle, TableRowStyle } from "pptx-automizer/dist";
 
 export interface Style {
   assign(style: any): void;
@@ -118,7 +117,7 @@ export interface Model {
   /**
    * Holds an array of all cells of the current row.
    */
-  cells: Cell[];
+  cells: () => Cell[];
   /**
    * Apply a callback to each cell of current row.
    */

@@ -1,4 +1,4 @@
-import { Query } from "./index";
+import { Query, ResultColumn } from "./index";
 import { vd } from "./helper";
 import { TableRowStyle } from "pptx-automizer/dist";
 
@@ -31,22 +31,28 @@ const run = async () => {
   const toScatter = queryResult.convert().toScatter();
   const toBubbles = queryResult.convert().toBubbles();
   const toTable = queryResult.convert().toTable();
-  const toResultRows = queryResult.convert().toResultRows();
+  // const toResultRows = queryResult.convert().toResultRows();
 
   queryResult.modelizer.dump();
 
   queryResult.modelizer.sort("row", ["answer 3"]);
   queryResult.modelizer.sort("column", ["Total"]);
-  queryResult.modelizer.sort("column", ["40-69"]);
 
   queryResult.modelizer.dump();
+
+  queryResult.modelizer.processRows((row) => {
+    // vd(row.cells);
+  });
+
+  const toResultRows = queryResult.convert().toResultRows();
 
   // vd(toResultRows);
 
-  vd(queryResult.modelizer.getKeys("row"));
-  vd(queryResult.inputKeys);
-
-  queryResult.modelizer.dump();
+  //
+  // vd(queryResult.modelizer.getKeys("row"));
+  // vd(queryResult.inputKeys);
+  //
+  // queryResult.modelizer.dump();
 };
 
 run()

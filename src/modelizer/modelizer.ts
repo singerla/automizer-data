@@ -17,8 +17,7 @@ import {
   Style,
 } from "./modelizer-types";
 import Points from "../points";
-import { vd } from "../helper";
-import { dumpBody, dumpCell, dumpFooter, dumpHeader, toColSize } from "./dump";
+import { dumpBody, dumpCell, dumpFooter, dumpHeader } from "./dump";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -28,27 +27,42 @@ import { dumpBody, dumpCell, dumpFooter, dumpHeader, toColSize } from "./dump";
  */
 export default class Modelizer {
   /**
+   * If strict mode is 'true', no rows/columns/keys will be added automatically.
+   * In lax mode, any non-existing string passing #parseCellKey will create
+   * a new entry, which makes it easy to add new rows or columns.
+   */
+  strict: boolean;
+  /**
+   * The parent class for this Modelizer instance
+   */
+  query: Query;
+  /**
    * Stores all keys for the current set of rows and columns.
-   * Represents the current edges of #table.
+   * Represents the current edges of result table.
    * @private
    */
   readonly #keys: Keys = {
     row: [],
     column: [],
   };
-
-  #rows: Model[] = [];
-  #columns: Model[] = [];
-
   /**
-   * If strict mode is 'true', no keys will be added automatically.
-   * In lax mode, any non-existing string passing #parseCellKey will create
-   * a new entry.
+   * Stores all Model rows. Each model holds an array of referenced cells and
+   * some useful methods to modelize row data.
+   * Referenced cells of a row represent its columns.
+   * @private
    */
-  strict: boolean;
-  // The parent class for this Modelizer instance
-  query: Query;
-
+  #rows: Model[] = [];
+  /**
+   * Stores all Model columns. Each model holds an array of referenced cells and
+   * some useful methods to modelize column data.
+   * Referenced cells of a column represent its rows.
+   * @private
+   */
+  #columns: Model[] = [];
+  /**
+   * Stores all Cells. Cells are referenced by rows and columns.
+   * @private
+   */
   #cells: Cell[] = [];
 
   constructor(options?: ModelizerOptions, query?: Query) {
@@ -291,9 +305,9 @@ export default class Modelizer {
       key: key,
       id: this.#parseCellKey(key, mode),
       style: this.#style(),
-      cells: this.#filterCells(mode === "row" ? "column" : "row", key),
+      cells: () => this.#filterCells(mode === "row" ? "column" : "row", key),
       each: (cb: ModelEachCb) => {
-        model.cells.forEach((cell) => cb(cell));
+        model.cells().forEach((cell) => cb(cell));
         return model;
       },
       collect: (): CellValue[] => {
@@ -314,7 +328,7 @@ export default class Modelizer {
       },
       updateKey: (newKey: string) => {
         this.#updateKey(mode, model.id, newKey);
-        model.cells.forEach((cell) => (cell.rowKey = newKey));
+        model.cells().forEach((cell) => (cell.rowKey = newKey));
         return model;
       },
       dump: (s1, s2) =>
@@ -431,7 +445,6 @@ export default class Modelizer {
   #filterCells(mode: KeyMode, key: string): Cell[] {
     const keys = this.getKeys(mode);
     const cells = [];
-
     keys.forEach((targetKey) => {
       const findOrCreateCell =
         mode === "column"
@@ -440,7 +453,6 @@ export default class Modelizer {
 
       cells.push(findOrCreateCell);
     });
-
     return cells;
   }
 
