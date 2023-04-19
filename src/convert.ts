@@ -226,7 +226,6 @@ export default class Convert {
 
   toResultRows(): ResultRow[] {
     const body = <ResultRow[]>[];
-    this.modelizer.dump();
     this.modelizer.processRows((row) => {
       const bodyRow = {
         key: row.key,
