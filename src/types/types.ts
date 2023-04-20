@@ -86,9 +86,9 @@ export type RawResult = {
 
 export type CachedObject = {
   key?: string;
-  datapoints: DataPoint[];
   sheets: Datasheet[];
   tags: Tag[];
+  // datapoints: DataPoint[];
   // keys: CellKeys;
   // inputKeys: CellKeys;
 };
@@ -148,6 +148,7 @@ export type DataPoint = {
   mode?: string;
   style?: TableRowStyle | ChartValueStyle;
   getMeta: (key: string) => DataPointMeta | undefined;
+  getMetas: () => DataPointMeta[];
   setMeta: (key: string, value: any) => DataPoint;
   getTag: (categoryId: number) => DataTag | undefined;
 };

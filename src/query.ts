@@ -149,7 +149,6 @@ export default class Query {
       const tagIds = allTagIds[level];
       const isNonGreedy = this.nonGreedySelector.includes(Number(level));
 
-      let datapoints = <DataPoint[]>[];
       let dataSheets = <Datasheet[]>[];
       let selectionTags = <Tag[]>[];
 
@@ -159,23 +158,21 @@ export default class Query {
         );
         selectionTags = cachedObject.tags;
         dataSheets = cachedObject.sheets;
-        datapoints = cachedObject.datapoints;
       } else {
         selectionTags = await this.getTagInfo(tagIds);
         dataSheets = await this.findSheets(selectionTags, isNonGreedy);
-        datapoints = this.extractDataPoints(dataSheets);
 
         this.cache?.set(
           tagIds,
           isNonGreedy,
           _.cloneDeep({
-            datapoints: datapoints,
             sheets: dataSheets,
             tags: selectionTags,
           })
         );
       }
 
+      const datapoints = this.extractDataPoints(dataSheets);
       inputKeys.addPoints(datapoints);
 
       usedDatapoints.push(...datapoints);

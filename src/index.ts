@@ -109,5 +109,6 @@ export { Points, Convert, Modelizer };
 export { getNestedClause, getTagGroupsByCategory };
 export { PrismaClient };
 
+import { Cell, InputCategoryKeys } from "./modelizer/modelizer-types";
 import { CachedObject, ICache } from "./types/types";
-export type { CachedObject, ICache };
+export type { CachedObject, ICache, Cell, InputCategoryKeys };

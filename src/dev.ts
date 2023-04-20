@@ -1,58 +1,74 @@
 import { Query, ResultColumn } from "./index";
 import { vd } from "./helper";
 import { TableRowStyle } from "pptx-automizer/dist";
+import QueryCache from "./helper/queryCache";
+
+const cache = new QueryCache();
 
 const run = async () => {
-  const dataTagSelector = [
-    [
-      {
-        category: "country",
-        value: "Norway",
-      },
-      {
-        category: "variable",
-        value: "Q12",
-      },
-    ],
-  ];
+  vd("Cache buffer: " + cache.buffer.length);
 
-  const queryResult = await Query.run({ dataTagSelector });
-
-  queryResult.modelizer.getRow(2).getCell(1).getPoint().style = <TableRowStyle>{
-    background: {
-      type: "srgbClr",
-      value: "cccccc",
-    },
-  };
-
-  const toSeriesCategories = queryResult.convert().toSeriesCategories();
-  const toVerticalLines = queryResult.convert().toVerticalLines();
-  const toCombo = queryResult.convert().toCombo();
-  const toScatter = queryResult.convert().toScatter();
-  const toBubbles = queryResult.convert().toBubbles();
-  const toTable = queryResult.convert().toTable();
-  // const toResultRows = queryResult.convert().toResultRows();
-
-  queryResult.modelizer.dump();
-
-  queryResult.modelizer.sort("row", ["answer 3"]);
-  queryResult.modelizer.sort("column", ["Total"]);
-
-  queryResult.modelizer.dump();
-
-  queryResult.modelizer.processRows((row) => {
-    // vd(row.cells);
+  const queryResult = await Query.run({
+    selector: [[5, 1, 2]],
+    cache,
   });
 
-  const toResultRows = queryResult.convert().toResultRows();
+  vd("Cache buffer: " + cache.buffer.length);
 
-  // vd(toResultRows);
+  const mod = queryResult.modelizer;
+  vd(mod.getCells().length);
 
+  // const point = mod.getRow(2).getCell(1).getPoint();
+  // point.style = <TableRowStyle>{
+  //   background: {
+  //     type: "srgbClr",
+  //     value: "cccccc",
+  //   },
+  // };
+  // point.setMeta("testMeta", 123);
+  // const resultRows1 = queryResult.convert().toResultRows();
+  // vd(resultRows1[2].cols[1].value[0]);
+
+  // mod.dump(20, 10, [], [], (cell) => {
+  //   // return cell.getValue();
+  //   return cell.getPoint().getMeta("testMeta")?.value;
+  // });
+
+  const queryResult2 = await Query.run({
+    selector: [[5, 1, 2]],
+    cache,
+  });
+
+  vd("Cache buffer: " + cache.buffer.length);
+  const mod2 = queryResult2.modelizer;
+  const point2 = mod2.getRow(2).getCell(1).getPoint();
+
+  point2.setMeta("testMeta", 1234);
+
+  // const point22 = mod2.getRow(2).getCell(1).getPoint();
+
+  // vd(point2.getMeta("testMeta"));
+
+  // mod2.dump(20, 10, [], [], (cell) => {
+  //   // return cell.getValue();
+  //   return cell.getPoint().getMeta("testMeta")?.value;
+  // });
   //
-  // vd(queryResult.modelizer.getKeys("row"));
-  // vd(queryResult.inputKeys);
-  //
-  // queryResult.modelizer.dump();
+
+  const resultRows = queryResult2.convert().toResultRows();
+  vd(resultRows[2].cols[1].value[0]);
+
+  // vd(mod2.getCells().filter((cell) => cell.rowKey === "answer 3"));
+
+  mod2.processRows((row) => {
+    row.cells().forEach((cell) => {
+      // vd(cell.getPoints());
+    });
+  });
+
+  // vd(mod2.getRow(2).getCell(1));
+
+  // mod2.getCell("answer 3", "19-29").dump();
 };
 
 run()

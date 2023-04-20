@@ -11,6 +11,7 @@ import {
 } from "pptx-automizer";
 import Modelizer from "./modelizer/modelizer";
 import { Cell, Model, ProcessRowCb } from "./modelizer/modelizer-types";
+import { vd } from "./helper";
 
 export default class Convert {
   modelizer: Modelizer;
@@ -234,7 +235,7 @@ export default class Convert {
       row.cells().forEach((cell) => {
         const resultCol = <ResultColumn>{
           key: cell.columnKey,
-          value: cell.points,
+          value: cell.getPoints(),
         };
         bodyRow.cols.push(resultCol);
       });

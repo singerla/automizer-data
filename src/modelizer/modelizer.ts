@@ -18,6 +18,7 @@ import {
 } from "./modelizer-types";
 import Points from "../points";
 import { dumpBody, dumpCell, dumpFooter, dumpHeader } from "./dump";
+import { vd } from "../helper";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -397,6 +398,7 @@ export default class Modelizer {
     const c = this.#parseCellKey(colKey, "column");
 
     if (cell) {
+      vd("setCell");
       const targetCell = _.cloneDeep(cell);
       if (typeof rowKey === "string") {
         targetCell.rowKey = rowKey;
@@ -405,14 +407,16 @@ export default class Modelizer {
         targetCell.columnKey = colKey;
       }
 
-      this.#pushCells(targetCell);
+      const createdCell = this.#findCellByKeys(
+        targetCell.rowKey,
+        targetCell.columnKey
+      );
+      Object.assign(createdCell, targetCell);
+
+      return createdCell;
     }
 
     return this.#findCellByIndex(r, c);
-  }
-
-  #pushCells(cell: Cell) {
-    this.#cells.push(cell);
   }
 
   #findCellByIndex(r: number, c: number): Cell {
@@ -420,7 +424,7 @@ export default class Modelizer {
     const columnKey = this.#getKey(c, "column");
 
     if (!rowKey || !columnKey) {
-      throw "Valid keys required to find cell at r: " + r + ", c: " + c;
+      throw "Valid keys are required to find cell at r: " + r + ", c: " + c;
     }
 
     return this.#findCellByKeys(rowKey, columnKey);
@@ -440,6 +444,10 @@ export default class Modelizer {
     this.#pushCells(createdCell);
 
     return createdCell;
+  }
+
+  #pushCells(cell: Cell) {
+    this.#cells.push(cell);
   }
 
   #filterCells(mode: KeyMode, key: string): Cell[] {
@@ -515,6 +523,9 @@ export default class Modelizer {
         }
         return cell.points[i];
       },
+      getPoints: () => {
+        return cell.points;
+      },
       addPoint: (point: DataPoint) => {
         cell.points = cell.points || [];
         cell.points.push(point);
@@ -539,6 +550,10 @@ export default class Modelizer {
     const ids = this.#parseCellKeys(keys, mode);
     const allKeys = this.#getKeys(mode);
     return allKeys.filter((key, c) => ids.length === 0 || ids.includes(c));
+  }
+
+  getCells() {
+    return this.#cells;
   }
 
   /**
@@ -604,7 +619,7 @@ export default class Modelizer {
     colSize?: number,
     rows?: Key[],
     cols?: Key[],
-    renderCell?
+    renderCell?: (cell: Cell) => any
   ) {
     firstColSize = firstColSize || 15;
     colSize = colSize || 10;

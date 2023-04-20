@@ -17,6 +17,8 @@ import {
 } from "./types/types";
 import { CellValue, InputKeys } from "./modelizer/modelizer-types";
 
+import _ from "lodash";
+
 export default class Points {
   points: DataPoint[];
 
@@ -37,6 +39,7 @@ export default class Points {
       value: value,
       tags: tags,
       meta: meta,
+      getMetas: () => point.meta,
       setMeta: (key: string, value: any): DataPoint =>
         Points.setMetaCb(point, key, value),
       getMeta: (key: string): DataPointMeta | undefined =>
@@ -44,6 +47,7 @@ export default class Points {
       getTag: (categoryId: number): DataTag | undefined =>
         Points.getTagCb(point, categoryId),
     };
+
     return point;
   }
 

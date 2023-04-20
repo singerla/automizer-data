@@ -4,20 +4,22 @@
  * @private
  */
 import { Cell } from "./modelizer-types";
+import { vd } from "../helper";
 
 export const dumpCell = (cell: Cell): void => {
   const contents = {
     value: cell.value,
-    row: cell.rowKey + " (" + cell.rowKey + ")",
-    column: cell.columnKey + " (" + cell.columnKey + ")",
-    points: cell.points.map((point) => {
+    row: cell.rowKey,
+    column: cell.columnKey,
+    points: cell.getPoints().map((point) => {
       return {
         value: point.value,
-        meta: point.meta,
+        meta: point.getMetas(),
         tags: point.tags,
       };
     }),
   };
+  console.log(contents);
 };
 
 export const dumpHeader = (
@@ -47,7 +49,12 @@ export const dumpBody = (
       const cell = cells.find(
         (cell) => cell.rowKey === rowKey && cell.columnKey === colKey
       );
-      const value = renderCell ? renderCell(cell) : cell.getValue();
+
+      let value = "-";
+      if (cell) {
+        value = renderCell ? renderCell(cell) : cell.getValue();
+      }
+
       row = row + toColSize(value, colSize);
     });
     console.log(row);

@@ -71,6 +71,7 @@ export interface Cell {
    * @param i
    */
   getPoint: (i?: number) => DataPoint;
+  getPoints: () => DataPoint[];
   /**
    * Get the current value of cell. If no changes were made, this is the
    * value of first datapoint.
