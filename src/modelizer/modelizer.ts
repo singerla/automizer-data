@@ -398,7 +398,6 @@ export default class Modelizer {
     const c = this.#parseCellKey(colKey, "column");
 
     if (cell) {
-      vd("setCell");
       const targetCell = _.cloneDeep(cell);
       if (typeof rowKey === "string") {
         targetCell.rowKey = rowKey;
