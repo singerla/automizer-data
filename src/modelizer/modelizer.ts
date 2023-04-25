@@ -177,7 +177,11 @@ export default class Modelizer {
    * @returns {string[]} Array of strings containing the keys.
    */
   getKeys(mode: KeyMode): string[] {
-    return [...this.#getKeys(mode)];
+    const tmpKeys = this.#getKeys(mode);
+    if (Array.isArray(tmpKeys)) {
+      return [...this.#getKeys(mode)];
+    }
+    return [];
   }
 
   /**
