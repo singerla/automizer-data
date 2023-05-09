@@ -535,8 +535,7 @@ export default class Modelizer {
       },
       getValue: () => cell.value || cell.getPoint(0).value,
       setValue: (value: CellValue) => {
-        const point = cell.getPoint();
-        point.value = value;
+        cell.value = value;
         return cell;
       },
       getRow: () => this.getRow(rowKey),

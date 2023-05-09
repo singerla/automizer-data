@@ -13,10 +13,10 @@ import { vd } from "./helper";
 
 type CreateSheetData = Prisma.SheetCreateArgs["data"] & {
   tags: {
-    connect: CreateSheetTagsConnect
-  }
+    connect: CreateSheetTagsConnect;
+  };
 };
-type CreateSheetTagsConnect = Prisma.Enumerable<Prisma.TagWhereUniqueInput>
+type CreateSheetTagsConnect = Prisma.Enumerable<Prisma.TagWhereUniqueInput>;
 
 export class Store {
   prisma: PrismaClient;
@@ -221,9 +221,9 @@ export class Store {
       await this.addTagIdsToTags(addCounterTags);
 
       const connectTags = [
-          ...Object.values(sheetData.tags.connect),
-        { id: addCounterTags[0].id }
-      ] as CreateSheetTagsConnect
+        ...Object.values(sheetData.tags.connect),
+        { id: addCounterTags[0].id },
+      ] as CreateSheetTagsConnect;
 
       sheetData.tags.connect = connectTags;
       sheetData.tagKey = this.getTagKey(sheetData.tags.connect);
