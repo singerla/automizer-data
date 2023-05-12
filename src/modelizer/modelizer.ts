@@ -533,8 +533,9 @@ export default class Modelizer {
         cell.points = cell.points || [];
         cell.points.push(point);
       },
-      getValue: () => cell.value || cell.getPoint(0).value,
+      getValue: () => cell.value || cell.getPoint().value,
       setValue: (value: CellValue) => {
+        cell.getPoint().value = value;
         cell.value = value;
         return cell;
       },
