@@ -13,6 +13,18 @@ export default class Keys {
     column: [],
     nested: [],
     category: [],
+    byCategoryId: (id: number) => {
+      return (
+        this.#inputKeys.category.find((inputKey) => inputKey.categoryId === id)
+          ?.keys || []
+      );
+    },
+    hasKey: (key: string, section) => {
+      if (typeof section === "number") {
+        return this.#inputKeys.byCategoryId(section).includes(key);
+      }
+      return this.#inputKeys[section].includes(key);
+    },
   };
 
   addPoints(points: DataPoint[]) {

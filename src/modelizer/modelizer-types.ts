@@ -15,6 +15,8 @@ export type InputKeys = {
   column: string[];
   nested: string[];
   category: InputCategoryKeys[];
+  byCategoryId: (id: number) => string[];
+  hasKey: (key: string, section: keyof Keys | number) => boolean;
 };
 
 export type InputCategoryKeys = {
