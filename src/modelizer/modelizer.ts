@@ -18,7 +18,6 @@ import {
 } from "./modelizer-types";
 import Points from "../points";
 import { dumpBody, dumpCell, dumpFooter, dumpHeader } from "./dump";
-import { vd } from "../helper";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -301,9 +300,10 @@ export default class Modelizer {
   }
 
   /**
-   * Retreive a row model object for the given row selector.
-   * @param key Pass a number or a string to select the target row.
-   * @return A model row object containing all cells.
+   * Retreive a row or column model object for the given selector.
+   * @param key Pass a number or a string to set the target key.
+   * @param mode Specify "row" or "column"
+   * @return A model object containing all cells.
    */
   createModel(key: string, mode: KeyMode): Model {
     const model: Model = {
@@ -333,7 +333,8 @@ export default class Modelizer {
       },
       updateKey: (newKey: string) => {
         this.#updateKey(mode, model.id, newKey);
-        model.cells().forEach((cell) => (cell.rowKey = newKey));
+        const targetKey = mode === "row" ? "rowKey" : "columnKey";
+        model.cells().forEach((cell) => (cell[targetKey] = newKey));
         return model;
       },
       dump: (s1, s2) =>
