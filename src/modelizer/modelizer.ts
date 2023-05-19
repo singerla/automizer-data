@@ -18,6 +18,7 @@ import {
 } from "./modelizer-types";
 import Points from "../points";
 import { dumpBody, dumpCell, dumpFooter, dumpHeader } from "./dump";
+import { vd } from "../helper";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -332,9 +333,10 @@ export default class Modelizer {
         return model;
       },
       updateKey: (newKey: string) => {
-        this.#updateKey(mode, model.id, newKey);
         const targetKey = mode === "row" ? "rowKey" : "columnKey";
         model.cells().forEach((cell) => (cell[targetKey] = newKey));
+        this.#updateKey(mode, model.id, newKey);
+
         return model;
       },
       dump: (s1, s2) =>
@@ -523,7 +525,13 @@ export default class Modelizer {
       getPoint: (i?: number) => {
         i = cell.points[i] ? i : 0;
         if (!cell.points || !cell.points[i]) {
-          cell.points[i] = Points.dataPointFactory();
+          cell.points[i] = Points.dataPointFactory(
+            rowKey,
+            columnKey,
+            [],
+            [],
+            null
+          );
         }
         return cell.points[i];
       },

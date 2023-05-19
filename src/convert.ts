@@ -26,7 +26,7 @@ export default class Convert {
       const categories = <ChartCategory[]>[];
 
       this.#forEachRow((row) => {
-        categories.push(this.#toCategory(row));
+        categories.push(this.#toCategory(row) as ChartCategory);
       });
 
       return {
@@ -268,7 +268,16 @@ export default class Convert {
   #toCategory(row: Model) {
     return {
       label: row.key,
-      values: row.cells().map((column) => column.toNumber()),
+      values: row.cells().map((column) => {
+        if (
+          column.value === null ||
+          column.value === undefined ||
+          column.value === ""
+        ) {
+          return "";
+        }
+        return column.toNumber();
+      }),
       styles: this.#extractPointStyle<ChartValueStyle>(row),
     };
   }
