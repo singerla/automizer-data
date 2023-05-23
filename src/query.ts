@@ -32,21 +32,8 @@ import Keys from "./keys";
 
 export default class Query {
   prisma: PrismaClient | any;
-  clause: any;
-  sheets: Datasheet[];
-  allSheets: Datasheet[];
-  inputKeys: CellKeys;
-  keys: CellKeys;
-  visibleKeys: {
-    row: string[];
-    column: string[];
-  };
-  points: DataPoint[];
   grid: DataGrid;
-  result: Result;
-  tags: Tag[][] = [];
   options: QueryOptions;
-
   modelizer: Modelizer;
 
   private selector: Selector = [[]];
@@ -58,19 +45,6 @@ export default class Query {
 
   constructor(prisma: PrismaClient | any) {
     this.prisma = prisma;
-    this.inputKeys = <CellKeys>{};
-    this.keys = <CellKeys>{};
-    this.visibleKeys = {
-      row: [],
-      column: [],
-    };
-    this.result = <Result>{
-      body: <ResultRow[]>[],
-      modelizer: undefined,
-    };
-    this.points = <DataPoint[]>[];
-    this.grid = <DataGrid>{};
-    this.allSheets = <Datasheet[]>[];
 
     return this;
   }
@@ -120,7 +94,7 @@ export default class Query {
     );
 
     if (this.grid.transform) {
-      await this.transformResult(this.grid.transform, modelizer);
+      await this.transformResult(this.grid.transform, modelizer, inputKeys);
     }
 
     return {
@@ -405,10 +379,11 @@ export default class Query {
 
   async transformResult(
     transformations: DataGridTransformation[],
-    modelizer: Modelizer
+    modelizer: Modelizer,
+    inputKeys: Keys
   ) {
     try {
-      await this.applyTransformations(transformations, modelizer);
+      await this.applyTransformations(transformations, modelizer, inputKeys);
     } catch (e) {
       throw e;
     }
@@ -416,13 +391,14 @@ export default class Query {
 
   async applyTransformations(
     transformations: DataGridTransformation[],
-    modelizer: Modelizer
+    modelizer: Modelizer,
+    inputKeys: Keys
   ) {
     for (const transform of transformations) {
       if (transform.modelize && typeof transform.modelize === "function") {
         const apply = await this.checkCondition(transform, modelizer);
         if (apply) {
-          await transform.modelize(modelizer, this);
+          await transform.modelize(modelizer, this, inputKeys);
         }
       }
     }

@@ -18,7 +18,6 @@ import {
 } from "./modelizer-types";
 import Points from "../points";
 import { dumpBody, dumpCell, dumpFooter, dumpHeader } from "./dump";
-import { vd } from "../helper";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -575,7 +574,17 @@ export default class Modelizer {
    * @returns {DataPoint}
    */
   getFirstPoint() {
-    return this.getCell(0, 0).getPoint();
+    let firstPoint;
+    this.process((cell) => {
+      if (firstPoint) {
+        return;
+      }
+      const cellHasPoint = cell.getPoint();
+      if (cellHasPoint) {
+        firstPoint = cellHasPoint;
+      }
+    });
+    return firstPoint;
   }
 
   /**

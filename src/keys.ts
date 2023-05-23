@@ -2,7 +2,6 @@ import { DataPoint, DataTag } from "./types/types";
 import { InputKeys } from "./modelizer/modelizer-types";
 
 export default class Keys {
-  points: DataPoint[] = [];
   /**
    * Stores all row keys, column keys and tags before any modification is
    * applied. Useful to compare the original values and output.
@@ -40,6 +39,28 @@ export default class Keys {
    */
   getInputKeys(): InputKeys {
     return this.#inputKeys;
+  }
+
+  setInputKeys(section: keyof Keys, keys: string[]): void {
+    this.#inputKeys[section] = keys;
+  }
+
+  getCategoryKeys(categoryId: number): string[] {
+    return this.#inputKeys.byCategoryId(categoryId);
+  }
+
+  updateCategoryKeys(categoryId: number, keys: string[]): void {
+    const existing = this.#inputKeys.category.find(
+      (inputKey) => inputKey.categoryId === categoryId
+    );
+    if (existing) {
+      existing.keys = keys;
+    } else {
+      this.#inputKeys.category.push({
+        categoryId,
+        keys,
+      });
+    }
   }
 
   #addPoint(point: DataPoint) {

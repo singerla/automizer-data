@@ -240,7 +240,7 @@ export type DataPointModifier = SortableModification & {
 };
 
 export type DataGridTransformation = SortableModification & {
-  modelize?: (args: any, query?: Query) => void;
+  modelize?: (args: any, query?: Query, inputKeys?: Keys) => void;
   condition?: (args: any) => Promise<boolean>;
 };
 
