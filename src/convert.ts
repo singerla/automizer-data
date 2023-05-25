@@ -69,7 +69,7 @@ export default class Convert {
         label: row.key,
         y: r + 0.5,
         values: row.cells().map((column) => column.toNumber()),
-        styles: this.#extractValueStyle(row.cells()),
+        styles: this.#extractValueStyle(row.cells()) as ChartValueStyle[],
       });
     });
 
