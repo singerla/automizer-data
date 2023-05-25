@@ -308,7 +308,7 @@ export default class Modelizer {
   createModel(key: string, mode: KeyMode): Model {
     const model: Model = {
       key: key,
-      id: this.#parseCellKey(key, mode),
+      id: () => this.#parseCellKey(key, mode),
       style: this.#style(),
       cells: () => this.#filterCells(mode === "row" ? "column" : "row", key),
       each: (cb: ModelEachCb) => {
@@ -322,26 +322,26 @@ export default class Modelizer {
         });
         return values;
       },
-      getCell: (i: Key) => this.getCellByMode(mode, model.id, i),
+      getCell: (i: Key) => this.getCellByMode(mode, model.id(), i),
       setCell: (i: Key, cell: Cell) => {
-        this.setCellByMode(mode, model.id, i, cell);
+        this.setCellByMode(mode, model.id(), i, cell);
         return model;
       },
       setCellValue: (i: Key, value: CellValue) => {
-        this.setCellValueByMode(mode, model.id, i, value);
+        this.setCellValueByMode(mode, model.id(), i, value);
         return model;
       },
       updateKey: (newKey: string) => {
         const targetKey = mode === "row" ? "rowKey" : "columnKey";
         model.cells().forEach((cell) => (cell[targetKey] = newKey));
-        this.#updateKey(mode, model.id, newKey);
+        this.#updateKey(mode, model.id(), newKey);
 
         return model;
       },
       dump: (s1, s2) =>
         mode === "row"
-          ? this.dump(s1, s2, [model.id], [])
-          : this.dump(s1, s2, [], [model.id]),
+          ? this.dump(s1, s2, [model.id()], [])
+          : this.dump(s1, s2, [], [model.id()]),
     };
     return model;
   }
@@ -513,7 +513,7 @@ export default class Modelizer {
    * afterwards.
    * @param rowKey
    * @param columnKey
-   * @returns {{column: number, colKey: string, getPoint: (i) => DataPoint, getRow: () => ModelRow, points: DataPoint[], getValue: () => number | string, setValue: (value: CellValue) => string | number, getColumn: () => ModelColumn, row: number, dump: () => void, value: undefined, toNumber: () => number, rowKey: string}}
+   * @returns Cell
    */
   #defaultCell(rowKey: string, columnKey: string): Cell {
     const cell = {

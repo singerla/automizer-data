@@ -114,9 +114,9 @@ export interface Model {
    */
   key: string;
   /**
-   * Index of current row, starting from 0.
+   * Retreive Index of current row or column, starting from 0.
    */
-  id: number;
+  id: () => number;
   /**
    * Holds an array of all cells of the current row.
    */
