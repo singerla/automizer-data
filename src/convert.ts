@@ -163,7 +163,7 @@ export default class Convert {
     const body = [];
     this.#forEachRow((row, r) => {
       body.push({
-        values: row.collect(),
+        values: row.cells().map((cell) => cell.toCell()),
       });
     });
 
@@ -209,7 +209,7 @@ export default class Convert {
       }
 
       row.cells().forEach((cell, c) => {
-        tableRow.push(cell.getValue());
+        tableRow.push(cell.toCell());
       });
 
       tableRowStyles.push(...this.#extractPointStyle<TableRowStyle>(row));
@@ -268,16 +268,7 @@ export default class Convert {
   #toCategory(row: Model) {
     return {
       label: row.key,
-      values: row.cells().map((column) => {
-        if (
-          column.value === null ||
-          column.value === undefined ||
-          column.value === ""
-        ) {
-          return "";
-        }
-        return column.toNumber();
-      }),
+      values: row.cells().map((column) => column.toCell()),
       styles: this.#extractPointStyle<ChartValueStyle>(row),
     };
   }
@@ -300,50 +291,4 @@ export default class Convert {
   #extractValueStyle(cells: Cell[]) {
     return cells.map((cell) => cell.getPoint()?.style || null);
   }
-
-  // renderCellValue(column: ResultColumn): ResultCell {
-  //   if (!column) return "";
-  //
-  //   if (Array.isArray(column.value)) {
-  //     if (!column.value[0] || column.value[0].value === null) {
-  //       return "";
-  //     }
-  //
-  //     if (column.value.length > 0) {
-  //       return column.value[0].value;
-  //     }
-  //   }
-  //
-  //   if (typeof column.value === "number" || typeof column.value === "string") {
-  //     return column.value;
-  //   }
-  //
-  //   if (typeof column.value === "function") {
-  //     return column.value;
-  //   }
-  //
-  //   return "";
-  // }
-
-  // formatPointKeys(keys: any) {
-  //   const rowOrColumn = ["row", "column", "nested"];
-  //
-  //   const queryResultKeys = <QueryResultKeys>{
-  //     row: keys.row ? Object.keys(keys.row) : [],
-  //     column: keys.column ? Object.keys(keys.column) : [],
-  //     nested: keys.nested ? Object.keys(keys.nested) : [],
-  //     category: [],
-  //   };
-  //
-  //   for (const key in keys) {
-  //     if (!rowOrColumn.includes(key)) {
-  //       queryResultKeys.category.push({
-  //         categoryId: Number(key),
-  //         keys: Object.keys(keys[key]),
-  //       });
-  //     }
-  //   }
-  //
-  //   return queryResultKeys;
-  // }
 }

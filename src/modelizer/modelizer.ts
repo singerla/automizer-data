@@ -210,7 +210,7 @@ export default class Modelizer {
   }
 
   #getKeys(mode: KeyMode): string[] {
-    return this.#keys[mode];
+    return this.#keys[mode] || [];
   }
 
   #addKeyByMode(mode, key): void {
@@ -549,8 +549,25 @@ export default class Modelizer {
       },
       getRow: () => this.getRow(rowKey),
       getColumn: () => this.getColumn(columnKey),
-      toNumber: () =>
-        cell.getValue() !== undefined ? Number(cell.getValue()) : 0,
+      toNumber: () => {
+        let currentValue = cell.getValue();
+        if (typeof currentValue === "string" && currentValue.includes(",")) {
+          currentValue = currentValue.replace(",", ".");
+        }
+        return Number(currentValue);
+      },
+      toCell: () => {
+        let currentValue = cell.getValue();
+        if (
+          currentValue === false ||
+          currentValue === null ||
+          currentValue === undefined ||
+          currentValue === ""
+        ) {
+          return "";
+        }
+        return cell.toNumber();
+      },
       dump: () => dumpCell(cell),
     };
 

@@ -99,6 +99,14 @@ export interface Cell {
    */
   toNumber: () => number;
   /**
+   * Get the current cell value as a number or a string,
+   * trying to convert
+   *  - a number-like value into a float
+   *  - an invalid or empty cell value into an empty string
+   *  - a non-number-like string value into a string
+   */
+  toCell: () => number | string;
+  /**
    * Log contents of the current cell to console.
    */
   dump: () => void;
