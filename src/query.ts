@@ -410,6 +410,9 @@ export default class Query {
         return false;
       }
     }
+    if (!modelizer.getFirstPoint()) {
+      return false;
+    }
     return true;
   }
 }

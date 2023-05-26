@@ -72,8 +72,10 @@ export interface Cell {
    * Skip i to retreive the first point.
    * @param i
    */
-  getPoint: (i?: number) => DataPoint;
+  getPoint: (i?: number, forceCreate?: boolean) => DataPoint;
   getPoints: () => DataPoint[];
+  createPoint: (value?) => DataPoint;
+  addPoint: (point: DataPoint) => Cell;
   /**
    * Get the current value of cell. If no changes were made, this is the
    * value of first datapoint.
@@ -99,13 +101,17 @@ export interface Cell {
    */
   toNumber: () => number;
   /**
+   * Get the current cell value as a number or empty string.
+   */
+  toNumberOrEmpty: () => number | "";
+  /**
    * Get the current cell value as a number or a string,
    * trying to convert
-   *  - a number-like value into a float
+   *  - a number-like value into a number
    *  - an invalid or empty cell value into an empty string
    *  - a non-number-like string value into a string
    */
-  toCell: () => number | string;
+  toCell: () => number | string | "";
   /**
    * Log contents of the current cell to console.
    */

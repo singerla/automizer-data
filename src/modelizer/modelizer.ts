@@ -521,25 +521,25 @@ export default class Modelizer {
       rowKey: rowKey,
       columnKey: columnKey,
       points: <DataPoint[]>[],
-      getPoint: (i?: number) => {
-        i = cell.points[i] ? i : 0;
-        if (!cell.points || !cell.points[i]) {
-          cell.points[i] = Points.dataPointFactory(
-            rowKey,
-            columnKey,
-            [],
-            [],
-            null
-          );
+      getPoint: (i?: number, forceCreate?): DataPoint => {
+        const points = cell.getPoints();
+        i = points[i] ? i : 0;
+        if (forceCreate || !points || !points[i]) {
+          const addPoint = cell.createPoint();
+          cell.addPoint(addPoint);
+          return addPoint;
         }
-        return cell.points[i];
+        return points[i];
       },
-      getPoints: () => {
-        return cell.points;
+      getPoints: (): DataPoint[] => {
+        return cell.points || [];
       },
-      addPoint: (point: DataPoint) => {
-        cell.points = cell.points || [];
+      createPoint: (value?): DataPoint => {
+        return Points.dataPointFactory(rowKey, columnKey, [], [], value);
+      },
+      addPoint: (point: DataPoint): Cell => {
         cell.points.push(point);
+        return cell;
       },
       getValue: () => cell.value || cell.getPoint().value,
       setValue: (value: CellValue) => {
@@ -556,6 +556,13 @@ export default class Modelizer {
         }
         return Number(currentValue);
       },
+      toNumberOrEmpty: () => {
+        let currentValue = cell.toCell();
+        if (currentValue === "") {
+          return currentValue;
+        }
+        return cell.toNumber();
+      },
       toCell: () => {
         let currentValue = cell.getValue();
         if (
@@ -566,7 +573,7 @@ export default class Modelizer {
         ) {
           return "";
         }
-        return cell.toNumber();
+        return currentValue;
       },
       dump: () => dumpCell(cell),
     };

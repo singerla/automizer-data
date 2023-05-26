@@ -268,7 +268,7 @@ export default class Convert {
   #toCategory(row: Model) {
     return {
       label: row.key,
-      values: row.cells().map((column) => column.toCell()),
+      values: row.cells().map((column) => column.toNumberOrEmpty()),
       styles: this.#extractPointStyle<ChartValueStyle>(row),
     };
   }
