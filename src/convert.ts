@@ -88,8 +88,8 @@ export default class Convert {
         label: row.key,
         values: row.cells().map((cell) => {
           return {
-            x: Number(cell.getPoint(0).value),
-            y: Number(cell.getPoint(1).value),
+            x: cell.getPoint(0).value as number,
+            y: cell.getPoint(1).value as number,
           };
         }),
         styles: this.#extractPointStyle<ChartValueStyle>(row),

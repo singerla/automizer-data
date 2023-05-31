@@ -1,4 +1,4 @@
-import { DataPoint } from "../types/types";
+import { DataPoint, DataPointMeta } from "../types/types";
 import { Query } from "../index";
 import _ from "lodash";
 import {
@@ -64,6 +64,12 @@ export default class Modelizer {
    * @private
    */
   #cells: Cell[] = [];
+  /**
+   * Stores an array of Metadata for the current instance. Useful to buffer e.g.
+   * Min/Max information.
+   * @private
+   */
+  #meta: DataPointMeta[] = [];
 
   constructor(options?: ModelizerOptions, query?: Query) {
     this.strict = options?.strict !== undefined ? options?.strict : true;
@@ -594,14 +600,27 @@ export default class Modelizer {
     return this.#cells;
   }
 
+  setMeta(key: string, value: DataPointMeta["value"]) {
+    this.#meta.push({
+      key,
+      value,
+    });
+  }
+  getMeta(key: string) {
+    return this.#meta.find((meta) => meta.key === key);
+  }
+  getMetas() {
+    return this.#meta;
+  }
+
   /**
    * Get the first of all DataPoints. This is helpful if you need general tags
    * or meta information and if you can assure that all active datapoints
    * hold the same information as Point zero.
    * @returns {DataPoint}
    */
-  getFirstPoint() {
-    let firstPoint;
+  getFirstPoint(): DataPoint | null {
+    let firstPoint: DataPoint | null;
     this.process((cell) => {
       if (firstPoint) {
         return;
