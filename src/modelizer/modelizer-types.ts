@@ -142,7 +142,7 @@ export interface Model {
   /**
    * Retrieve an array of all cell values.
    */
-  collect: () => CellValue[];
+  collect: () => number[];
   /**
    * Retrieve a cell from current row by key.
    * @param c

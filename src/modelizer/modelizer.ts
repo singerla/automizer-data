@@ -315,7 +315,7 @@ export default class Modelizer {
         model.cells().forEach((cell) => cb(cell));
         return model;
       },
-      collect: (): CellValue[] => {
+      collect: (): number[] => {
         const values = [];
         model.each((cell) => {
           values.push(cell.toNumber());
