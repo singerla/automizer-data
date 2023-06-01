@@ -609,6 +609,12 @@ export default class Modelizer {
   getMeta(key: string) {
     return this.#meta.find((meta) => meta.key === key);
   }
+  getNestedMeta(key: string, label: string) {
+    const nestedMeta = this.getMeta(key)?.value;
+    if (Array.isArray(nestedMeta)) {
+      return nestedMeta.find((meta) => meta.label === label)?.value;
+    }
+  }
   getMetas() {
     return this.#meta;
   }
