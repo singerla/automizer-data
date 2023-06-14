@@ -247,6 +247,8 @@ export type DataGridTransformation = SortableModification & {
 export type SortableModification = {
   executionOrder?: number;
   name?: string;
+  key?: string;
+  condition?: string;
 };
 
 export type CellKey = {
