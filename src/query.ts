@@ -5,7 +5,6 @@ import _ from "lodash";
 import {
   CachedObject,
   CategoryCount,
-  CellKeys,
   DataGrid,
   DataGridTransformation,
   DataPoint,
@@ -15,12 +14,11 @@ import {
   DataTagSelector,
   ICache,
   IdSelector,
+  ModelizeArguments,
   QueryOptions,
   QueryResult,
   RawResult,
-  Result,
   ResultCell,
-  ResultRow,
   Selector,
   Sheets,
 } from "./types/types";
@@ -398,7 +396,12 @@ export default class Query {
       if (transform.modelize && typeof transform.modelize === "function") {
         const apply = await this.checkCondition(transform, modelizer);
         if (apply) {
-          await transform.modelize(modelizer, this, inputKeys);
+          const args = <ModelizeArguments>{
+            query: this,
+            inputKeys,
+            params: transform.params,
+          };
+          await transform.modelize(modelizer, args);
         }
       }
     }

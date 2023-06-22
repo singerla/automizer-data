@@ -239,9 +239,16 @@ export type DataPointModifier = SortableModification & {
   callbacks?: any[];
 };
 
+export type ModelizeArguments = {
+  query?: Query;
+  inputKeys?: Keys;
+  params: Record<string, any>;
+};
+
 export type DataGridTransformation = SortableModification & {
-  modelize?: (args: any, query?: Query, inputKeys?: Keys) => void;
+  modelize?: (mod: Modelizer, args: ModelizeArguments) => void;
   condition?: (args: any) => Promise<boolean>;
+  params?: Record<string, any>;
 };
 
 export type SortableModification = {
