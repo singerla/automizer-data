@@ -28,6 +28,7 @@ export class Store {
   tags: Tag[];
   importId: number;
   status: StatusTracker;
+  tagValueMaxLength: number;
 
   constructor(prisma: PrismaClient, options?: StoreOptions) {
     this.prisma = prisma;
@@ -51,6 +52,7 @@ export class Store {
     }
 
     this.importId = 0;
+    this.tagValueMaxLength = 256;
     this.categories = [];
     this.sheetKeys = {};
     this.tags = [];
@@ -251,6 +253,11 @@ export class Store {
   async addTagIdsToTags(tags: DataTag[]): Promise<void> {
     for (let i in tags) {
       const tag = tags[i];
+      if (tag.value.length > this.tagValueMaxLength) {
+        console.error("Tag name shortened: " + tag.value);
+        tag.value = tag.value.slice(256);
+      }
+
       const existingTag = this.tags.find(
         (existingTag: Tag) =>
           existingTag.name === tag.value &&
