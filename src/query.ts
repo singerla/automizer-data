@@ -401,7 +401,13 @@ export default class Query {
             inputKeys,
             params: transform.params,
           };
-          await transform.modelize(modelizer, args);
+          try {
+            await transform.modelize(modelizer, args);
+          } catch (e) {
+            console.error(e);
+            console.log(transform);
+            console.log(transform.modelize.toString());
+          }
         }
       }
     }

@@ -246,7 +246,7 @@ export type ModelizeArguments = {
 };
 
 export type DataGridTransformation = SortableModification & {
-  modelize?: (mod: Modelizer, args: ModelizeArguments) => void;
+  modelize?: (mod: Modelizer, args: ModelizeArguments) => void | Promise<void>;
   condition?: (args: any) => Promise<boolean>;
   params?: Record<string, any>;
 };
