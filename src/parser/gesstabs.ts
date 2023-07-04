@@ -66,7 +66,7 @@ export class Gesstabs extends Parser {
   }
 
   parseSections(data: RawRow): void {
-    const firstCell = String(data[0]).trim();
+    let firstCell = String(data[0]).trim();
     const secondCell = data[1];
 
     const hasFirstCell = data[0] && String(data[0]).length > 0;
@@ -87,6 +87,7 @@ export class Gesstabs extends Parser {
         body: [],
         meta: [],
         nested: [],
+        duplicates: {},
       };
 
       this.nested = <RawResultNestedParent[]>[];
@@ -113,6 +114,9 @@ export class Gesstabs extends Parser {
 
     if (hasFirstCell && hasSecondCell) {
       this.currentSection = "body";
+
+      firstCell = this.deduplicateRowLabels(data);
+
       const isMeta = this.parseMeta(data, firstCell);
       if (!isMeta) {
         this.results[this.count].body.push(data);
@@ -123,6 +127,23 @@ export class Gesstabs extends Parser {
         });
       }
     }
+  }
+
+  deduplicateRowLabels(data: RawRow): string {
+    const rowLabel = data[0];
+    if (!this.results[this.count].duplicates[rowLabel]) {
+      this.results[this.count].duplicates[rowLabel] = 1;
+    } else {
+      this.results[this.count].duplicates[rowLabel]++;
+    }
+
+    const duplicateCount = this.results[this.count].duplicates[rowLabel];
+
+    if (duplicateCount > 1) {
+      data[0] += " (" + duplicateCount + ")";
+    }
+
+    return data[0] as string;
   }
 
   parseMeta(data: RawRow, firstCell: string): boolean {

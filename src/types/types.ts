@@ -355,6 +355,7 @@ export type RawResultData = {
   body: RawRow[];
   meta: RawResultMeta[];
   nested?: RawResultNestedItem[];
+  duplicates?: Record<string, number>;
 };
 
 export type RawColumnSlice = {
