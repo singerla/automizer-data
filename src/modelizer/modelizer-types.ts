@@ -74,6 +74,7 @@ export interface Cell {
    */
   getPoint: (i?: number, forceCreate?: boolean) => DataPoint;
   getPoints: () => DataPoint[];
+  setPoints: (points: DataPoint[]) => void;
   createPoint: (value?) => DataPoint;
   addPoint: (point: DataPoint) => Cell;
   /**

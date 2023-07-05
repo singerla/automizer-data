@@ -540,6 +540,10 @@ export default class Modelizer {
       getPoints: (): DataPoint[] => {
         return cell.points || [];
       },
+      setPoints: (points: DataPoint[]): void => {
+        cell.points = points;
+        cell.setValue(points[0].value);
+      },
       createPoint: (value?: CellValue): DataPoint => {
         return Points.dataPointFactory(rowKey, columnKey, [], [], value);
       },
