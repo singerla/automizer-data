@@ -1,34 +1,55 @@
-import { Query, ResultColumn } from "./index";
 import { vd } from "./helper";
-import { TableRowStyle } from "pptx-automizer/dist";
-import QueryCache from "./helper/queryCache";
-
-const cache = new QueryCache();
+import { Store } from "./store";
+import { PrismaClient } from "./client";
+import { ParserOptions, RawResultInfo, Tagger } from "./types/types";
+import { Gesstabs } from "./parser/gesstabs";
+import { PSPP } from "./parser/pspp";
 
 const run = async () => {
-  vd("Cache buffer: " + cache.buffer.length);
+  const tmpDir = `${__dirname}/../__test__/tmp`;
+  const filename = `/home/tsing/Schreibtisch/survey_937949_spss(1).sav`;
 
-  const queryResult = await Query.run({
-    selector: [[5, 1, 2]],
-    cache,
+  const store = new Store(new PrismaClient(), {
+    filename: filename,
+    userId: 1,
+    statusTracker: (status) => {
+      // console.log(status.share);
+    },
   });
 
-  vd("Cache buffer: " + cache.buffer.length);
+  const config = <ParserOptions>{
+    spsTmpDir: tmpDir,
+    spsCommands: [
+      {
+        command: "CROSSTABS",
+        varDep: "G01Q02",
+        varIndep: "G01Q05",
+      },
+      {
+        command: "CROSSTABS",
+        varDep: "G01Q02",
+        varIndep: "G01Q01",
+      },
+    ],
+  };
 
-  const mod = queryResult.modelizer;
-  vd(mod.getCells().length);
+  const parse = new PSPP(config);
+  const datasheets = await parse.fromSav(filename);
+  vd(datasheets);
 
-  mod.getColumn("Difference").each((cell) => {
-    const totalCell = cell.getRow().getCell("Total").toNumber();
-    const vsCell = cell.getRow().getCell("female").toNumber();
-    cell.setValue(totalCell - vsCell);
-  });
+  const summary = await store
+    .run(datasheets)
+    .then((summary) => {
+      return summary;
+    })
+    .catch((e) => {
+      throw e;
+    })
+    .finally(async () => {
+      await store.prisma.$disconnect();
+    });
 
-  const diffs = mod.getColumn("Difference").collect();
-  const fixture = [8, 15, -27];
-  const diffs2 = mod.getColumn("Difference").collect();
-  vd(mod.getCells().length);
-  mod.dump();
+  vd(summary);
 };
 
 run()

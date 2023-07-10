@@ -43,6 +43,7 @@
     "@types/node-xlsx": "^0.21.0",
     "cli-progress": "^3.11.2",
     "csv-parser": "^3.0.0",
+    "csv-string": "^4.1.1",
     "lodash": "^4.17.21",
     "node-xlsx": "^0.21.0"
   },

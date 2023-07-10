@@ -4,18 +4,15 @@ import Query from "./query";
 import Points from "./points";
 import Convert from "./convert";
 import Modelizer from "./modelizer/modelizer";
+import Keys from "./keys";
 
 import { Store } from "./store";
 import { Parser } from "./parser/parser";
 import { Gesstabs } from "./parser/gesstabs";
 import { Generic } from "./parser/generic";
-
-import { all, filterBy, filterByDataTag } from "./filter";
-import { dump, points, value } from "./cell";
-import { byColId } from "./sort";
-import { getNestedClause, getTagGroupsByCategory } from "./helper";
-
+import { Cell, InputCategoryKeys, KeyMode } from "./modelizer/modelizer-types";
 import {
+  CachedObject,
   DataGrid,
   DataGridCategories,
   DataGridTransformation,
@@ -25,6 +22,8 @@ import {
   DataPointModifier,
   DataResultCellFilter,
   DataTag,
+  ICache,
+  IdSelector,
   ModArgsAddMeta,
   ModArgsAddPointInfo,
   ModArgsAddToNew,
@@ -41,19 +40,24 @@ import {
   ModArgsTagTolabel,
   ModArgsTranspose,
   ModifierCommandArgument,
+  NestedParentValue,
   ParserOptions,
   QueryOptions,
+  QueryResult,
   RawResultInfo,
   Result as ResultType,
   ResultCell,
   ResultColumn,
   ResultRow,
   Selector,
-  IdSelector,
   StoreOptions,
   Tagger,
-  QueryResult,
 } from "./types/types";
+
+import { all, filterBy, filterByDataTag } from "./filter";
+import { dump, value } from "./cell";
+import { byColId } from "./sort";
+import { getNestedClause, getTagGroupsByCategory } from "./helper";
 
 const cell = {
   value,
@@ -105,10 +109,15 @@ export type {
   QueryResult,
 };
 export { Query, Parser, Gesstabs, Generic, Store, filter, cell };
-export { Points, Convert, Modelizer };
+export { Points, Convert, Modelizer, Keys };
 export { getNestedClause, getTagGroupsByCategory };
 export { PrismaClient };
 
-import { Cell, InputCategoryKeys } from "./modelizer/modelizer-types";
-import { CachedObject, ICache } from "./types/types";
-export type { CachedObject, ICache, Cell, InputCategoryKeys };
+export type {
+  CachedObject,
+  ICache,
+  Cell,
+  InputCategoryKeys,
+  KeyMode,
+  NestedParentValue,
+};
