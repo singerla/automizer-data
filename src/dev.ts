@@ -1,13 +1,12 @@
 import { vd } from "./helper";
 import { Store } from "./store";
 import { PrismaClient } from "./client";
-import { ParserOptions, RawResultInfo, Tagger } from "./types/types";
-import { Gesstabs } from "./parser/gesstabs";
+import { ParserOptions } from "./types/types";
 import { PSPP } from "./parser/pspp";
 
 const run = async () => {
   const tmpDir = `${__dirname}/../__test__/tmp`;
-  const filename = `/home/tsing/Schreibtisch/survey_937949_spss(1).sav`;
+  const filename = `${__dirname}/../__test__/data/test-data.sav`;
 
   const store = new Store(new PrismaClient(), {
     filename: filename,
@@ -18,19 +17,73 @@ const run = async () => {
   });
 
   const config = <ParserOptions>{
-    spsTmpDir: tmpDir,
-    spsCommands: [
-      {
-        command: "CROSSTABS",
-        varDep: "G01Q02",
-        varIndep: "G01Q05",
+    renderTags: null,
+    renderRow: null,
+    skipRows: null,
+    metaMap: null,
+    tmpDir: tmpDir,
+    pspp: {
+      binary: "/usr/bin/pspp",
+      keys: {
+        skipKeys: ["Table: Zusammenfassung"],
+        valueKey: "Spalte %",
+        tableKey: "Table: ",
+        totalKey: "Gesamt",
+        totalLabel: "TOTAL",
       },
-      {
-        command: "CROSSTABS",
-        varDep: "G01Q02",
-        varIndep: "G01Q01",
-      },
-    ],
+      filters: [
+        {
+          category: "vartitle",
+          value: "Very busy",
+          key: "veryBusy",
+          selectIf: "Q03=1 OR Q03=2",
+        },
+      ],
+      commands: [
+        {
+          rowVar: "Q02",
+          columnVars: ["Q05"],
+        },
+        {
+          rowVar: "Q02",
+          columnVars: ["Q05"],
+          filters: ["veryBusy"],
+        },
+        {
+          rowVar: "Q02",
+          columnVars: ["Q01", "Q03"],
+        },
+        {
+          rowVar: "Q02",
+          columnVars: ["Q01", "Q03"],
+          filters: ["veryBusy"],
+        },
+      ],
+      labels: [
+        {
+          section: "columns",
+          replace:
+            "Ich komme überhaupt nicht zurecht und benötige Unterstützung bei der Nutzung von PowerPoint.",
+          by: "Neuling",
+        },
+        {
+          section: "columns",
+          replace:
+            "Ich habe Schwierigkeiten und würde gerne mehr über dessen Funktionen lernen wollen.",
+          by: "Neugierig",
+        },
+        {
+          section: "subgroup",
+          replace: "Q01",
+          by: "BUSINESS",
+        },
+        {
+          section: "subgroup",
+          replace: "Q03",
+          by: "SEGMENTATION",
+        },
+      ],
+    },
   };
 
   const parse = new PSPP(config);

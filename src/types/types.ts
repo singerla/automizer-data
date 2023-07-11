@@ -51,23 +51,45 @@ export type ParserOptions = {
   overcodes?: Overcodes[];
   skipRows: string[];
   worksheetId?: number;
-  spsCommands?: {
-    command: "CROSSTABS";
-    varDep: string;
-    varIndep: string;
-  }[];
-  spsTmpDir?: string;
+  tmpDir?: string;
+  pspp?: {
+    binary: string;
+    keys: ParserOptionsPsppKeys;
+    filters: ParserOptionsPsppFilters[];
+    labels: ParserOptionsPsppLabels[];
+    commands: ParserOptionsPsppCommands[];
+  };
+};
+
+export type ParserOptionsPsppKeys = {
+  skipKeys: string[];
+  valueKey: string;
+  tableKey: string;
+  totalKey: string;
+  totalLabel: string;
+};
+
+export type ParserOptionsPsppLabels = {
+  section: "rows" | "columns" | string;
+  replace: string;
+  by: string;
+};
+
+export type ParserOptionsPsppFilters = {
+  category: string;
+  value: string;
+  key: string;
+  selectIf: string;
+};
+
+export type ParserOptionsPsppCommands = {
+  name?: "CROSSTABS";
+  filters?: string[];
+  rowVar: string;
+  columnVars: string[];
 };
 
 export type ParserOptionsSignificance = {
-  cellSeparator: string;
-  headerSeparator: string;
-  headerFilter: string[];
-  lettersKey: string;
-  valueKey: string;
-};
-
-export type ParserOptionsPspp = {
   cellSeparator: string;
   headerSeparator: string;
   headerFilter: string[];

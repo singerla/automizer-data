@@ -1,150 +1,327 @@
-import { Datasheet, ParserOptions } from "../types/types";
+import {
+  Datasheet,
+  ParserOptions,
+  ParserOptionsPsppCommands,
+  ParserOptionsPsppFilters,
+  ParserOptionsPsppKeys,
+  ParserOptionsPsppLabels,
+  RawRow,
+} from "../types/types";
 import { Parser } from "./parser";
-
+import { vd } from "../helper";
+const { execSync } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
 const CSV = require("csv-string");
+
+type PsppItem = {
+  index: number;
+  commandName: string;
+  rowVar: string;
+  columnVar: string;
+  filters: ParserOptionsPsppFilters[];
+  syntax: string;
+};
+
+type PsppStack = {
+  items: PsppItem[];
+  byIndex: (i: number) => PsppItem;
+};
+
+type PsppDatasheet = Datasheet & {
+  count: number;
+  mapColumns: number[];
+  index: number;
+};
 
 export class PSPP extends Parser {
   constructor(config: ParserOptions) {
     super(config);
   }
 
-  async fromSav(file: string): Promise<Datasheet[]> {
-    const psppBin = "/usr/bin/pspp";
+  async fromSav(file: string): Promise<PsppDatasheet[]> {
+    const filters = this.config.pspp.filters || [];
+    const labels = this.config.pspp.labels || [];
+    const commands = this.config.pspp.commands || [];
 
-    const spsSyntax = [`GET FILE="${file}".`];
-
-    this.config.spsCommands.forEach((sps) => {
-      let syntax = "";
-      switch (sps.command) {
-        case "CROSSTABS":
-          syntax = `CROSSTABS
-            /TABLES= ${sps.varDep} BY  ${sps.varIndep}
-            /FORMAT=TABLES NOPIVOT
-            /CELLS=COUNT COLUMN.
-          `;
-          break;
-        default:
-          break;
-      }
-      spsSyntax.push(syntax);
-    });
-
-    const tmpDir = this.config.spsTmpDir + "/";
-
-    const tmpFilename = tmpDir + crypto.randomUUID() + ".sps";
-    fs.writeFileSync(tmpFilename, spsSyntax.join("\n"));
-
-    const execPspp = `${psppBin} ${tmpFilename} -O format=csv`;
-
-    const { execSync } = require("child_process");
-
-    const psppOutput = execSync(execPspp, (error, stdout, stderr) => {
-      if (error) {
-        console.log(`error: ${error.message}`);
-        return;
-      }
-      if (stderr) {
-        console.log(`stderr: ${stderr}`);
-        return;
-      }
-    }).toString();
-
+    const spsStack = this.getSpsStack(commands, filters);
+    const tmpFilename = this.writeTmpSpsFile(file, spsStack);
+    const psppOutput = this.callPspp(this.config.pspp.binary, tmpFilename);
     const parsedCsv = CSV.parse(psppOutput, ",");
 
-    const skip = ["Table: Zusammenfassung"];
-    const valueKey = "Spalte %";
-    const tableKey = "Table: ";
-    const totalKey = "Gesamt";
-    const totalLabel = "TOTAL";
+    const datasheets = this.getDatasheets(
+      parsedCsv,
+      this.config.pspp.keys,
+      spsStack
+    );
 
-    let currentTable;
-    let currentTableIndex = 0;
-    const datasheets = <Datasheet[]>[];
-    parsedCsv.forEach((row, r) => {
-      if (!skip.includes(row[0]) && row[0].indexOf(tableKey) === 0) {
-        currentTable = {
-          index: currentTableIndex,
-          meta: [],
-          data: [],
-          rows: [],
-          columns: [],
-          mapColumns: [],
-          tags: [
-            {
-              category: "quId",
-              value: this.config.spsCommands[currentTableIndex].varDep,
-            },
-            {
-              category: "subgroup",
-              value: this.config.spsCommands[currentTableIndex].varIndep,
-            },
-            {
-              category: "questionId",
-              value: parsedCsv[r + 3][0],
-            },
-          ],
-          count: 1,
-        };
-        datasheets.push(currentTable);
-        currentTableIndex++;
-      }
-
-      if (currentTable?.count) {
-        if (currentTable.count === 3) {
-          currentTable.columns.push(totalLabel);
-          currentTable.mapColumns.push({
-            colId: row.length - 1,
-            column: totalLabel,
-          });
-
-          row.forEach((cell, c) => {
-            if (cell.length === 0) return;
-            currentTable.columns.push(cell);
-            currentTable.mapColumns.push({
-              colId: c,
-              column: cell,
-            });
-          });
-        }
-
-        if (currentTable.count >= 4 && row[2] === valueKey) {
-          if (parsedCsv[r - 1][1].length) {
-            const rowLabel = parsedCsv[r - 1][1];
-            currentTable.rows.push(rowLabel);
-
-            const dataRow = [];
-            currentTable.mapColumns.forEach((mapColumn) => {
-              dataRow.push(PSPP.floatify(row[mapColumn.colId]));
-            });
-            currentTable.data.push(dataRow);
-          }
-        }
-
-        if (row[0] === totalKey) {
-          const metaRow = [];
-          currentTable.mapColumns.forEach((mapColumn) => {
-            metaRow.push(PSPP.floatify(row[mapColumn.colId]));
-          });
-          currentTable.meta.push({
-            key: "base",
-            value: "Base",
-            data: metaRow,
-          });
-        }
-
-        currentTable.count++;
-      }
-
-      if (currentTable?.count > 0 && row.length === 0 && row[0] === "") {
-        currentTable = {};
-      }
-    });
+    this.renameLabels(datasheets, labels);
 
     fs.unlinkSync(tmpFilename);
 
     return datasheets;
+  }
+
+  getDatasheets(
+    parsedCsv: string[][],
+    keys: ParserOptionsPsppKeys,
+    spsStack
+  ): PsppDatasheet[] {
+    let currentDatasheet;
+    let currentIndex = 0;
+    const datasheets = <PsppDatasheet[]>[];
+    parsedCsv.forEach((row, r) => {
+      if (
+        !keys.skipKeys.includes(row[0]) &&
+        row[0].indexOf(keys.tableKey) === 0
+      ) {
+        const quId = parsedCsv[r + 3][0];
+        const currentStackItem = spsStack.byIndex(currentIndex);
+        currentDatasheet = this.getDefaultDatatable(
+          currentIndex,
+          quId,
+          currentStackItem
+        );
+        datasheets.push(currentDatasheet);
+        currentIndex++;
+      }
+
+      if (currentDatasheet?.count) {
+        if (currentDatasheet.count === 3) {
+          this.setColumns(currentDatasheet, row, keys.totalLabel);
+        }
+
+        if (currentDatasheet.count >= 4 && row[2] === keys.valueKey) {
+          this.setSheetData(parsedCsv, r, currentDatasheet);
+        }
+
+        if (row[0] === keys.totalKey) {
+          this.setMeta(currentDatasheet, row);
+        }
+        currentDatasheet.count++;
+      }
+
+      if (currentDatasheet?.count > 0 && row.length === 0 && row[0] === "") {
+        currentDatasheet = {};
+      }
+    });
+    return datasheets;
+  }
+
+  setMeta(currentDatasheet: PsppDatasheet, row: string[]) {
+    const metaRow = [];
+    currentDatasheet.mapColumns.forEach((mapColumn) => {
+      metaRow.push(PSPP.floatify(row[mapColumn]));
+    });
+    currentDatasheet.meta.push({
+      key: "base",
+      label: "Base",
+      data: metaRow,
+    });
+  }
+
+  setColumns(
+    currentDatasheet: PsppDatasheet,
+    row: string[],
+    totalLabel: string
+  ) {
+    currentDatasheet.columns.push(totalLabel);
+    currentDatasheet.mapColumns.push(row.length - 1);
+
+    row.forEach((cell, c) => {
+      if (cell.length === 0) return;
+      currentDatasheet.columns.push(cell);
+      currentDatasheet.mapColumns.push(c);
+    });
+  }
+
+  setSheetData(
+    parsedCsv: string[][],
+    r: number,
+    currentDatasheet: PsppDatasheet
+  ) {
+    const currentRow = parsedCsv[r];
+    const previousRow = parsedCsv[r - 1];
+    if (previousRow[1].length) {
+      const rowLabel = previousRow[1];
+      currentDatasheet.rows.push(rowLabel);
+
+      const dataRow = [];
+      currentDatasheet.mapColumns.forEach((mapColumn) => {
+        dataRow.push(PSPP.floatify(currentRow[mapColumn]));
+      });
+      currentDatasheet.data.push(dataRow);
+    }
+  }
+
+  getDefaultDatatable(
+    currentTableIndex: number,
+    quId: string,
+    currentStackItem: PsppItem
+  ): PsppDatasheet {
+    const currentDatasheet = <PsppDatasheet>{
+      index: currentTableIndex,
+      mapColumns: [],
+      count: 1,
+      meta: [],
+      data: [],
+      rows: [],
+      columns: [],
+      tags: [],
+    };
+
+    currentDatasheet.tags = [
+      {
+        category: "quId",
+        value: currentStackItem.rowVar,
+      },
+      {
+        category: "subgroup",
+        value: currentStackItem.columnVar,
+      },
+      {
+        category: "questionId",
+        value: quId,
+      },
+    ];
+
+    currentStackItem.filters.forEach((filter) => {
+      currentDatasheet.tags.push({
+        category: filter.category,
+        value: filter.value,
+      });
+    });
+
+    return currentDatasheet;
+  }
+
+  getSpsStack(
+    commands: ParserOptionsPsppCommands[],
+    filters: ParserOptionsPsppFilters[]
+  ): PsppStack {
+    const spsStack: PsppStack = {
+      byIndex: (i: number): PsppItem => {
+        return spsStack.items.find((item) => item.index === i);
+      },
+      items: <PsppItem[]>[],
+    };
+
+    let count = 0;
+    commands.forEach((command) => {
+      const name = command.name ? command.name : "CROSSTABS";
+
+      let syntaxSelectIf = "";
+      let targetFilters: ParserOptionsPsppFilters[] = [];
+      if (command.filters) {
+        targetFilters = filters.filter((filter) =>
+          command.filters.includes(filter.key)
+        );
+        const selectIf = targetFilters
+          .map((filter) => filter.selectIf)
+          .join(" AND ");
+        syntaxSelectIf += `TEMPORARY. 
+          SELECT IF ${selectIf}.
+        `;
+      }
+
+      command.columnVars.forEach((columnVar) => {
+        const syntax = [syntaxSelectIf];
+
+        syntax.push(
+          this.getSpsCommand(name, {
+            rowVar: command.rowVar,
+            columnVar: columnVar,
+          })
+        );
+
+        spsStack.items.push({
+          index: count,
+          commandName: name,
+          rowVar: command.rowVar,
+          columnVar: columnVar,
+          syntax: syntax.join(""),
+          filters: targetFilters,
+        });
+        count++;
+      });
+    });
+
+    return spsStack;
+  }
+
+  getSpsCommand(name, args) {
+    switch (name) {
+      case "CROSSTABS":
+        return `CROSSTABS
+              /TABLES=${args.rowVar} BY ${args.columnVar}
+              /FORMAT=TABLES NOPIVOT
+              /CELLS=COUNT COLUMN.
+          `;
+      default:
+        break;
+    }
+  }
+
+  renameLabels(datasheets: PsppDatasheet[], labels: ParserOptionsPsppLabels[]) {
+    labels.forEach((label) => {
+      if (label.section === "rows" || label.section === "columns") {
+        this.replaceLabelsBySection(datasheets, label.section, label);
+      } else {
+        this.replaceLabelsByTag(datasheets, label);
+      }
+    });
+  }
+
+  replaceLabelsBySection(
+    datasheets: PsppDatasheet[],
+    section: "rows" | "columns",
+    label: ParserOptionsPsppLabels
+  ) {
+    datasheets.forEach((datasheet) => {
+      datasheet[section].forEach((row, r) => {
+        if (label.replace === row) {
+          datasheet[section][r] = label.by;
+        }
+      });
+    });
+  }
+
+  replaceLabelsByTag(
+    datasheets: PsppDatasheet[],
+    label: ParserOptionsPsppLabels
+  ) {
+    datasheets.forEach((datasheet) => {
+      const targetTag = datasheet.tags.find(
+        (tag) => tag.category === label.section && tag.value === label.replace
+      );
+      if (targetTag) {
+        targetTag.value = label.by;
+      }
+    });
+  }
+
+  writeTmpSpsFile(file: string, spsStack: PsppStack): string {
+    const spsSyntax = [`GET FILE="${file}".`];
+    spsStack.items.forEach((spsItem) => {
+      spsSyntax.push(spsItem.syntax);
+    });
+
+    const tmpDir = this.config.tmpDir + "/";
+    const tmpFilename = tmpDir + crypto.randomUUID() + ".sps";
+    fs.writeFileSync(tmpFilename, spsSyntax.join("\n"));
+
+    return tmpFilename;
+  }
+
+  callPspp(psppBin: string, tmpFilename: string) {
+    const execPspp = `${psppBin} ${tmpFilename} -O format=csv`;
+    let psppOutput;
+    try {
+      psppOutput = execSync(execPspp).toString();
+    } catch (e) {
+      console.error(e);
+    }
+    return psppOutput;
   }
 
   static floatify(str: string): number {
