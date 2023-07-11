@@ -29,13 +29,7 @@ test("store demo sav-data using PSPP and prisma client", async () => {
     tmpDir: tmpDir,
     pspp: {
       binary: "/usr/bin/pspp",
-      keys: {
-        skipKeys: ["Table: Zusammenfassung"],
-        valueKey: "Spalte %",
-        tableKey: "Table: ",
-        totalKey: "Gesamt",
-        totalLabel: "TOTAL",
-      },
+      psppLanguage: "de",
       filters: [
         {
           category: "vartitle",

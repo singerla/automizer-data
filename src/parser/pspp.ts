@@ -51,12 +51,14 @@ export class Pspp extends Parser {
     const psppOutput = this.callPspp(this.config.pspp.binary, tmpFilename);
     const parsedCsv = CSV.parse(psppOutput, ",");
 
-    const datasheets = this.getDatasheets(
-      parsedCsv,
-      this.config.pspp.keys,
-      spsStack,
-      addTags
-    );
+    const psppLanguage = this.config.pspp.psppLanguage || "en";
+    const keys = Pspp.getKeys(psppLanguage);
+
+    if (this.config.pspp.keys) {
+      Object.assign(keys, this.config.pspp.keys);
+    }
+
+    const datasheets = this.getDatasheets(parsedCsv, keys, spsStack, addTags);
 
     this.renameLabels(datasheets, labels);
 
@@ -333,5 +335,25 @@ export class Pspp extends Parser {
   static floatify(str: string): number {
     const num = str.replace(",", ".").replace("%", "");
     return Number(num);
+  }
+
+  static getKeys(lang: "de" | "en"): ParserOptionsPsppKeys {
+    const keys = {
+      de: {
+        skipKeys: ["Table: Zusammenfassung"],
+        valueKey: "Spalte %",
+        tableKey: "Table: ",
+        totalKey: "Gesamt",
+        totalLabel: "TOTAL",
+      },
+      en: {
+        skipKeys: ["Table: Summary"],
+        valueKey: "Column %",
+        tableKey: "Table: ",
+        totalKey: "Total",
+        totalLabel: "TOTAL",
+      },
+    };
+    return keys[lang] || keys.en;
   }
 }

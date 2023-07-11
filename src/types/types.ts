@@ -57,7 +57,8 @@ export type ParserOptions = {
 
 export type ParserOptionsPspp = {
   binary: string;
-  keys: ParserOptionsPsppKeys;
+  psppLanguage?: "en" | "de";
+  keys?: ParserOptionsPsppKeys;
   filters: ParserOptionsPsppFilters[];
   labels: ParserOptionsPsppLabels[];
   commands: ParserOptionsPsppCommands[];
