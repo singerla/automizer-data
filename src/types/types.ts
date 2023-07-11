@@ -52,13 +52,16 @@ export type ParserOptions = {
   skipRows: string[];
   worksheetId?: number;
   tmpDir?: string;
-  pspp?: {
-    binary: string;
-    keys: ParserOptionsPsppKeys;
-    filters: ParserOptionsPsppFilters[];
-    labels: ParserOptionsPsppLabels[];
-    commands: ParserOptionsPsppCommands[];
-  };
+  pspp?: ParserOptionsPspp;
+};
+
+export type ParserOptionsPspp = {
+  binary: string;
+  keys: ParserOptionsPsppKeys;
+  filters: ParserOptionsPsppFilters[];
+  labels: ParserOptionsPsppLabels[];
+  commands: ParserOptionsPsppCommands[];
+  addTags: DataTag[];
 };
 
 export type ParserOptionsPsppKeys = {

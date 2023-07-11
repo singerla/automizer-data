@@ -1,5 +1,6 @@
 import {
   Datasheet,
+  DataTag,
   ParserOptions,
   ParserOptionsPsppCommands,
   ParserOptionsPsppFilters,
@@ -34,7 +35,7 @@ type PsppDatasheet = Datasheet & {
   index: number;
 };
 
-export class PSPP extends Parser {
+export class Pspp extends Parser {
   constructor(config: ParserOptions) {
     super(config);
   }
@@ -43,6 +44,7 @@ export class PSPP extends Parser {
     const filters = this.config.pspp.filters || [];
     const labels = this.config.pspp.labels || [];
     const commands = this.config.pspp.commands || [];
+    const addTags = this.config.pspp.addTags || [];
 
     const spsStack = this.getSpsStack(commands, filters);
     const tmpFilename = this.writeTmpSpsFile(file, spsStack);
@@ -52,7 +54,8 @@ export class PSPP extends Parser {
     const datasheets = this.getDatasheets(
       parsedCsv,
       this.config.pspp.keys,
-      spsStack
+      spsStack,
+      addTags
     );
 
     this.renameLabels(datasheets, labels);
@@ -65,7 +68,8 @@ export class PSPP extends Parser {
   getDatasheets(
     parsedCsv: string[][],
     keys: ParserOptionsPsppKeys,
-    spsStack
+    spsStack: PsppStack,
+    addTags: DataTag[]
   ): PsppDatasheet[] {
     let currentDatasheet;
     let currentIndex = 0;
@@ -75,12 +79,13 @@ export class PSPP extends Parser {
         !keys.skipKeys.includes(row[0]) &&
         row[0].indexOf(keys.tableKey) === 0
       ) {
-        const quId = parsedCsv[r + 3][0];
+        const questionText = parsedCsv[r + 3][0];
         const currentStackItem = spsStack.byIndex(currentIndex);
         currentDatasheet = this.getDefaultDatatable(
           currentIndex,
-          quId,
-          currentStackItem
+          questionText,
+          currentStackItem,
+          addTags
         );
         datasheets.push(currentDatasheet);
         currentIndex++;
@@ -111,7 +116,7 @@ export class PSPP extends Parser {
   setMeta(currentDatasheet: PsppDatasheet, row: string[]) {
     const metaRow = [];
     currentDatasheet.mapColumns.forEach((mapColumn) => {
-      metaRow.push(PSPP.floatify(row[mapColumn]));
+      metaRow.push(Pspp.floatify(row[mapColumn]));
     });
     currentDatasheet.meta.push({
       key: "base",
@@ -148,7 +153,7 @@ export class PSPP extends Parser {
 
       const dataRow = [];
       currentDatasheet.mapColumns.forEach((mapColumn) => {
-        dataRow.push(PSPP.floatify(currentRow[mapColumn]));
+        dataRow.push(Pspp.floatify(currentRow[mapColumn]));
       });
       currentDatasheet.data.push(dataRow);
     }
@@ -156,8 +161,9 @@ export class PSPP extends Parser {
 
   getDefaultDatatable(
     currentTableIndex: number,
-    quId: string,
-    currentStackItem: PsppItem
+    questionText: string,
+    currentStackItem: PsppItem,
+    addTags: DataTag[]
   ): PsppDatasheet {
     const currentDatasheet = <PsppDatasheet>{
       index: currentTableIndex,
@@ -169,10 +175,10 @@ export class PSPP extends Parser {
       columns: [],
       tags: [],
     };
-
     currentDatasheet.tags = [
+      ...addTags,
       {
-        category: "quId",
+        category: "questionNumber",
         value: currentStackItem.rowVar,
       },
       {
@@ -180,8 +186,8 @@ export class PSPP extends Parser {
         value: currentStackItem.columnVar,
       },
       {
-        category: "questionId",
-        value: quId,
+        category: "questionText",
+        value: questionText,
       },
     ];
 

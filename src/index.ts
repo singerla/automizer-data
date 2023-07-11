@@ -9,6 +9,7 @@ import Keys from "./keys";
 import { Store } from "./store";
 import { Parser } from "./parser/parser";
 import { Gesstabs } from "./parser/gesstabs";
+import { Pspp } from "./parser/pspp";
 import { Generic } from "./parser/generic";
 import { Cell, InputCategoryKeys, KeyMode } from "./modelizer/modelizer-types";
 import {
@@ -42,6 +43,7 @@ import {
   ModifierCommandArgument,
   NestedParentValue,
   ParserOptions,
+  ParserOptionsPspp,
   QueryOptions,
   QueryResult,
   RawResultInfo,
@@ -72,7 +74,13 @@ const sort = {
   byColId,
 };
 
-export type { ParserOptions, RawResultInfo, StoreOptions, Tagger };
+export type {
+  ParserOptions,
+  ParserOptionsPspp,
+  RawResultInfo,
+  StoreOptions,
+  Tagger,
+};
 export type { ResultColumn, ResultRow, ResultCell };
 export type {
   DataGrid,
@@ -108,7 +116,7 @@ export type {
   ResultType,
   QueryResult,
 };
-export { Query, Parser, Gesstabs, Generic, Store, filter, cell };
+export { Query, Parser, Gesstabs, Pspp, Generic, Store, filter, cell };
 export { Points, Convert, Modelizer, Keys };
 export { getNestedClause, getTagGroupsByCategory };
 export { PrismaClient };

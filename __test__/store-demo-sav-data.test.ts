@@ -1,12 +1,17 @@
-import { vd } from "./helper";
-import { Store } from "./store";
-import { PrismaClient } from "./client";
-import { ParserOptions } from "./types/types";
-import { Pspp } from "./parser/pspp";
+import { PrismaClient } from "../src/client";
+import { Store } from "../src/index";
+import {
+  ParserOptions,
+  Tagger,
+  RawResultInfo,
+  StatusTracker,
+} from "../src/types/types";
+import { Gesstabs } from "../src/parser/gesstabs";
+import { Pspp } from "../src/parser/pspp";
 
-const run = async () => {
-  const tmpDir = `${__dirname}/../__test__/tmp`;
-  const filename = `${__dirname}/../__test__/data/test-data.sav`;
+test("store demo sav-data using PSPP and prisma client", async () => {
+  const tmpDir = `${__dirname}/tmp`;
+  const filename = `${__dirname}/data/test-data.sav`;
 
   const store = new Store(new PrismaClient(), {
     filename: filename,
@@ -37,6 +42,12 @@ const run = async () => {
           value: "Very busy",
           key: "veryBusy",
           selectIf: "Q03=1 OR Q03=2",
+        },
+      ],
+      addTags: [
+        {
+          category: "country",
+          value: "Country A",
         },
       ],
       commands: [
@@ -83,19 +94,11 @@ const run = async () => {
           by: "SEGMENTATION",
         },
       ],
-      addTags: [
-        {
-          category: "country",
-          value: "Country A",
-        },
-      ],
     },
   };
 
   const parse = new Pspp(config);
   const datasheets = await parse.fromSav(filename);
-  vd(datasheets);
-
   const summary = await store
     .run(datasheets)
     .then((summary) => {
@@ -105,14 +108,8 @@ const run = async () => {
       throw e;
     })
     .finally(async () => {
-      await store.prisma.$disconnect();
+      // await store.prisma.$disconnect();
     });
 
-  vd(summary);
-};
-
-run()
-  .then((result) => {})
-  .catch((e) => {
-    throw e;
-  });
+  expect(summary.ids.length).toBe(6);
+});
