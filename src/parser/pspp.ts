@@ -10,7 +10,7 @@ import {
 } from "../types/types";
 import { Parser } from "./parser";
 import { vd } from "../helper";
-const { execSync } = require("child_process");
+const { execSync, exec } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
 const CSV = require("csv-string");
@@ -48,7 +48,9 @@ export class Pspp extends Parser {
 
     const spsStack = this.getSpsStack(commands, filters);
     const tmpFilename = this.writeTmpSpsFile(file, spsStack);
-    const psppOutput = this.callPspp(this.config.pspp.binary, tmpFilename);
+
+    const psppBin = this.config.pspp.binary;
+    const psppOutput = await this.callPspp(psppBin, tmpFilename);
     const parsedCsv = CSV.parse(psppOutput, ",");
 
     const psppLanguage = this.config.pspp.psppLanguage || "en";
@@ -321,8 +323,9 @@ export class Pspp extends Parser {
     return tmpFilename;
   }
 
-  callPspp(psppBin: string, tmpFilename: string) {
-    const execPspp = `${psppBin} ${tmpFilename} -O format=csv`;
+  async callPspp(psppBin: string, tmpFilename: string) {
+    const execPspp = `${psppBin} ${tmpFilename} -O format=csv --error-file=${tmpFilename}.err.txt`;
+
     let psppOutput;
     try {
       psppOutput = execSync(execPspp).toString();

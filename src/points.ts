@@ -165,12 +165,20 @@ export default class Points {
   map(args: ModArgsMap, points?: DataPoint[]): void {
     const { source, target } = args;
     this.targetPoints(points).forEach((point) => {
+      let targetValue = "n/a map";
       if (source === "row" || source === "column") {
-        point[target] = point[source];
+        targetValue = point[source];
       } else {
         const tag = point.tags.find((tag) => tag.categoryId === source);
-        point[target] = tag?.value ? tag?.value : "n/a map";
+        targetValue = tag?.value ? tag?.value : "n/a map";
       }
+      point.setMeta("mapOrigin", {
+        row: point.row,
+        column: point.column,
+        mapping: target,
+        targetValue: targetValue,
+      });
+      point[target] = targetValue;
     });
   }
 

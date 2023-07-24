@@ -542,7 +542,11 @@ export default class Modelizer {
       },
       setPoints: (points: DataPoint[]): void => {
         cell.points = points;
-        cell.setValue(points[0].value);
+        if (points.length) {
+          cell.setValue(points[0].value);
+        } else {
+          cell.setValue(null);
+        }
       },
       createPoint: (value?: CellValue): DataPoint => {
         return Points.dataPointFactory(rowKey, columnKey, [], [], value);
