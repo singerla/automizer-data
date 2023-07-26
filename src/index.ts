@@ -40,6 +40,7 @@ import {
   ModArgsStringTolabel,
   ModArgsTagTolabel,
   ModArgsTranspose,
+  ModelizeArguments,
   ModifierCommandArgument,
   NestedParentValue,
   ParserOptions,
@@ -128,4 +129,5 @@ export type {
   InputCategoryKeys,
   KeyMode,
   NestedParentValue,
+  ModelizeArguments,
 };
