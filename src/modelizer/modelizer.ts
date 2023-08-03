@@ -526,9 +526,19 @@ export default class Modelizer {
       value: undefined,
       rowKey: rowKey,
       columnKey: columnKey,
+      meta: {},
+      targetPoint: 0,
+      setTargetPoint: (i?: number) => {
+        cell.targetPoint = i || 0;
+        return cell;
+      },
+      getTargetPoint: () => {
+        return cell.targetPoint;
+      },
       points: <DataPoint[]>[],
-      getPoint: (i?: number, forceCreate?): DataPoint => {
+      getPoint: (i?: number, forceCreate?: boolean): DataPoint => {
         const points = cell.getPoints();
+        i = i === undefined ? cell.getTargetPoint() : i;
         i = points[i] ? i : 0;
         if (forceCreate || !points || !points[i]) {
           const addPoint = cell.createPoint();

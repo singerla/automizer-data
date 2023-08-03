@@ -117,6 +117,13 @@ export interface Cell {
    * Log contents of the current cell to console.
    */
   dump: () => void;
+  /**
+   * Define a point from Cell['points'] to hold the source data (instead of point 0).
+   */
+  targetPoint?: number;
+  setTargetPoint?: (i?: number) => Cell;
+  getTargetPoint?: () => number;
+  meta: any;
 }
 
 /**
