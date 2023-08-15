@@ -11,7 +11,12 @@ import { Parser } from "./parser/parser";
 import { Gesstabs } from "./parser/gesstabs";
 import { Pspp } from "./parser/pspp";
 import { Generic } from "./parser/generic";
-import { Cell, InputCategoryKeys, KeyMode } from "./modelizer/modelizer-types";
+import {
+  Cell,
+  InputCategoryKeys,
+  KeyMode,
+  Model,
+} from "./modelizer/modelizer-types";
 import {
   CachedObject,
   DataGrid,
@@ -118,7 +123,7 @@ export type {
   QueryResult,
 };
 export { Query, Parser, Gesstabs, Pspp, Generic, Store, filter, cell };
-export { Points, Convert, Modelizer, Keys };
+export { Points, Convert, Modelizer, Model, Keys };
 export { getNestedClause, getTagGroupsByCategory };
 export { PrismaClient };
 

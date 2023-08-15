@@ -1,8 +1,19 @@
-import { DataPoint } from "../types/types";
+import { DataPoint, DataPointMeta } from "../types/types";
 
 export interface Style {
   assign(style: any): void;
   get(): any;
+}
+
+export type ModelMeta = {
+  key: string;
+  value: any;
+};
+
+export interface Meta {
+  set(metaKey: string, metaValue: ModelMeta["value"]): void;
+  get(metaKey: string): ModelMeta;
+  state: ModelMeta[];
 }
 
 export type ModelizerOptions = {
@@ -136,6 +147,10 @@ export interface Model {
    */
   key: string;
   /**
+   * Whether the model is a row or a column.
+   */
+  mode: KeyMode;
+  /**
    * Retreive Index of current row or column, starting from 0.
    */
   id: () => number;
@@ -177,6 +192,10 @@ export interface Model {
    * Holds a style to pass it to pptx automizer later.
    */
   style: Style;
+  /**
+   * Holds meta information for whole row or column.
+   */
+  meta: Meta;
   /**
    * Log contents of the current row to console.
    */

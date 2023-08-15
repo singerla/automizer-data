@@ -205,7 +205,7 @@ export default class Convert {
 
       if (params?.showRowLabels) {
         tableRow.push(String(row.key));
-        tableRowStyles.push(null);
+        tableRowStyles.push(row.style.get());
       }
 
       row.cells().forEach((cell, c) => {

@@ -8,9 +8,11 @@ import {
   Key,
   KeyMode,
   Keys,
+  Meta,
   Model,
   ModelEachCb,
   ModelizerOptions,
+  ModelMeta,
   ProcessColumnCb,
   ProcessRowCb,
   RenderTableCb,
@@ -314,9 +316,11 @@ export default class Modelizer {
   createModel(key: string, mode: KeyMode): Model {
     const model: Model = {
       key: key,
+      mode: mode,
       id: () => this.#parseCellKey(key, mode),
       style: this.#style(),
       cells: () => this.#filterCells(mode === "row" ? "column" : "row", key),
+      meta: this.#modelMeta(),
       each: (cb: ModelEachCb) => {
         model.cells().forEach((cell) => cb(cell));
         return model;
@@ -355,17 +359,30 @@ export default class Modelizer {
   #style = (): Style => {
     const style = {
       state: {},
-      assign(style) {
-        style.state = {
-          ...style.state,
-          ...style,
-        };
+      assign(assignStyle) {
+        Object.assign(style.state, assignStyle);
       },
       get() {
         return style.state;
       },
     };
     return style;
+  };
+
+  #modelMeta = (): Meta => {
+    const meta = {
+      state: <ModelMeta[]>[],
+      set(key: string, value: ModelMeta["value"]) {
+        meta.state.push({
+          key: key,
+          value: value,
+        });
+      },
+      get(key: string): ModelMeta {
+        return meta.state.find((state) => state.key === key);
+      },
+    };
+    return meta;
   };
 
   getCellByMode(mode: KeyMode, i1: Key, i2: Key): Cell {
