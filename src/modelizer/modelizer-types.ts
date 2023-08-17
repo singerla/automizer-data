@@ -165,7 +165,7 @@ export interface Model {
   /**
    * Retrieve an array of all cell values.
    */
-  collect: () => number[];
+  collect: (cb?: (cell: Cell) => boolean | null) => number[];
   /**
    * Retrieve a cell from current row by key.
    * @param c

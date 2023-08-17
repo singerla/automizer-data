@@ -325,10 +325,12 @@ export default class Modelizer {
         model.cells().forEach((cell) => cb(cell));
         return model;
       },
-      collect: (): number[] => {
+      collect: (cb?): number[] => {
         const values = [];
         model.each((cell) => {
-          values.push(cell.toNumber());
+          if (!cb || (typeof cb === "function" && cb(cell))) {
+            values.push(cell.toNumber());
+          }
         });
         return values;
       },
