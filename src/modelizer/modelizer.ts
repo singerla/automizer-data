@@ -317,9 +317,10 @@ export default class Modelizer {
     const model: Model = {
       key: key,
       mode: mode,
-      id: () => this.#parseCellKey(key, mode),
+      id: () => this.#parseCellKey(key, model.mode),
       style: this.#style(),
-      cells: () => this.#filterCells(mode === "row" ? "column" : "row", key),
+      cells: () =>
+        this.#filterCells(model.mode === "row" ? "column" : "row", key),
       meta: this.#modelMeta(),
       each: (cb: ModelEachCb) => {
         model.cells().forEach((cell) => cb(cell));
@@ -334,24 +335,24 @@ export default class Modelizer {
         });
         return values;
       },
-      getCell: (i: Key) => this.getCellByMode(mode, model.id(), i),
+      getCell: (i: Key) => this.getCellByMode(model.mode, model.id(), i),
       setCell: (i: Key, cell: Cell) => {
-        this.setCellByMode(mode, model.id(), i, cell);
+        this.setCellByMode(model.mode, model.id(), i, cell);
         return model;
       },
       setCellValue: (i: Key, value: CellValue) => {
-        this.setCellValueByMode(mode, model.id(), i, value);
+        this.setCellValueByMode(model.mode, model.id(), i, value);
         return model;
       },
       updateKey: (newKey: string) => {
-        const targetKey = mode === "row" ? "rowKey" : "columnKey";
+        const targetKey = model.mode === "row" ? "rowKey" : "columnKey";
         model.cells().forEach((cell) => (cell[targetKey] = newKey));
-        this.#updateKey(mode, model.id(), newKey);
+        this.#updateKey(model.mode, model.id(), newKey);
 
         return model;
       },
       dump: (s1, s2) =>
-        mode === "row"
+        model.mode === "row"
           ? this.dump(s1, s2, [model.id()], [])
           : this.dump(s1, s2, [], [model.id()]),
     };
@@ -559,10 +560,13 @@ export default class Modelizer {
         const points = cell.getPoints();
         i = i === undefined ? cell.getTargetPoint() : i;
         i = points[i] ? i : 0;
-        if (forceCreate || !points || !points[i]) {
-          const addPoint = cell.createPoint();
-          cell.addPoint(addPoint);
-          return addPoint;
+        if (!points || !points[i]) {
+          if (forceCreate === true) {
+            const addPoint = cell.createPoint();
+            cell.addPoint(addPoint);
+            return addPoint;
+          }
+          return null;
         }
         return points[i];
       },
@@ -587,16 +591,16 @@ export default class Modelizer {
         cell.points.push(point);
         return cell;
       },
-      getValue: () => cell.value || cell.getPoint().value,
+      getValue: () => cell.value || cell.getPoint()?.value,
       setValue: (value: CellValue) => {
-        cell.getPoint().value = value;
+        cell.getPoint(0, true).value = value;
         cell.value = value;
         return cell;
       },
-      getRow: () => this.getRow(rowKey),
-      getColumn: () => this.getColumn(columnKey),
+      getRow: () => this.getRow(cell.rowKey),
+      getColumn: () => this.getColumn(cell.columnKey),
       toNumber: () => {
-        let currentValue = cell.getValue();
+        let currentValue = cell.getValue() || 0;
         if (typeof currentValue === "string" && currentValue.includes(",")) {
           currentValue = currentValue.replace(",", ".");
         }
@@ -668,7 +672,7 @@ export default class Modelizer {
       if (firstPoint) {
         return;
       }
-      const cellHasPoint = cell.getPoint();
+      const cellHasPoint = cell.getPoint(0, false);
       if (cellHasPoint) {
         firstPoint = cellHasPoint;
       }
@@ -699,21 +703,47 @@ export default class Modelizer {
    * Transpose the result by switching rows and columns.
    */
   transpose() {
-    const sortRows = this.getKeys("column");
-    const sortCols = this.getKeys("row");
+    const sortCols = this.getKeys("column");
+    const sortRows = this.getKeys("row");
 
-    this.process((cell) => {
-      const rowKey = cell.rowKey;
-      const colKey = cell.columnKey;
-      cell.points.forEach((point) => {
-        point.row = rowKey;
-        point.column = colKey;
-      });
-      this.setCell(colKey, rowKey, cell);
+    const tmpRows: Model[] = ([] = []);
+    sortRows.forEach((rowKey) => {
+      tmpRows.push(this.getRow(rowKey));
     });
 
-    this.sort("row", sortRows);
-    this.sort("column", sortCols);
+    const tmpColumns: Model[] = [];
+    sortCols.forEach((columnKey) => {
+      tmpColumns.push(this.getColumn(columnKey));
+    });
+
+    this.#keys.row = [];
+    this.#keys.column = [];
+    this.#rows = [];
+    this.#columns = [];
+
+    tmpColumns.forEach((column) => {
+      column.mode = "row";
+      this.#rows.push(column);
+      this.#keys.row.push(column.key);
+    });
+    tmpRows.forEach((row) => {
+      row.mode = "column";
+      this.#columns.push(row);
+      this.#keys.column.push(row.key);
+    });
+
+    this.#cells.forEach((cell) => {
+      const rowKey = cell.rowKey;
+      const colKey = cell.columnKey;
+
+      cell.points.forEach((point) => {
+        point.row = colKey;
+        point.column = rowKey;
+      });
+
+      cell.rowKey = colKey;
+      cell.columnKey = rowKey;
+    });
   }
 
   /**
