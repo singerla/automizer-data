@@ -88,8 +88,8 @@ export default class Convert {
         label: row.key,
         values: row.cells().map((cell) => {
           return {
-            x: cell.getPoint(0).value as number,
-            y: cell.getPoint(1).value as number,
+            x: cell.getPoint(0)?.value as number,
+            y: cell.getPoint(1)?.value as number,
           };
         }),
         styles: this.#extractPointStyle<ChartValueStyle>(row),
@@ -111,9 +111,9 @@ export default class Convert {
         label: row.key,
         values: row.cells().map((col: Cell) => {
           return <ChartBubble>{
-            size: Number(col.getPoint(0).value),
-            x: Number(col.getPoint(1).value),
-            y: Number(col.getPoint(2).value),
+            size: Number(col.getPoint(0)?.value),
+            x: Number(col.getPoint(1)?.value),
+            y: Number(col.getPoint(2)?.value),
           };
         }),
         styles: this.#extractPointStyle<ChartValueStyle>(row),
