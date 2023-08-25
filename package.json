@@ -1,6 +1,6 @@
 {
   "name": "automizer-data",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Store and browse aggregated data using Prisma database tool",
   "repository": {
     "type": "git",
