@@ -222,6 +222,7 @@ export type QueryResult = {
     row: string[];
     column: string[];
   };
+  info?: Record<string, any>;
 };
 
 export type QueryResultKeys = {
