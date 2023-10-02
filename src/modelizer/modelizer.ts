@@ -346,7 +346,12 @@ export default class Modelizer {
       },
       updateKey: (newKey: string) => {
         const targetKey = model.mode === "row" ? "rowKey" : "columnKey";
-        model.cells().forEach((cell) => (cell[targetKey] = newKey));
+        model.cells().forEach((cell) => {
+          cell.points.forEach((point) => {
+            point[model.mode] = newKey;
+          });
+          cell[targetKey] = newKey;
+        });
         this.#updateKey(model.mode, model.id(), newKey);
 
         return model;
