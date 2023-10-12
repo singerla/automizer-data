@@ -1,6 +1,6 @@
 import { DataPoint, DataPointMeta } from "../types/types";
 import { Query } from "../index";
-import _ from "lodash";
+import _, { round } from "lodash";
 import {
   AddPointsOptions,
   Cell,
@@ -604,12 +604,19 @@ export default class Modelizer {
       },
       getRow: () => this.getRow(cell.rowKey),
       getColumn: () => this.getColumn(cell.columnKey),
-      toNumber: () => {
+      toNumber: (precision?: number) => {
         let currentValue = cell.getValue() || 0;
         if (typeof currentValue === "string" && currentValue.includes(",")) {
-          currentValue = currentValue.replace(",", ".");
+          currentValue = currentValue
+            .replace(",", ".")
+            .replace("±", "")
+            .replace("+", "");
         }
-        return Number(currentValue);
+        currentValue = Number(currentValue);
+        if (precision !== undefined) {
+          return round(currentValue, precision);
+        }
+        return currentValue;
       },
       toNumberOrEmpty: () => {
         let currentValue = cell.toCell();

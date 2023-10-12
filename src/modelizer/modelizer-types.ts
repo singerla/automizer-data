@@ -110,8 +110,9 @@ export interface Cell {
   getColumn: () => Model;
   /**
    * Get the current cell value as a number.
+   * Set precision to specify the precision to round to.
    */
-  toNumber: () => number;
+  toNumber: (precision?: number) => number;
   /**
    * Get the current cell value as a number or empty string.
    */
