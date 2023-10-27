@@ -416,7 +416,7 @@ export default class Query {
             await transform.modelize(modelizer, args);
           } catch (e) {
             errors.push({
-              errorMessage123: e.message,
+              errorMessage: e.message,
               lineNumber: e.lineNumber,
               name: transform.name,
               params: transform.params,
