@@ -223,7 +223,24 @@ export type QueryResult = {
     column: string[];
   };
   info?: Record<string, any>;
+  errors?: QueryTransformationError[];
+  dumpedData?: DumpedData[];
 };
+
+export type QueryTransformationError = {
+  name: string;
+  params: Record<string, any>;
+  executionOrder: number;
+  errorCode: string;
+  errorMessage: string;
+  lineNumber: number;
+};
+
+export type DumpedData = {
+  section?: string;
+  data: any;
+};
+export type QueryTransformationDump = (data: any, section?: string) => void;
 
 export type QueryResultKeys = {
   row: string[];

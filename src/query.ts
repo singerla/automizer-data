@@ -1,5 +1,5 @@
 import { PrismaClient, Tag } from "./client";
-import { getNestedClause } from "./helper";
+import { getNestedClause, vd } from "./helper";
 import _ from "lodash";
 
 import {
@@ -12,11 +12,14 @@ import {
   Datasheet,
   DataTag,
   DataTagSelector,
+  DumpedData,
   ICache,
   IdSelector,
   ModelizeArguments,
   QueryOptions,
   QueryResult,
+  QueryTransformationDump,
+  QueryTransformationError,
   RawResult,
   ResultCell,
   Selector,
@@ -91,8 +94,23 @@ export default class Query {
       this
     );
 
+    const errors: QueryTransformationError[] = [];
+    const dumpedData: DumpedData[] = [];
+    const dump: QueryTransformationDump = (data: any, section?: string) => {
+      dumpedData.push({
+        section,
+        data,
+      });
+    };
+
     if (this.grid.transform) {
-      await this.transformResult(this.grid.transform, modelizer, inputKeys);
+      await this.transformResult(
+        this.grid.transform,
+        modelizer,
+        inputKeys,
+        errors,
+        dump
+      );
     }
 
     return {
@@ -106,6 +124,8 @@ export default class Query {
         row: modelizer.getKeys("row"),
         column: modelizer.getKeys("column"),
       },
+      errors,
+      dumpedData,
     };
   }
 
@@ -378,19 +398,9 @@ export default class Query {
   async transformResult(
     transformations: DataGridTransformation[],
     modelizer: Modelizer,
-    inputKeys: Keys
-  ) {
-    try {
-      await this.applyTransformations(transformations, modelizer, inputKeys);
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  async applyTransformations(
-    transformations: DataGridTransformation[],
-    modelizer: Modelizer,
-    inputKeys: Keys
+    inputKeys: Keys,
+    errors: QueryTransformationError[],
+    dump: QueryTransformationDump
   ) {
     for (const transform of transformations) {
       if (transform.modelize && typeof transform.modelize === "function") {
@@ -400,13 +410,19 @@ export default class Query {
             query: this,
             inputKeys,
             params: transform.params,
+            dump,
           };
           try {
             await transform.modelize(modelizer, args);
           } catch (e) {
-            console.error(e);
-            console.log(transform);
-            console.log(transform.modelize.toString());
+            errors.push({
+              errorMessage123: e.message,
+              lineNumber: e.lineNumber,
+              name: transform.name,
+              params: transform.params,
+              executionOrder: transform.executionOrder,
+              errorCode: transform.modelize.toString(),
+            });
           }
         }
       }
