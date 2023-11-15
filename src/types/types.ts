@@ -3,22 +3,24 @@ import { Gesstabs } from "../parser/gesstabs";
 import { Generic } from "../index";
 import { Parser } from "../parser/parser";
 import ResultClass from "../convert";
+import Convert from "../convert";
 import { ChartValueStyle, TableRowStyle } from "pptx-automizer";
 import ResultInfo from "../helper/resultInfo";
 import Modelizer from "../modelizer/modelizer";
 import Query from "../query";
 import { InputKeys } from "../modelizer/modelizer-types";
-import Convert from "../convert";
 import Keys from "../keys";
 
 export type PrismaId = number;
 
 export type StoreOptions = {
   replaceExisting?: boolean;
-  runBefore?: (prisma: PrismaClient) => Promise<void>;
+  dropAllSheets?: boolean;
+  dropAllTags?: boolean;
   filename?: string;
   userId?: PrismaId;
   statusTracker?: StatusTracker["next"];
+  tagsCache?: ITagsCache;
 };
 
 export type ParserType = Parser | Generic | Gesstabs;
@@ -139,6 +141,15 @@ export interface ICache {
   set: (selector: Selector, isNonGreedy: boolean, data: CachedObject) => void;
 }
 
+export interface ITagsCache {
+  init: (prisma: PrismaClient) => Promise<void>;
+  exists: (name: string, categoryId: number) => boolean;
+  tagExists: (tag: Tag) => boolean;
+  get: (name: string, categoryId: number) => any;
+  create: (name: string, categoryId: number) => Promise<Tag>;
+  set: (tag: Tag) => void;
+}
+
 export type QueryOptions = {
   selector?: Selector;
   dataTagSelector?: DataTagSelector;
@@ -147,6 +158,7 @@ export type QueryOptions = {
   prisma?: PrismaClient;
   maxSheets?: number;
   cache?: ICache;
+  tagsCache?: ITagsCache;
 };
 
 export type CategoryCount = {

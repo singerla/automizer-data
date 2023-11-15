@@ -4,12 +4,14 @@ import Query from "./query";
 import {
   Datasheet,
   DataTag,
+  ITagsCache,
   StatusTracker,
   StoreOptions,
   StoreSummary,
 } from "./types/types";
 import crypto from "crypto";
 import { vd } from "./helper";
+import TagsCache from "./helper/tagsCache";
 
 type CreateSheetData = Prisma.SheetCreateArgs["data"] & {
   tags: {
@@ -29,6 +31,7 @@ export class Store {
   importId: number;
   status: StatusTracker;
   tagValueMaxLength: number;
+  tagsCache: ITagsCache;
 
   constructor(prisma: PrismaClient, options?: StoreOptions) {
     this.prisma = prisma;
@@ -45,6 +48,7 @@ export class Store {
       statusTracker: (status: StatusTracker) => {
         console.log(status.share);
       },
+      tagsCache: new TagsCache(),
     };
 
     if (options) {
@@ -55,6 +59,7 @@ export class Store {
     this.tagValueMaxLength = 256;
     this.categories = [];
     this.sheetKeys = {};
+
     this.tags = [];
     this.status = {
       current: 0,
@@ -73,9 +78,7 @@ export class Store {
   }
 
   async run(datasheets: Datasheet[]): Promise<StoreSummary> {
-    if (this.options?.runBefore) {
-      await this.options?.runBefore(this.prisma);
-    }
+    await this.runBefore();
 
     this.status.max = datasheets.length;
     this.status.info = "analyze datasheets";
@@ -93,6 +96,19 @@ export class Store {
     // await this.prisma.$disconnect()
 
     return this.summary;
+  }
+
+  async runBefore() {
+    if (this.options?.dropAllSheets === true) {
+      const deleted = await this.prisma.sheet.deleteMany();
+      console.log("Deleted " + String(deleted.count) + " sheets");
+    }
+
+    if (this.options?.dropAllTags === true) {
+      const deletedTags = await this.prisma.tag.deleteMany();
+      await this.tagsCache.init(this.prisma);
+      console.log("Deleted " + String(deletedTags.count) + " tags");
+    }
   }
 
   async getImport() {
@@ -126,20 +142,26 @@ export class Store {
   }
 
   async getTags(): Promise<void> {
-    this.tags = await this.prisma.tag.findMany();
+    await this.tagsCache.init(this.prisma);
+    // this.tags = await this.prisma.tag.findMany();
   }
 
   async createTag(name: string, catId: number): Promise<Tag> {
-    const newTag = await this.prisma.tag.create({
-      data: {
-        name: name,
-        category: {
-          connect: { id: catId },
-        },
-      },
-    });
-    this.tags.push(newTag);
-    return newTag;
+    const exists = this.tagsCache.get(name, catId);
+    if (exists) {
+      return exists;
+    }
+    return this.tagsCache.create(name, catId);
+    // const newTag = await this.prisma.tag.create({
+    //   data: {
+    //     name: name,
+    //     category: {
+    //       connect: { id: catId },
+    //     },
+    //   },
+    // });
+    // this.tags.push(newTag);
+    // return newTag;
   }
 
   async storeData(datasheet: Datasheet) {
@@ -258,11 +280,12 @@ export class Store {
         tag.value = tag.value.slice(256);
       }
 
-      const existingTag = this.tags.find(
-        (existingTag: Tag) =>
-          existingTag.name === tag.value &&
-          existingTag.categoryId === tag.categoryId
-      );
+      const existingTag = this.tagsCache.get(tag.value, tag.categoryId);
+      // const existingTag = this.tags.find(
+      //   (existingTag: Tag) =>
+      //     existingTag.name === tag.value &&
+      //     existingTag.categoryId === tag.categoryId
+      // );
 
       if (!existingTag) {
         if (!tag.value) {

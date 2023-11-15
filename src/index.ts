@@ -7,6 +7,7 @@ import Modelizer from "./modelizer/modelizer";
 import Keys from "./keys";
 
 import { Store } from "./store";
+import TagsCache from "./helper/tagsCache";
 import { Parser } from "./parser/parser";
 import { Gesstabs } from "./parser/gesstabs";
 import { Pspp } from "./parser/pspp";
@@ -29,6 +30,7 @@ import {
   DataResultCellFilter,
   DataTag,
   ICache,
+  ITagsCache,
   IdSelector,
   ModArgsAddMeta,
   ModArgsAddPointInfo,
@@ -124,12 +126,14 @@ export type {
 };
 export { Query, Parser, Gesstabs, Pspp, Generic, Store, filter, cell };
 export { Points, Convert, Modelizer, Model, Keys };
+export { TagsCache };
 export { getNestedClause, getTagGroupsByCategory };
 export { PrismaClient };
 
 export type {
   CachedObject,
   ICache,
+  ITagsCache,
   Cell,
   InputCategoryKeys,
   KeyMode,
