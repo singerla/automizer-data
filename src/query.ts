@@ -1,5 +1,5 @@
 import { PrismaClient, Tag } from "./client";
-import { getNestedClause, vd } from "./helper";
+import { getNestedClause } from "./helper";
 import _ from "lodash";
 
 import {
@@ -15,7 +15,6 @@ import {
   DumpedData,
   ICache,
   IdSelector,
-  ITagsCache,
   ModelizeArguments,
   QueryOptions,
   QueryResult,
@@ -44,7 +43,6 @@ export default class Query {
   private nonGreedySelector: number[] = [];
   private maxSheets: number = 150;
   private cache: ICache;
-  private tagsCache: ITagsCache;
 
   constructor(prisma: PrismaClient | any) {
     this.prisma = prisma;
@@ -69,7 +67,6 @@ export default class Query {
     this.nonGreedySelector =
       options.nonGreedySelector || this.nonGreedySelector;
     this.cache = options.cache;
-    this.tagsCache = options.tagsCache;
 
     this.dataTagSelector = options.dataTagSelector;
     this.selector = options.selector || this.selector;
@@ -432,7 +429,7 @@ export default class Query {
     }
   }
 
-  async checkCondition(transform, modelizer): Promise<boolean> {
+  async checkCondition(transform, modelizer: Modelizer): Promise<boolean> {
     if (transform.condition && typeof transform.condition === "function") {
       if ((await transform.condition(modelizer)) !== true) {
         return false;

@@ -1,6 +1,7 @@
 import { PrismaClient, Tag } from "@prisma/client";
+import { ITagsCache } from "../types/types";
 
-export default class TagsCache {
+export default class TagsCache implements ITagsCache {
   prisma: PrismaClient;
   buffer: Tag[] = [];
 
@@ -16,6 +17,12 @@ export default class TagsCache {
   };
   tagExists = (tag: Tag): boolean => {
     return !!this.buffer.find((obj) => obj.id === tag.id);
+  };
+  getMany = (categoryId?: number): Tag[] => {
+    if (!categoryId) {
+      return this.buffer;
+    }
+    return this.buffer.filter((obj) => obj.categoryId === categoryId);
   };
   get = (name: string, categoryId: number): Tag | null => {
     return this.buffer.find(

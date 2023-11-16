@@ -1,16 +1,14 @@
-import { Category, PrismaClient, Prisma, Sheet, Tag } from "./client";
+import { Category, Prisma, PrismaClient, Tag } from "./client";
 
 import Query from "./query";
 import {
   Datasheet,
   DataTag,
-  ITagsCache,
   StatusTracker,
   StoreOptions,
   StoreSummary,
 } from "./types/types";
 import crypto from "crypto";
-import { vd } from "./helper";
 import TagsCache from "./helper/tagsCache";
 
 type CreateSheetData = Prisma.SheetCreateArgs["data"] & {
@@ -31,7 +29,6 @@ export class Store {
   importId: number;
   status: StatusTracker;
   tagValueMaxLength: number;
-  tagsCache: ITagsCache;
 
   constructor(prisma: PrismaClient, options?: StoreOptions) {
     this.prisma = prisma;
@@ -106,7 +103,7 @@ export class Store {
 
     if (this.options?.dropAllTags === true) {
       const deletedTags = await this.prisma.tag.deleteMany();
-      await this.tagsCache.init(this.prisma);
+      await this.options.tagsCache.init(this.prisma);
       console.log("Deleted " + String(deletedTags.count) + " tags");
     }
   }
@@ -142,16 +139,16 @@ export class Store {
   }
 
   async getTags(): Promise<void> {
-    await this.tagsCache.init(this.prisma);
+    await this.options.tagsCache.init(this.prisma);
     // this.tags = await this.prisma.tag.findMany();
   }
 
   async createTag(name: string, catId: number): Promise<Tag> {
-    const exists = this.tagsCache.get(name, catId);
+    const exists = this.options.tagsCache.get(name, catId);
     if (exists) {
       return exists;
     }
-    return this.tagsCache.create(name, catId);
+    return this.options.tagsCache.create(name, catId);
     // const newTag = await this.prisma.tag.create({
     //   data: {
     //     name: name,
@@ -182,11 +179,12 @@ export class Store {
     const tagIds = datasheet.tags.map((tag) => {
       return { id: tag.id };
     });
+    const tagInfo = datasheet.tags.map((tag) => tag.id);
 
     const { rowKey, columnKey, tagKey, sheetKey } =
       this.getSheetKeys(datasheet);
 
-    const createSheetData = <CreateSheetData>{
+    return <CreateSheetData>{
       columns: JSON.stringify(datasheet.columns),
       rows: JSON.stringify(datasheet.rows),
       data: JSON.stringify(datasheet.data),
@@ -200,9 +198,8 @@ export class Store {
       rowKey,
       columnKey,
       tagKey,
+      tagInfo: JSON.stringify(tagInfo),
     };
-
-    return createSheetData;
   }
 
   async deleteExistingDatasheets(createSheetData: CreateSheetData) {
@@ -280,7 +277,7 @@ export class Store {
         tag.value = tag.value.slice(256);
       }
 
-      const existingTag = this.tagsCache.get(tag.value, tag.categoryId);
+      const existingTag = this.options.tagsCache.get(tag.value, tag.categoryId);
       // const existingTag = this.tags.find(
       //   (existingTag: Tag) =>
       //     existingTag.name === tag.value &&

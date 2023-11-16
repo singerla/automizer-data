@@ -4,7 +4,7 @@ datasource db {
 }
 
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
   // output          = "./client"
   // binaryTargets = ["debian-openssl-3.0.x", "native"]
 }
@@ -27,7 +27,7 @@ model Import {
 
 model Category {
   id    Int    @id @default(autoincrement())
-  name  String  @unique
+  name  String @unique
   color String
   icon  String
   tags  Tag[]
@@ -54,6 +54,7 @@ model Sheet {
   rowKey    String
   columnKey String
   tagKey    String
+  tagInfo   String
 }
 
 model Selection {
