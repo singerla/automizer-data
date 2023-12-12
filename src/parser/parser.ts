@@ -221,7 +221,7 @@ export class Parser {
     slice: RawColumnSlice,
     rawTable: RawTable
   ) {
-    const colArr = Object.values(subgroupHeader);
+    const colArr = [...subgroupHeader];
     rawTable.columns = colArr
       .slice(slice.start, slice.end)
       .map((col) => String(col));
