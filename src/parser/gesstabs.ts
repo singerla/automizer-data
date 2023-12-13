@@ -130,7 +130,7 @@ export class Gesstabs extends Parser {
   }
 
   deduplicateRowLabels(data: RawRow): string {
-    const rowLabel = data[0];
+    const rowLabel = String(data[0]);
     if (!this.results[this.count].duplicates[rowLabel]) {
       this.results[this.count].duplicates[rowLabel] = 1;
     } else {
@@ -142,8 +142,7 @@ export class Gesstabs extends Parser {
     if (duplicateCount > 1) {
       data[0] += " (" + duplicateCount + ")";
     }
-
-    return data[0] as string;
+    return String(data[0]);
   }
 
   parseMeta(data: RawRow, firstCell: string): boolean {
