@@ -109,12 +109,13 @@ export class Gesstabs extends Parser {
 
     if (!hasFirstCell && hasSecondCell && this.currentSection !== "body") {
       this.currentSection = "header";
-      this.results[this.count].header.push(data.slice(1));
+      this.results[this.count].header.push(this.sanitizeRow(data.slice(1)));
     }
 
     if (hasFirstCell && hasSecondCell) {
       this.currentSection = "body";
 
+      data = this.sanitizeRow(data);
       firstCell = this.deduplicateRowLabels(data);
 
       const isMeta = this.parseMeta(data, firstCell);
@@ -127,6 +128,15 @@ export class Gesstabs extends Parser {
         });
       }
     }
+  }
+
+  sanitizeRow(data: RawRow) {
+    data.forEach((cell, c) => {
+      if (typeof cell === "string") {
+        data[c] = cell.trim();
+      }
+    });
+    return data;
   }
 
   deduplicateRowLabels(data: RawRow): string {
