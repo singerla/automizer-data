@@ -11,6 +11,7 @@ import TagsCache from "./helper/tagsCache";
 import { Parser } from "./parser/parser";
 import { Gesstabs } from "./parser/gesstabs";
 import { Pspp } from "./parser/pspp";
+import { MySQL } from "./parser/mysql";
 import { Generic } from "./parser/generic";
 import {
   Cell,
@@ -124,7 +125,7 @@ export type {
   ResultType,
   QueryResult,
 };
-export { Query, Parser, Gesstabs, Pspp, Generic, Store, filter, cell };
+export { Query, Parser, Gesstabs, Pspp, MySQL, Generic, Store, filter, cell };
 export { Points, Convert, Modelizer, Model, Keys };
 export { TagsCache };
 export { getNestedClause, getTagGroupsByCategory };

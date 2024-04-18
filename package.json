@@ -43,6 +43,7 @@
     "csv-parser": "^3.0.0",
     "csv-string": "^4.1.1",
     "lodash": "^4.17.21",
+    "mysql2": "^3.9.6",
     "node-xlsx": "^0.21.0",
     "pptx-automizer": "^0.4.5",
     "typescript": "5.1.6"

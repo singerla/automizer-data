@@ -212,6 +212,9 @@ export default class Query {
     });
 
     if (sheets.length === this.maxSheets) {
+      console.error(
+        "Exceeded maxSheets (" + this.maxSheets + "), got " + sheets.length
+      );
       // throw "Too many sheets. Add more tags to selection.";
       return [];
     }

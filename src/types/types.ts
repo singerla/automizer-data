@@ -10,6 +10,8 @@ import Modelizer from "../modelizer/modelizer";
 import Query from "../query";
 import { InputKeys } from "../modelizer/modelizer-types";
 import Keys from "../keys";
+import mysql from "mysql2/promise";
+import { ConnectionOptions } from "mysql2/index";
 
 export type PrismaId = number;
 
@@ -55,6 +57,15 @@ export type ParserOptions = {
   worksheetId?: number;
   tmpDir?: string;
   pspp?: ParserOptionsPspp;
+  mysql?: ParserOptionsMySQL;
+};
+
+export type ParserOptionsMySQL = {
+  connection: mysql.ConnectionOptions;
+  callback: (
+    connection: mysql.Connection,
+    datasheets: Datasheet[]
+  ) => Promise<void>;
 };
 
 export type ParserOptionsPspp = {
