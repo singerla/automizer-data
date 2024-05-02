@@ -42,6 +42,20 @@ export class Generic extends Parser {
     return this.datasheets;
   }
 
+  async fromCustomXlsx(file: string): Promise<Datasheet[]> {
+    this.file = path.basename(file);
+
+    const worksheetId = this.config.worksheetId || 0;
+    const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file));
+    const data = workSheetsFromBuffer[worksheetId].data;
+    console.log("File rows count: " + String(data.length));
+
+    this.results = this.config.customXlsx(data, this.file);
+    this.setDatasheets();
+
+    return this.datasheets;
+  }
+
   autoDetectConfig(data: any) {
     this.tableSeparator = !this.config.separator
       ? data[0][0]

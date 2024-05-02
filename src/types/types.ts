@@ -11,7 +11,6 @@ import Query from "../query";
 import { InputKeys } from "../modelizer/modelizer-types";
 import Keys from "../keys";
 import mysql from "mysql2/promise";
-import { ConnectionOptions } from "mysql2/index";
 
 export type PrismaId = number;
 
@@ -58,6 +57,7 @@ export type ParserOptions = {
   tmpDir?: string;
   pspp?: ParserOptionsPspp;
   mysql?: ParserOptionsMySQL;
+  customXlsx?: ParserOptionsCustomXlsx;
 };
 
 export type ParserOptionsMySQL = {
@@ -67,6 +67,11 @@ export type ParserOptionsMySQL = {
     datasheets: Datasheet[]
   ) => Promise<void>;
 };
+
+export type ParserOptionsCustomXlsx = (
+  rows: any[],
+  file: string
+) => RawResultData[];
 
 export type ParserOptionsPspp = {
   binary: string;
@@ -160,6 +165,7 @@ export interface ITagsCache {
   get: (name: string, categoryId: number) => Tag | null;
   create: (name?: string, categoryId?: number) => Promise<Tag>;
   set: (tag: Tag) => void;
+  reset: () => Promise<void>;
 }
 
 export type QueryOptions = {

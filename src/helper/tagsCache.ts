@@ -12,6 +12,10 @@ export default class TagsCache implements ITagsCache {
     this.buffer = await this.prisma.tag.findMany();
     console.log("TagsCache initalized with " + this.buffer.length + " tags");
   };
+  reset = async () => {
+    this.buffer = await this.prisma.tag.findMany();
+    console.log("TagsCache reset with " + this.buffer.length + " tags");
+  };
   exists = (name: string, categoryId: number): boolean => {
     return !!this.get(name, categoryId);
   };
