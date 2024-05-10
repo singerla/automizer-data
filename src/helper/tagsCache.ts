@@ -33,6 +33,9 @@ export default class TagsCache implements ITagsCache {
       (obj) => obj.name === name && obj.categoryId === categoryId
     );
   };
+  getByValue = (name: string): Tag[] => {
+    return this.buffer.filter((obj) => obj.name === name);
+  };
   create = async (name: string, categoryId: number): Promise<Tag> => {
     const newTag = await this.prisma.tag.create({
       data: {

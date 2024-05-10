@@ -19,6 +19,8 @@ export type StoreOptions = {
   dropAllSheets?: boolean;
   dropAllTags?: boolean;
   filename?: string;
+  dedupTagCategories?: boolean;
+  noDedupTagCategories?: PrismaId[];
   userId?: PrismaId;
   statusTracker?: StatusTracker["next"];
   tagsCache?: ITagsCache;
@@ -163,6 +165,7 @@ export interface ITagsCache {
   tagExists: (tag: Tag) => boolean;
   getMany: (categoryId?: number) => Tag[];
   get: (name: string, categoryId: number) => Tag | null;
+  getByValue: (name: string) => Tag[];
   create: (name?: string, categoryId?: number) => Promise<Tag>;
   set: (tag: Tag) => void;
   reset: () => Promise<void>;

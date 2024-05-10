@@ -39,6 +39,8 @@ export class Store {
 
     this.query = new Query(this.prisma);
     this.options = {
+      dedupTagCategories: false,
+      noDedupTagCategories: [],
       replaceExisting: true,
       filename: "unknown",
       userId: 1,
@@ -270,19 +272,20 @@ export class Store {
   }
 
   async addTagIdsToTags(tags: DataTag[]): Promise<void> {
-    for (let i in tags) {
-      const tag = tags[i];
+    for (const tag of tags) {
       if (tag.value.length > this.tagValueMaxLength) {
         console.error("Tag name shortened: " + tag.value);
         tag.value = tag.value.slice(256);
       }
 
+      if (
+        this.options.dedupTagCategories &&
+        !this.options.noDedupTagCategories.includes(tag.categoryId)
+      ) {
+        this.dedupTagCategory(tag);
+      }
+
       const existingTag = this.options.tagsCache.get(tag.value, tag.categoryId);
-      // const existingTag = this.tags.find(
-      //   (existingTag: Tag) =>
-      //     existingTag.name === tag.value &&
-      //     existingTag.categoryId === tag.categoryId
-      // );
 
       if (!existingTag) {
         if (!tag.value) {
@@ -293,6 +296,26 @@ export class Store {
         tag.id = newTag.id;
       } else {
         tag.id = existingTag.id;
+      }
+    }
+  }
+
+  dedupTagCategory(tag: DataTag) {
+    const existingTagValues = this.options.tagsCache.getByValue(tag.value);
+    if (existingTagValues.length) {
+      const existing = existingTagValues.find(
+        (existingTagValue) => existingTagValue.categoryId !== tag.categoryId
+      );
+
+      if (existing) {
+        const existingCatInfo = this.categories.find(
+          (cat) => existing.categoryId === cat.id
+        );
+        console.log(
+          `Merged tag "${tag.value}" (${tag.category}/${tag.categoryId}) ` +
+            `with category ${existingCatInfo.name}/${existingCatInfo.id}`
+        );
+        tag.categoryId = existing.categoryId;
       }
     }
   }
