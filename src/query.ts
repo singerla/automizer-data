@@ -164,7 +164,7 @@ export default class Query {
         );
       }
 
-      const datapoints = this.extractDataPoints(dataSheets);
+      const datapoints = this.extractDataPoints(dataSheets, Number(level));
       inputKeys.addPoints(datapoints);
 
       usedDatapoints.push(...datapoints);
@@ -274,7 +274,7 @@ export default class Query {
     );
   }
 
-  extractDataPoints(sheets: Datasheet[]): DataPoint[] {
+  extractDataPoints(sheets: Datasheet[], selection: number): DataPoint[] {
     const dataPoints = <DataPoint[]>[];
     sheets.forEach((sheet) => {
       sheet.data.forEach((points, r) => {
@@ -285,7 +285,8 @@ export default class Query {
               sheet.columns[c],
               sheet.tags,
               Points.getDataPointMeta(sheet, r, c),
-              value
+              value,
+              selection
             )
           );
         });

@@ -218,6 +218,7 @@ export type DataPoint = {
   value: ResultCell;
   tags: DataTag[];
   meta?: DataPointMeta[];
+  selection?: number;
   mode?: string;
   style?: TableRowStyle | ChartValueStyle;
   getMeta: (key: string) => DataPointMeta | undefined;
@@ -325,7 +326,6 @@ export type DataResultCellFilter = {
 };
 
 export type DataPointModifier = SortableModification & {
-  applyToLevel?: number[];
   cb?: any;
   callbacks?: any[];
 };
@@ -344,6 +344,7 @@ export type DataGridTransformation = SortableModification & {
 
 export type SortableModification = {
   executionOrder?: number;
+  applyToLevel?: number[];
   name?: string;
   key?: string;
   condition?: string;

@@ -20,6 +20,7 @@ import {
 } from "./modelizer-types";
 import Points from "../points";
 import { dumpBody, dumpCell, dumpFooter, dumpHeader } from "./dump";
+import { vd } from "../helper";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -270,7 +271,8 @@ export default class Modelizer {
    */
   pushCellPoints(r: Key, c: Key, point: DataPoint): Cell {
     const targetCell = this.getCell(r, c);
-    targetCell.points.push(point);
+    targetCell.addPoint(point);
+
     return targetCell;
   }
   /**
@@ -319,6 +321,21 @@ export default class Modelizer {
       mode: mode,
       id: () => this.#parseCellKey(key, model.mode),
       style: this.#style(),
+      selections: [],
+      hasSelection: (id: number | number[]) => {
+        if (typeof id === "number") {
+          return model.selections.includes(id);
+        }
+        if (!id || id.length === 0) {
+          return true;
+        }
+        return model.selections.some((value) => id.includes(value));
+      },
+      addSelection: (id: number) => {
+        if (typeof id === "number" && !model.selections.includes(id)) {
+          model.selections.push(id);
+        }
+      },
       cells: () =>
         this.#filterCells(model.mode === "row" ? "column" : "row", key),
       meta: this.#modelMeta(),
@@ -337,6 +354,7 @@ export default class Modelizer {
       },
       getCell: (i: Key) => this.getCellByMode(model.mode, model.id(), i),
       setCell: (i: Key, cell: Cell) => {
+        model.addSelection(cell.getPoint()?.selection);
         this.setCellByMode(model.mode, model.id(), i, cell);
         return model;
       },
@@ -560,6 +578,18 @@ export default class Modelizer {
       getTargetPoint: () => {
         return cell.targetPoint;
       },
+      selections: [],
+      hasSelection: (id: number | number[]) => {
+        if (typeof id === "number") {
+          return cell.selections.includes(id);
+        }
+        return cell.selections.some((value) => id.includes(value));
+      },
+      addSelection: (id: number) => {
+        if (typeof id === "number" && !cell.selections.includes(id)) {
+          cell.selections.push(id);
+        }
+      },
       points: <DataPoint[]>[],
       getPoint: (i?: number, forceCreate?: boolean): DataPoint => {
         const points = cell.getPoints();
@@ -594,6 +624,9 @@ export default class Modelizer {
           point = cell.createPoint(point);
         }
         cell.points.push(point);
+
+        cell.addSelection(point.selection);
+
         return cell;
       },
       getValue: () => cell.value || cell.getPoint()?.value,
@@ -602,6 +635,7 @@ export default class Modelizer {
         cell.value = value;
         return cell;
       },
+      getModel: () => this.getRow(cell.rowKey),
       getRow: () => this.getRow(cell.rowKey),
       getColumn: () => this.getColumn(cell.columnKey),
       toNumber: (precision?: number) => {

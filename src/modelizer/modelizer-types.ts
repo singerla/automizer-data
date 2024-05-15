@@ -135,6 +135,11 @@ export interface Cell {
   targetPoint?: number;
   setTargetPoint?: (i?: number) => Cell;
   getTargetPoint?: () => number;
+
+  selections: number[];
+  addSelection: (id: number) => void;
+  hasSelection: (ids: number | number[]) => boolean;
+
   meta: any;
 }
 
@@ -155,6 +160,11 @@ export interface Model {
    * Retreive Index of current row or column, starting from 0.
    */
   id: () => number;
+
+  selections: number[];
+  addSelection: (id: number) => void;
+  hasSelection: (ids: number | number[]) => boolean;
+
   /**
    * Holds an array of all cells of the current row.
    */

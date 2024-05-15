@@ -31,7 +31,8 @@ export default class Points {
     colKey?: string,
     tags?: DataTag[],
     meta?: DataPointMeta[],
-    value?: CellValue
+    value?: CellValue,
+    selection?: number
   ) {
     const point = <DataPoint>{
       row: rowKey,
@@ -39,6 +40,7 @@ export default class Points {
       value: value,
       tags: tags,
       meta: meta,
+      selection: selection,
       getMetas: () => point.meta,
       setMeta: (key: string, value: any): DataPoint =>
         Points.setMetaCb(point, key, value),
