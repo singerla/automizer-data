@@ -348,6 +348,20 @@ export type SortableModification = {
   name?: string;
   key?: string;
   condition?: string;
+  conditionParams?: ConditionArgsHasParams;
+  conditions?: ConditionArgsHasParams[];
+};
+
+export type ConditionArgsHasParams = {
+  conditionName?: string;
+  categoryId?: number;
+  loopId?: number;
+  hasOneOf: string[];
+  hasSelection?: number[];
+  hasItem?: string[];
+  hasRound?: number[];
+  revert: boolean;
+  updateParams?: any;
 };
 
 export type CellKey = {
