@@ -50,7 +50,7 @@ export default class Convert {
       categories.push({
         label: row.key,
         y: r + yValueOffset,
-        values: row.cells().map((column) => column.toNumber()),
+        values: row.cells().map((column) => column.toNumberOrEmpty()),
       });
     });
 
@@ -68,7 +68,9 @@ export default class Convert {
       categories.push({
         label: row.key,
         y: r + 0.5,
-        values: row.cells().map((column) => column.toNumber()),
+        values: row.cells().map((column, c) => {
+          return column.toNumberOrEmpty() as number;
+        }),
         styles: this.#extractValueStyle(row.cells()) as ChartValueStyle[],
       });
     });
