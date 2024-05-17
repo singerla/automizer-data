@@ -321,20 +321,8 @@ export default class Modelizer {
       mode: mode,
       id: () => this.#parseCellKey(key, model.mode),
       style: this.#style(),
-      selections: [],
       hasSelection: (id: number | number[]) => {
-        if (typeof id === "number") {
-          return model.selections.includes(id);
-        }
-        if (!id || id.length === 0) {
-          return true;
-        }
-        return model.selections.some((value) => id.includes(value));
-      },
-      addSelection: (id: number) => {
-        if (typeof id === "number" && !model.selections.includes(id)) {
-          model.selections.push(id);
-        }
+        return !!model.cells().find((cell) => cell.hasSelection(id));
       },
       cells: () =>
         this.#filterCells(model.mode === "row" ? "column" : "row", key),
@@ -354,7 +342,6 @@ export default class Modelizer {
       },
       getCell: (i: Key) => this.getCellByMode(model.mode, model.id(), i),
       setCell: (i: Key, cell: Cell) => {
-        model.addSelection(cell.getPoint()?.selection);
         this.setCellByMode(model.mode, model.id(), i, cell);
         return model;
       },

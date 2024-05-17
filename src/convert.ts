@@ -50,7 +50,7 @@ export default class Convert {
       categories.push({
         label: row.key,
         y: r + yValueOffset,
-        values: row.cells().map((column) => column.toNumberOrEmpty()),
+        values: row.cells().map((column) => column.toNumberOrEmpty() as number),
       });
     });
 

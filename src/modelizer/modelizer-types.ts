@@ -1,4 +1,4 @@
-import { DataPoint, DataPointMeta } from "../types/types";
+import { DataPoint } from "../types/types";
 
 export interface Style {
   assign(style: any): void;
@@ -161,8 +161,6 @@ export interface Model {
    */
   id: () => number;
 
-  selections: number[];
-  addSelection: (id: number) => void;
   hasSelection: (ids: number | number[]) => boolean;
 
   /**
