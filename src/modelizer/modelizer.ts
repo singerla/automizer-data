@@ -20,7 +20,6 @@ import {
 } from "./modelizer-types";
 import Points from "../points";
 import { dumpBody, dumpCell, dumpFooter, dumpHeader } from "./dump";
-import { vd } from "../helper";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -472,9 +471,7 @@ export default class Modelizer {
   }
 
   #findCellByKeys(rowKey: string, columnKey: string): Cell {
-    const existingCell = this.#cells.find(
-      (cell) => cell.rowKey === rowKey && cell.columnKey === columnKey
-    );
+    const existingCell = this.findCell(rowKey, columnKey);
 
     if (existingCell) {
       return existingCell;
@@ -485,6 +482,13 @@ export default class Modelizer {
     this.#pushCells(createdCell);
 
     return createdCell;
+  }
+
+  findCell(rowKey: string, columnKey: string): Cell {
+    const existingCell = this.#cells.find(
+      (cell) => cell.rowKey === rowKey && cell.columnKey === columnKey
+    );
+    return existingCell;
   }
 
   #pushCells(cell: Cell) {
@@ -612,7 +616,9 @@ export default class Modelizer {
         }
         cell.points.push(point);
 
-        cell.addSelection(point.selection);
+        if (point?.selection) {
+          cell.addSelection(point.selection);
+        }
 
         return cell;
       },
