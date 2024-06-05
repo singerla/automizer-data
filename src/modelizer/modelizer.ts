@@ -577,7 +577,7 @@ export default class Modelizer {
         return cell.selections.some((value) => id.includes(value));
       },
       addSelection: (id: number) => {
-        if (typeof id === "number" && !cell.selections.includes(id)) {
+        if (!cell.selections.includes(id)) {
           cell.selections.push(id);
         }
       },
@@ -616,7 +616,7 @@ export default class Modelizer {
         }
         cell.points.push(point);
 
-        if (point?.selection) {
+        if (typeof point?.selection === "number") {
           cell.addSelection(point.selection);
         }
 
