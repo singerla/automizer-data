@@ -354,13 +354,16 @@ export type SortableModification = {
 
 export type ConditionArgsHasParams = {
   conditionName?: string;
+  name?: string;
   categoryId?: number;
   loopId?: number;
-  hasOneOf: string[];
+  hasOneOf?: string[];
   hasSelection?: number[];
   hasItem?: string[];
   hasRound?: number[];
-  revert: boolean;
+  targetValue?: string | number | boolean;
+  hasValue?: string | number | boolean;
+  revert?: boolean;
   updateParams?: any;
 };
 
