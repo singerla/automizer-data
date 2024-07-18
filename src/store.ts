@@ -129,13 +129,17 @@ export class Store {
   }
 
   async createCategory(name: string): Promise<Category> {
-    const newCat = await this.prisma.category.create({
-      data: {
-        name: name,
-        color: "grey",
-        icon: "settings",
-      },
-    });
+    const newCat = await this.prisma.category
+      .create({
+        data: {
+          name: name,
+          color: "grey",
+          icon: "settings",
+        },
+      })
+      .catch((e) => {
+        throw "Cannot create category: " + name;
+      });
     this.categories.push(newCat);
     return newCat;
   }
@@ -260,7 +264,7 @@ export class Store {
     for (let i in tags) {
       const tag = tags[i];
       const cat = this.categories.find(
-        (cat: Category) => cat.name === tag.category
+        (cat: Category) => cat.name.toLowerCase() === tag.category.toLowerCase()
       );
       if (cat && cat.id) {
         tag.categoryId = cat.id;

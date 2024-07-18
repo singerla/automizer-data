@@ -1,22 +1,12 @@
 import {
-  RawResultData,
-  DataTag,
-  RawColumnSlice,
-  ParserOptions,
-  RawTable,
   Datasheet,
+  ParserOptions,
+  RawResultData,
   RawRow,
-  StoreSummary,
-  ResultCell,
-  RawResultMeta,
-  RawResultNestedItem,
-  RawResultNestedParent,
 } from "../types/types";
-import { Store } from "./../store";
 
 import xlsx from "node-xlsx";
 import { Parser } from "./parser";
-import { vd } from "../helper";
 
 const fs = require("fs");
 const path = require("path");
@@ -118,4 +108,24 @@ export class Generic extends Parser {
       }
     }
   }
+
+  // Add some randomness to imported values
+  static shuffleRow = (row: number[], r: number) => {
+    row.forEach((cell: number, c: number) => {
+      if (c > 0) {
+        cell = Number(cell);
+        let x = Math.floor((Math.random() * cell) / 3.5 + 1);
+        if (r % 2 === 0) {
+          row[c] = cell + x;
+        } else {
+          row[c] = cell - x;
+        }
+        if (row[c] <= 0) {
+          row[c] = Math.abs(row[c]);
+        }
+        row[c] = Math.round(row[c] * 10) / 10;
+      }
+    });
+    return row;
+  };
 }
