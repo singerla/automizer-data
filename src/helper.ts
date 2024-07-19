@@ -21,6 +21,9 @@ export const getNestedClause = (selectionTags: Tag[]): NestedClause | false => {
 export const getTagGroupsByCategory = (selectionTags: Tag[]): PrismaId[][] => {
   const groups = <NestedClauseTagGroup>{};
   selectionTags.forEach((tag) => {
+    if (!tag || tag.categoryId === undefined) {
+      return;
+    }
     if (!groups[tag.categoryId]) {
       groups[tag.categoryId] = [];
     }
