@@ -5,8 +5,6 @@ export default class TagsCache implements ITagsCache {
   prisma: PrismaClient;
   buffer: Tag[] = [];
 
-  constructor() {}
-
   init = async (prisma: PrismaClient) => {
     this.prisma = prisma;
     this.buffer = await this.prisma.tag.findMany();
@@ -22,7 +20,10 @@ export default class TagsCache implements ITagsCache {
   tagExists = (tag: Tag): boolean => {
     return !!this.buffer.find((obj) => obj.id === tag.id);
   };
-  getMany = (categoryId?: number): Tag[] => {
+  getMany = async (categoryId?: number): Promise<Tag[]> => {
+    if (this.buffer.length === 0) {
+      await this.reset();
+    }
     if (!categoryId) {
       return this.buffer;
     }
