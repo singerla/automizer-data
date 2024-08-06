@@ -33,7 +33,7 @@ export default class Keys {
   }
 
   /**
-   * Retreive all untouched unique row and column keys and tags from all
+   * Retrieve all untouched unique row and column keys and tags from all
    * DataPoints. Object keys are 'row', 'col' and each used categoryId.
    * @returns InputKeys Object with section keys and array of strings values.
    */

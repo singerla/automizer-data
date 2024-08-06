@@ -179,7 +179,7 @@ export default class Modelizer {
   }
 
   /**
-   * Retreive the current keys for row or column.
+   * Retrieve the current keys for row or column.
    * @param mode Pass "row" or "col" to specify the target dimension.
    * @returns {string[]} Array of strings containing the keys.
    */
@@ -275,7 +275,7 @@ export default class Modelizer {
     return targetCell;
   }
   /**
-   * Retreive a rows- or columns-model object for the given selector.
+   * Retrieve a rows- or columns-model object for the given selector.
    * @param mode Pass 'row' or 'column'.
    * @param key Pass a number or a string to select the target row/column.
    * @return A model row/column object containing all cells.
@@ -309,7 +309,7 @@ export default class Modelizer {
   }
 
   /**
-   * Retreive a row or column model object for the given selector.
+   * Retrieve a row or column model object for the given selector.
    * @param key Pass a number or a string to set the target key.
    * @param mode Specify "row" or "column"
    * @return A model object containing all cells.

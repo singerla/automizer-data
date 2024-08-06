@@ -80,7 +80,7 @@ export interface Cell {
   points: DataPoint[];
   /**
    * Get the i-th point associated with current cell.
-   * Skip i to retreive the first point.
+   * Skip i to retrieve the first point.
    * @param i
    */
   getPoint: (i?: number, forceCreate?: boolean) => DataPoint;
@@ -99,12 +99,12 @@ export interface Cell {
    */
   setValue: (value: CellValue) => Cell;
   /**
-   * Retreive all neighbour cells from left to right of the current cell,
+   * Retrieve all neighbour cells from left to right of the current cell,
    * including the current cell.
    */
   getRow: () => Model;
   /**
-   * Retreive all cells from the same column of the current cell,
+   * Retrieve all cells from the same column of the current cell,
    * including the current cell.
    */
   getColumn: () => Model;
@@ -157,7 +157,7 @@ export interface Model {
    */
   mode: KeyMode;
   /**
-   * Retreive Index of current row or column, starting from 0.
+   * Retrieve Index of current row or column, starting from 0.
    */
   id: () => number;
 
