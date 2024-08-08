@@ -6,9 +6,12 @@ export default class TagsCache implements ITagsCache {
   buffer: Tag[] = [];
 
   init = async (prisma: PrismaClient) => {
-    this.prisma = prisma;
+    this.setPrismaClient(prisma);
     this.buffer = await this.prisma.tag.findMany();
     console.log("TagsCache initalized with " + this.buffer.length + " tags");
+  };
+  setPrismaClient = (prisma: PrismaClient) => {
+    this.prisma = prisma;
   };
   reset = async () => {
     this.buffer = await this.prisma.tag.findMany();

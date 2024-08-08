@@ -161,6 +161,7 @@ export interface ICache {
 
 export interface ITagsCache {
   init: (prisma: PrismaClient) => Promise<void>;
+  setPrismaClient: (prisma: PrismaClient) => void;
   exists: (name: string, categoryId: number) => boolean;
   tagExists: (tag: Tag) => boolean;
   getMany: (categoryId?: number) => Promise<Tag[]>;
