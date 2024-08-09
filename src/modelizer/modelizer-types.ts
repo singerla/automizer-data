@@ -160,9 +160,12 @@ export interface Model {
    * Retrieve Index of current row or column, starting from 0.
    */
   id: () => number;
+  /**
+   * Get current sortation index of row or column, starting from 0.
+   */
+  getIndex: () => number;
 
   hasSelection: (ids: number | number[]) => boolean;
-
   /**
    * Holds an array of all cells of the current row.
    */
@@ -193,10 +196,20 @@ export interface Model {
    */
   setCell: (c: Key, cell: Cell) => Model;
   /**
-   * Update the key of current row. This will also update the row label.
+   * Update the key of current row/column. This will also update the row label.
    * @param newKey
    */
   updateKey: (newKey: string) => Model;
+  /**
+   * Drop the current row/column
+   */
+  drop: () => void;
+  /**
+   * Update the position of current row/column.
+   * Skip beforeKey to append the model.
+   * @param atKey
+   */
+  insertBefore: (atKey?: Key) => Model;
   /**
    * Holds a style to pass it to pptx automizer later.
    */

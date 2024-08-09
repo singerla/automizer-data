@@ -1,4 +1,4 @@
-import { DataPoint, DataPointMeta } from "../types/types";
+import { DataPoint, DataPointMeta, DataTag } from "../types/types";
 import { Query } from "../index";
 import _, { round } from "lodash";
 import {
@@ -20,6 +20,7 @@ import {
 } from "./modelizer-types";
 import Points from "../points";
 import { dumpBody, dumpCell, dumpFooter, dumpHeader } from "./dump";
+import { vd } from "../helper";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -319,6 +320,9 @@ export default class Modelizer {
       key: key,
       mode: mode,
       id: () => this.#parseCellKey(key, model.mode),
+      getIndex: () => {
+        return this.getKeys(model.mode).indexOf(model.key);
+      },
       style: this.#style(),
       hasSelection: (id: number | number[]) => {
         return !!model.cells().find((cell) => cell.hasSelection(id));
@@ -357,6 +361,27 @@ export default class Modelizer {
           cell[targetKey] = newKey;
         });
         this.#updateKey(model.mode, model.id(), newKey);
+
+        return model;
+      },
+      drop: () => {
+        const currentSortation = [...this.getKeys(model.mode)];
+        currentSortation.splice(model.getIndex(), 1);
+        this.sort(model.mode, currentSortation);
+      },
+      insertBefore: (atKey?: string) => {
+        model.drop();
+
+        const currentSortation = [...this.getKeys(model.mode)];
+        if (atKey === undefined) {
+          currentSortation.push(model.key);
+        } else {
+          const targetModel = this.getByMode(model.mode, atKey);
+          const targetIndex = currentSortation.indexOf(targetModel.key);
+          currentSortation.splice(targetIndex, 0, model.key);
+        }
+
+        this.sort(model.mode, currentSortation);
 
         return model;
       },
