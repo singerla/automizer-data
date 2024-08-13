@@ -672,6 +672,9 @@ export default class Modelizer {
       },
       toNumberOrEmpty: () => {
         let currentValue = cell.toCell();
+        if (currentValue === undefined) {
+          return "";
+        }
         if (currentValue === "") {
           return currentValue;
         }
@@ -682,7 +685,6 @@ export default class Modelizer {
         if (
           currentValue === false ||
           currentValue === null ||
-          currentValue === undefined ||
           currentValue === ""
         ) {
           return "";

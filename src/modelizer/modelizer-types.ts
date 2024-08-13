@@ -123,8 +123,10 @@ export interface Cell {
    *  - a number-like value into a number
    *  - an invalid or empty cell value into an empty string
    *  - a non-number-like string value into a string
+   *
+   *  An undefined value will leave the target cell untouched
    */
-  toCell: () => number | string | "";
+  toCell: () => number | string | "" | undefined;
   /**
    * Log contents of the current cell to console.
    */
