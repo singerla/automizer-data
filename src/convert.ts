@@ -188,21 +188,31 @@ export default class Convert {
       };
     }
 
+    const header = [];
     if (params?.showColumnLabels) {
-      const header = [];
+      const headerRow = [];
       if (params?.showRowLabels) {
-        header.push("");
+        headerRow.push("");
       }
-      header.push(...firstRow.cells().map((col) => col.columnKey));
+
+      const columnLabels = [...firstRow.cells().map((col) => col.columnKey)];
+      headerRow.push(columnLabels);
 
       body.push({
-        values: header,
+        values: headerRow,
         // TODO: insert column label styles
+      });
+
+      header.push({
+        values: columnLabels,
+        spans: firstRow.cells().map(() => 1),
+        styles: [],
       });
     }
 
     this.#forEachRow((row, r) => {
       const tableRow = [];
+
       const tableRowStyles: TableRowStyle[] = [];
 
       if (params?.showRowLabels) {
@@ -220,9 +230,33 @@ export default class Convert {
         values: tableRow,
         styles: tableRowStyles,
       });
+
+      const headerRow = [];
+      const spansRow = <any>[];
+      row.cells().forEach((cell, c) => {
+        const isHeader = cell.getPoint().getMeta("isHeader");
+        if (isHeader?.value) {
+          headerRow.push(cell.toCell());
+          const spans = cell.getPoint().getMeta("spans");
+          if (spans?.value) {
+            spansRow.push(spans.value);
+          } else {
+            spansRow.push(null);
+          }
+        }
+      });
+
+      if (headerRow.length > 0) {
+        header.push({
+          values: headerRow,
+          styles: tableRowStyles,
+          spans: spansRow,
+        });
+      }
     });
 
     return {
+      header,
       body,
     };
   }
