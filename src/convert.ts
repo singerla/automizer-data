@@ -195,8 +195,8 @@ export default class Convert {
         headerRow.push("");
       }
 
-      const columnLabels = [...firstRow.cells().map((col) => col.columnKey)];
-      headerRow.push(columnLabels);
+      const columnLabels = firstRow.cells().map((col) => col.columnKey);
+      headerRow.push(...columnLabels);
 
       body.push({
         values: headerRow,
