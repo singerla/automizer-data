@@ -38,6 +38,11 @@ export type ParserOptions = {
     parser: ParserType,
     slice: RawColumnSlice
   ) => string[];
+  renderHeaderTags?: (
+    label?: string[],
+    table?: RawTable,
+    parser?: ParserType
+  ) => DataTag[];
   renderRow: (
     cells: ResultCell[],
     label: string,

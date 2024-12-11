@@ -24,6 +24,8 @@ export class Parser {
   datasheets: Datasheet[];
   tableSeparator: string;
   file: string;
+  glueHeaderLevels: string = "|";
+  headerLevelCategory: string = "subgroup";
 
   constructor(config: ParserOptions) {
     this.results = <RawResultData[]>[];
@@ -69,7 +71,18 @@ export class Parser {
         const targetTags = [...tags];
 
         if (subgroup.label.length) {
-          targetTags.push(this.getTag("subgroup", subgroup.label));
+          if (this.config.renderHeaderTags) {
+            const labels = subgroup.label.split(this.glueHeaderLevels);
+            targetTags.push(
+              ...this.config.renderHeaderTags(labels, subgroup, this)
+            );
+          } else {
+            const tag: DataTag = this.getTag(
+              this.headerLevelCategory,
+              subgroup.label
+            );
+            targetTags.push(tag);
+          }
         }
 
         this.datasheets.push({
@@ -135,7 +148,7 @@ export class Parser {
       }
 
       const uniqueUpperValues = [...new Set(upperValues)];
-      const sliceKey = uniqueUpperValues.join("|");
+      const sliceKey = uniqueUpperValues.join(this.glueHeaderLevels);
       if (!sliceKeys[sliceKey]) {
         sliceKeys[sliceKey] = <any>[];
       }
