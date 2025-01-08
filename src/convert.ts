@@ -1,4 +1,4 @@
-import { ResultColumn, ResultRow } from "./types/types";
+import { ResultColumn, ResultRow } from './types/types';
 import {
   ChartBubble,
   ChartCategory,
@@ -8,10 +8,10 @@ import {
   TableData,
   TableRow,
   TableRowStyle,
-} from "pptx-automizer";
-import Modelizer from "./modelizer/modelizer";
-import { Cell, Model, ProcessRowCb } from "./modelizer/modelizer-types";
-import { vd } from "./helper";
+} from 'pptx-automizer';
+import Modelizer from './modelizer/modelizer';
+import { Cell, Model, ProcessRowCb } from './modelizer/modelizer-types';
+import { vd } from './helper';
 
 export default class Convert {
   modelizer: Modelizer;
@@ -48,7 +48,7 @@ export default class Convert {
 
     this.#forEachRow((row, r) => {
       categories.push({
-        label: row.key,
+        label: row.getLabel(),
         y: r + yValueOffset,
         values: row.cells().map((column) => column.toNumberOrEmpty() as number),
       });
@@ -66,7 +66,7 @@ export default class Convert {
 
     this.#forEachRow((row, r) => {
       categories.push({
-        label: row.key,
+        label: row.getLabel(),
         y: r + 0.5,
         values: row.cells().map((column, c) => {
           return column.toNumberOrEmpty() as number;
@@ -87,7 +87,7 @@ export default class Convert {
 
     this.#forEachRow((row, r) => {
       categories.push({
-        label: row.key,
+        label: row.getLabel(),
         values: row.cells().map((cell) => {
           return {
             x: cell.getPoint(0)?.value as number,
@@ -110,7 +110,7 @@ export default class Convert {
 
     this.#forEachRow((row, r) => {
       categories.push({
-        label: row.key,
+        label: row.getLabel(),
         values: row.cells().map((col: Cell) => {
           return <ChartBubble>{
             size: Number(col.getPoint(0)?.value),
@@ -132,7 +132,7 @@ export default class Convert {
     const body = [];
     this.#forEachRow((row, r) => {
       body.push({
-        values: [row.key],
+        values: [row.getLabel()],
         styles: this.#extractPointStyle<TableRowStyle>(row),
       });
     });
@@ -146,8 +146,9 @@ export default class Convert {
     let series = <string[]>[];
     let styles = <any>[];
     const firstRow = this.#getFirstRow();
+
     if (firstRow) {
-      series = firstRow.cells().map((col) => col.columnKey);
+      series = [...this.modelizer.getLabels('column')];
       styles = this.#extractPointStyle<TableRowStyle>(firstRow);
     }
 
@@ -192,10 +193,10 @@ export default class Convert {
     if (params?.showColumnLabels) {
       const headerRow = [];
       if (params?.showRowLabels) {
-        headerRow.push("");
+        headerRow.push('');
       }
 
-      const columnLabels = firstRow.cells().map((col) => col.columnKey);
+      const columnLabels = this.#getColumnLabels();
       headerRow.push(...columnLabels);
 
       body.push({
@@ -216,8 +217,9 @@ export default class Convert {
       const tableRowStyles: TableRowStyle[] = [];
 
       if (params?.showRowLabels) {
-        tableRow.push(String(row.key));
-        tableRowStyles.push(row.style.get());
+        tableRow.push(String(row.getLabel()));
+        const rowStyle = row.style.get();
+        tableRowStyles.push(rowStyle);
       }
 
       row.cells().forEach((cell, c) => {
@@ -234,10 +236,10 @@ export default class Convert {
       const headerRow = [];
       const spansRow = <any>[];
       row.cells().forEach((cell, c) => {
-        const isHeader = cell.getPoint().getMeta("isHeader");
+        const isHeader = cell.getPoint()?.getMeta('isHeader');
         if (isHeader?.value) {
           headerRow.push(cell.toCell());
-          const spans = cell.getPoint().getMeta("spans");
+          const spans = cell.getPoint()?.getMeta('spans');
           if (spans?.value) {
             spansRow.push(spans.value);
           } else {
@@ -263,14 +265,16 @@ export default class Convert {
 
   toResultRows(): ResultRow[] {
     const body = <ResultRow[]>[];
+    const columnLabels = this.#getColumnLabels();
+
     this.modelizer.processRows((row) => {
       const bodyRow = {
-        key: row.key,
+        key: row.getLabel(),
         cols: <ResultColumn[]>[],
       };
-      row.cells().forEach((cell) => {
+      row.cells().forEach((cell, c) => {
         const resultCol = <ResultColumn>{
-          key: cell.columnKey,
+          key: columnLabels[c] || cell.columnKey,
           value: cell.getPoints(),
         };
         bodyRow.cols.push(resultCol);
@@ -287,7 +291,7 @@ export default class Convert {
         const column = this.modelizer.getColumn(col.columnKey);
         const seriesStyle = column.style.get();
         return {
-          label: col.columnKey,
+          label: column.getLabel(),
           style: seriesStyle,
         };
       });
@@ -297,13 +301,17 @@ export default class Convert {
     return this.modelizer.getRow(0);
   }
 
+  #getColumnLabels() {
+    return this.modelizer.getLabels('column');
+  }
+
   #forEachRow(cb: ProcessRowCb) {
     this.modelizer.processRows(cb);
   }
 
   #toCategory(row: Model) {
     return {
-      label: row.key,
+      label: row.getLabel(),
       values: row.cells().map((column) => column.toNumberOrEmpty()),
       styles: this.#extractPointStyle<ChartValueStyle>(row),
     };

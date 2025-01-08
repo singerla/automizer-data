@@ -1,7 +1,8 @@
-import { DataPoint } from "../types/types";
+import { DataPoint } from '../types/types';
 
 export interface Style {
   assign(style: any): void;
+
   get(): any;
 }
 
@@ -11,8 +12,10 @@ export type ModelMeta = {
 };
 
 export interface Meta {
-  set(metaKey: string, metaValue: ModelMeta["value"]): void;
+  set(metaKey: string, metaValue: ModelMeta['value']): void;
+
   get(metaKey: string): ModelMeta;
+
   state: ModelMeta[];
 }
 
@@ -52,6 +55,7 @@ export type Row = Cell[];
  * A column is a set of cells that go from top to bottom inside a table.
  */
 export type Column = Cell[];
+
 /**
  * A Cell holds an array of points associated to a row and a column.
  * The value of a cell is initially set by the first datapoint to initialize
@@ -116,7 +120,7 @@ export interface Cell {
   /**
    * Get the current cell value as a number or empty string.
    */
-  toNumberOrEmpty: () => number | "";
+  toNumberOrEmpty: () => number | '';
   /**
    * Get the current cell value as a number or a string,
    * trying to convert
@@ -126,7 +130,7 @@ export interface Cell {
    *
    *  An undefined value will leave the target cell untouched
    */
-  toCell: () => number | string | "" | undefined;
+  toCell: () => number | string | '' | undefined;
   /**
    * Log contents of the current cell to console.
    */
@@ -151,9 +155,19 @@ export interface Cell {
  */
 export interface Model {
   /**
-   * The key of current row as added to rowKeys.
+   * The key of current row as added to rowKeys. Must be unique.
    */
   key: string;
+  /**
+   * The label to display when model is printed. Defaults to Model.key.
+   * You can have the same label in rows/columns more than once.
+   */
+  label: string;
+  /**
+   * Get the label to display.
+   * It is equal to Model.key unless you did updateKey with updateLabel=true.
+   */
+  getLabel: () => string;
   /**
    * Whether the model is a row or a column.
    */
@@ -199,9 +213,20 @@ export interface Model {
   setCell: (c: Key, cell: Cell) => Model;
   /**
    * Update the key of current row/column. This will also update the row label.
+   * Modelizer can't handle duplicate keys per rows/columns.
+   * If you need non-unique keys, use updateLabel
+   * to separate string for label when printing.
+   *
    * @param newKey
+   * @param updateLabel Update only label and leave key untouched
    */
   updateKey: (newKey: string) => Model;
+  /**
+   * Update the label of current row/column and leave key untouched.
+   *
+   * @param newLabel
+   */
+  updateLabel: (newLabel: string) => Model;
   /**
    * Drop the current row/column
    */
@@ -225,6 +250,7 @@ export interface Model {
    */
   dump: (s1?: number, s2?: number) => void;
 }
+
 /**
  * Each cell can hold a value. The value is used to be displayed.
  */
@@ -239,7 +265,7 @@ export type Key = string | number;
  * There are "row" or "col" dimensions. "row" will go from left to right, while
  * "col" will go from top to bottom, both starting by zero.
  */
-export type KeyMode = "row" | "column";
+export type KeyMode = 'row' | 'column';
 /**
  * A table will be constructed by adding DataPoints.
  */
@@ -257,7 +283,7 @@ export type RenderTableCb = (
   r: number,
   c: number,
   rowKey: Key,
-  colKey: Key
+  colKey: Key,
 ) => void;
 export type ProcessRowCb = (row: Model, r: number, rowKey: Key) => void;
 export type ProcessColumnCb = (column: Model, c: number, colKey: Key) => void;
