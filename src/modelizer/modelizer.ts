@@ -332,7 +332,7 @@ export default class Modelizer {
 
   findOrCreateModel(models: Model[], mode: KeyMode, key: Key) {
     const modelKey = this.#getKey(key, mode);
-    const existing = models.find((model) => model.key === modelKey);
+    const existing = models.find((model) => model.key === modelKey || model.getLabel() === modelKey);
     if (existing) {
       return existing;
     }
