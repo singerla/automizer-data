@@ -1,4 +1,4 @@
-import { DataPoint, DataPointMeta, DataTag } from '../types/types';
+import { DataPoint, DataPointMeta } from '../types/types';
 import { Query } from '../index';
 import _, { round } from 'lodash';
 import {
@@ -20,7 +20,6 @@ import {
 } from './modelizer-types';
 import Points from '../points';
 import { dumpBody, dumpCell, dumpFooter, dumpHeader } from './dump';
-import { vd } from '../helper';
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -725,6 +724,17 @@ export default class Modelizer {
           return currentValue;
         }
         return cell.toNumber();
+      },
+      isValid: () => {
+        let currentValue = cell.toCell();
+        if (currentValue === '' ||
+          currentValue === null ||
+          currentValue === undefined ||
+          Number.isNaN(currentValue)
+        ) {
+          return false;
+        }
+        return true;
       },
       toCell: () => {
         let currentValue = cell.getValue();

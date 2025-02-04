@@ -1,24 +1,26 @@
-import { PrismaClient } from "./client";
+import { PrismaClient } from './client';
 
-import Query from "./query";
-import Points from "./points";
-import Convert from "./convert";
-import Modelizer from "./modelizer/modelizer";
-import Keys from "./keys";
+import Query from './query';
+import Points from './points';
+import Convert from './convert';
+import Modelizer from './modelizer/modelizer';
+import Keys from './keys';
 
-import { Store } from "./store";
-import TagsCache from "./helper/tagsCache";
-import { Parser } from "./parser/parser";
-import { Gesstabs } from "./parser/gesstabs";
-import { Pspp } from "./parser/pspp";
-import { MySQL } from "./parser/mysql";
-import { Generic } from "./parser/generic";
+import { Store } from './store';
+import TagsCache from './helper/tagsCache';
+import { Parser } from './parser/parser';
+import { Gesstabs } from './parser/gesstabs';
+import { Pspp } from './parser/pspp';
+import { MySQL } from './parser/mysql';
+import { Generic } from './parser/generic';
+import { Tagged } from './parser/tagged';
+
 import {
   Cell,
   InputCategoryKeys,
   KeyMode,
   Model,
-} from "./modelizer/modelizer-types";
+} from './modelizer/modelizer-types';
 import {
   CachedObject,
   DataGrid,
@@ -63,12 +65,12 @@ import {
   Selector,
   StoreOptions,
   Tagger,
-} from "./types/types";
+} from './types/types';
 
-import { all, filterBy, filterByDataTag } from "./filter";
-import { dump, value } from "./cell";
-import { byColId } from "./sort";
-import { getNestedClause, getTagGroupsByCategory } from "./helper";
+import { all, filterBy, filterByDataTag } from './filter';
+import { dump, value } from './cell';
+import { byColId } from './sort';
+import { getNestedClause, getTagGroupsByCategory } from './helper';
 
 const cell = {
   value,
@@ -125,7 +127,7 @@ export type {
   ResultType,
   QueryResult,
 };
-export { Query, Parser, Gesstabs, Pspp, MySQL, Generic, Store, filter, cell };
+export { Query, Parser, Gesstabs, Pspp, MySQL, Generic, Tagged, Store, filter, cell };
 export { Points, Convert, Modelizer, Model, Keys };
 export { TagsCache };
 export { getNestedClause, getTagGroupsByCategory };

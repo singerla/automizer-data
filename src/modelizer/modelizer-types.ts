@@ -132,6 +132,10 @@ export interface Cell {
    */
   toCell: () => number | string | '' | undefined;
   /**
+   * Check if cell value is valid
+   */
+  isValid: () => boolean;
+  /**
    * Log contents of the current cell to console.
    */
   dump: () => void;
