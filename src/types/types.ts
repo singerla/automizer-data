@@ -176,6 +176,7 @@ export interface ITagsCache {
   getMany: (categoryId?: number) => Promise<Tag[]>;
   get: (name: string, categoryId: number) => Tag | null;
   getByValue: (name: string) => Tag[];
+  getById: (id: number) => Tag | null;
   create: (name?: string, categoryId?: number) => Promise<Tag>;
   set: (tag: Tag) => void;
   reset: () => Promise<void>;
