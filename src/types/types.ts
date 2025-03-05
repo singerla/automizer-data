@@ -369,6 +369,7 @@ export type ConditionArgsHasParams = {
   categoryId?: number;
   loopId?: number;
   hasOneOf?: string[];
+  hasTagId?: number[];
   hasSelection?: number[];
   hasItem?: string[];
   hasRound?: number[];
