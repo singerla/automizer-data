@@ -1,16 +1,16 @@
-import { PrismaClient, Sheet, Tag } from '../client';
-import { Gesstabs } from '../parser/gesstabs';
-import { Generic } from '../index';
-import { Parser } from '../parser/parser';
-import ResultClass from '../convert';
-import Convert from '../convert';
-import { ChartValueStyle, TableRowStyle } from 'pptx-automizer';
-import ResultInfo from '../helper/resultInfo';
-import Modelizer from '../modelizer/modelizer';
-import Query from '../query';
-import { InputKeys } from '../modelizer/modelizer-types';
-import Keys from '../keys';
-import mysql from 'mysql2/promise';
+import { PrismaClient, Sheet, Tag } from "../client";
+import { Gesstabs } from "../parser/gesstabs";
+import { Generic } from "../index";
+import { Parser } from "../parser/parser";
+import ResultClass from "../convert";
+import Convert from "../convert";
+import { ChartValueStyle, TableRowStyle } from "pptx-automizer";
+import ResultInfo from "../helper/resultInfo";
+import Modelizer from "../modelizer/modelizer";
+import Query from "../query";
+import { InputKeys } from "../modelizer/modelizer-types";
+import Keys from "../keys";
+import mysql from "mysql2/promise";
 
 export type PrismaId = number;
 
@@ -22,7 +22,7 @@ export type StoreOptions = {
   dedupTagCategories?: boolean;
   noDedupTagCategories?: PrismaId[];
   userId?: PrismaId;
-  statusTracker?: StatusTracker['next'];
+  statusTracker?: StatusTracker["next"];
   tagsCache?: ITagsCache;
 };
 
@@ -36,25 +36,25 @@ export type ParserOptions = {
     cells: string[],
     meta: RawResultMeta[],
     parser: ParserType,
-    slice: RawColumnSlice,
+    slice: RawColumnSlice
   ) => string[];
   renderHeaderTags?: (
     label?: string[],
     table?: RawTable,
-    parser?: ParserType,
+    parser?: ParserType
   ) => DataTag[];
   renderRow: (
     cells: ResultCell[],
     label: string,
     meta: RawResultMeta[],
-    parser: ParserType,
+    parser: ParserType
   ) => ResultCell[];
   renderLabel?: (label: string) => string;
   renderRawResultData?: (data: RawResultData, parser: ParserType) => void;
   renderRawTables?: (
     rawTables: RawTable[],
     tags: DataTag[],
-    parser: ParserType,
+    parser: ParserType
   ) => void;
   metaMap: MetaMap;
   significance?: ParserOptionsSignificance;
@@ -67,7 +67,7 @@ export type ParserOptions = {
   customXlsx?: ParserOptionsCustomXlsx;
   metaKey?: string;
   totalLabel?: string;
-  mapCategories: Record<string, string>,
+  mapCategories?: Record<string, string>;
   tagsMarker?: string;
 };
 
@@ -75,18 +75,18 @@ export type ParserOptionsMySQL = {
   connection: mysql.ConnectionOptions;
   callback: (
     connection: mysql.Connection,
-    datasheets: Datasheet[],
+    datasheets: Datasheet[]
   ) => Promise<void>;
 };
 
 export type ParserOptionsCustomXlsx = (
   rows: any[],
-  file: string,
+  file: string
 ) => RawResultData[];
 
 export type ParserOptionsPspp = {
   binary: string;
-  psppLanguage?: 'en' | 'de';
+  psppLanguage?: "en" | "de";
   keys?: ParserOptionsPsppKeys;
   filters: ParserOptionsPsppFilters[];
   labels: ParserOptionsPsppLabels[];
@@ -103,7 +103,7 @@ export type ParserOptionsPsppKeys = {
 };
 
 export type ParserOptionsPsppLabels = {
-  section: 'rows' | 'columns' | string;
+  section: "rows" | "columns" | string;
   replace: string;
   by: string;
 };
@@ -116,7 +116,7 @@ export type ParserOptionsPsppFilters = {
 };
 
 export type ParserOptionsPsppCommands = {
-  name?: 'CROSSTABS';
+  name?: "CROSSTABS";
   filters?: string[];
   rowVar: string;
   columnVars: string[];
@@ -209,9 +209,9 @@ export type NestedClause = {
       id:
         | PrismaId
         | {
-        in: PrismaId[];
-        AND?: NestedClause;
-      };
+            in: PrismaId[];
+            AND?: NestedClause;
+          };
     };
   };
 };
@@ -421,7 +421,7 @@ export type MetaParam = {
   cb: (
     row: ResultRow,
     params: MetaParam,
-    result: ResultClass,
+    result: ResultClass
   ) => TableRowStyle[] | ChartValueStyle[];
   styles: MetaParamStyle[];
 };
@@ -495,7 +495,7 @@ export type RawTable = {
   meta: RawResultMeta[];
 };
 
-export type DataPointTarget = 'row' | 'column';
+export type DataPointTarget = "row" | "column";
 
 export type RenameLabel = {
   target?: DataPointTarget;

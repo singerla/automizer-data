@@ -1,18 +1,18 @@
-import { CachedObject, Selector } from "../types/types";
+import { CachedObject, IdSelector, Selector } from "../types/types";
 
 export default class QueryCache {
   buffer: CachedObject[] = [];
-  exists = (selector: Selector, isNonGreedy: boolean): boolean => {
+  exists = (selector: IdSelector, isNonGreedy: boolean): boolean => {
     const key = this.getKey(selector, isNonGreedy);
     return !!this.buffer.find((obj) => obj.key === key);
   };
-  get = (selector: Selector, isNonGreedy: boolean): CachedObject => {
+  get = (selector: IdSelector, isNonGreedy: boolean): CachedObject => {
     const key = this.getKey(selector, isNonGreedy);
     // vd('from cache: ' + key);
     return this.buffer.find((obj) => obj.key === key);
   };
   set = (
-    selector: Selector,
+    selector: IdSelector,
     isNonGreedy: boolean,
     data: CachedObject
   ): void => {
@@ -29,7 +29,7 @@ export default class QueryCache {
     this.buffer = [];
   };
 
-  getKey = (selector: Selector, isNonGreedy): string => {
+  getKey = (selector: IdSelector, isNonGreedy: boolean): string => {
     return selector.join("|") + (isNonGreedy ? "-ng" : "");
   };
 }
