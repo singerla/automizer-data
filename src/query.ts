@@ -1,6 +1,6 @@
-import { PrismaClient, Tag } from './client';
-import { getNestedClause } from './helper';
-import _ from 'lodash';
+import { PrismaClient, Tag } from "./client";
+import { getNestedClause, vd } from "./helper";
+import _ from "lodash";
 
 import {
   CachedObject,
@@ -24,12 +24,12 @@ import {
   ResultCell,
   Selector,
   Sheets,
-} from './types/types';
+} from "./types/types";
 
-import Points from './points';
-import Modelizer from './modelizer/modelizer';
-import Convert from './convert';
-import Keys from './keys';
+import Points from "./points";
+import Modelizer from "./modelizer/modelizer";
+import Convert from "./convert";
+import Keys from "./keys";
 
 export default class Query {
   prisma: PrismaClient | any;
@@ -43,6 +43,8 @@ export default class Query {
   private nonGreedySelector: number[] = [];
   private maxSheets: number = 150;
   private cache: ICache;
+
+  private selectionValidator: QueryOptions["selectionValidator"];
 
   constructor(prisma: PrismaClient | any) {
     this.prisma = prisma;
@@ -71,6 +73,8 @@ export default class Query {
     this.dataTagSelector = options.dataTagSelector;
     this.selector = options.selector || this.selector;
 
+    this.selectionValidator = options.selectionValidator;
+
     return this;
   }
 
@@ -79,10 +83,13 @@ export default class Query {
       this.selector = await this.convertDataTagSelector(this.dataTagSelector);
     }
 
-    const selector = this.selector;
-    const tagIds = await this.parseSelector(selector).catch(() => {
-      throw 'Parse Selector failed';
-    });
+    let tagIds: Selector;
+
+    try {
+      tagIds = this.parseSelector(this.selector);
+    } catch (e) {
+      throw "Parse Selector failed";
+    }
 
     const { points, sheets, tags, inputKeys } = await this.getRawResult(tagIds);
 
@@ -91,7 +98,7 @@ export default class Query {
         points,
         strict: false,
       },
-      this,
+      this
     );
 
     const errors: QueryTransformationError[] = [];
@@ -109,7 +116,7 @@ export default class Query {
         modelizer,
         inputKeys,
         errors,
-        dump,
+        dump
       );
     }
 
@@ -121,15 +128,15 @@ export default class Query {
       convert: (tmpModelizer?) => new Convert(tmpModelizer || modelizer),
       isValid: () => !!modelizer.getFirstPoint(),
       visibleKeys: {
-        row: modelizer.getLabels('row'),
-        column: modelizer.getLabels('column'),
+        row: modelizer.getLabels("row"),
+        column: modelizer.getLabels("column"),
       },
       errors,
       dumpedData,
     };
   }
 
-  async getRawResult(allTagIds): Promise<RawResult> {
+  async getRawResult(allTagIds: Selector): Promise<RawResult> {
     const modifiedDataPoints = <DataPoint[]>[];
     const usedTags: Tag[][] = [];
     const usedDatasheets = <Datasheet[]>[];
@@ -146,7 +153,7 @@ export default class Query {
 
       if (this.cache?.exists(tagIds, isNonGreedy)) {
         const cachedObject = this.fromCache(
-          this.cache.get(tagIds, isNonGreedy),
+          this.cache.get(tagIds, isNonGreedy)
         );
         selectionTags = cachedObject.tags;
         dataSheets = cachedObject.sheets;
@@ -160,7 +167,7 @@ export default class Query {
           _.cloneDeep({
             sheets: dataSheets,
             tags: selectionTags,
-          }),
+          })
         );
       }
 
@@ -188,7 +195,7 @@ export default class Query {
     return _.cloneDeep(cached);
   }
 
-  async getTagInfo(tagIds: number[]): Promise<Tag[]> {
+  async getTagInfo(tagIds: IdSelector): Promise<Tag[]> {
     return this.prisma.tag.findMany({
       where: {
         id: {
@@ -199,6 +206,14 @@ export default class Query {
   }
 
   async findSheets(tags: Tag[], isNonGreedy: boolean): Promise<Datasheet[]> {
+    if (typeof this.selectionValidator === "function") {
+      const isValid = this.selectionValidator(tags);
+      if (!isValid) {
+        const tagInfo = tags.map((tag) => `${tag.name} (${tag.id})`);
+        throw "The selection is not valid: " + tagInfo.join("; ");
+      }
+    }
+
     let clause = getNestedClause(tags);
     if (!clause) return [];
 
@@ -213,8 +228,9 @@ export default class Query {
 
     if (sheets.length === this.maxSheets) {
       console.error(
-        'Exceeded maxSheets (' + this.maxSheets + '), got ' + sheets.length,
+        "Exceeded maxSheets (" + this.maxSheets + "), got " + sheets.length
       );
+      console.log(tags);
       // throw "Too many sheets. Add more tags to selection.";
       return [];
     }
@@ -252,7 +268,7 @@ export default class Query {
    */
   filterSheets(sheets: Sheets): Sheets {
     const nonGreedyIds = this.getSheetCategoryCount(sheets).map(
-      (count) => count.sheetId,
+      (count) => count.sheetId
     );
     return sheets.filter((sheet) => nonGreedyIds.includes(sheet.id));
   }
@@ -270,7 +286,7 @@ export default class Query {
     const smallestCount = categoryCount[0].categoryIds.length;
 
     return categoryCount.filter(
-      (categoryCount) => categoryCount.categoryIds.length <= smallestCount,
+      (categoryCount) => categoryCount.categoryIds.length <= smallestCount
     );
   }
 
@@ -286,8 +302,8 @@ export default class Query {
               sheet.tags,
               Points.getDataPointMeta(sheet, r, c),
               value,
-              selection,
-            ),
+              selection
+            )
           );
         });
       });
@@ -305,7 +321,7 @@ export default class Query {
 
       if (modifier.callbacks) {
         modifier.callbacks.forEach((callback) => {
-          if (typeof callback === 'function') {
+          if (typeof callback === "function") {
             callback(points);
           }
         });
@@ -327,25 +343,25 @@ export default class Query {
     return modifiers;
   }
 
-  async parseSelector(selector: Selector): Promise<IdSelector[]> {
+  parseSelector(selector: Selector): Selector {
     if (selector[0][0] === undefined) {
-      throw 'Selection is empty';
+      throw "Selection is empty";
     }
 
-    if (typeof selector[0][0] === 'number') {
-      return selector as IdSelector[];
+    if (typeof selector[0][0] === "number") {
+      return selector;
     }
 
-    throw 'Invalid selector.';
+    throw "Invalid selector.";
   }
 
   async convertDataTagSelector(selector: DataTagSelector): Promise<Selector> {
-    const tagIdSelector = <number[][]>[];
+    const tagIdSelector = <Selector>[];
     for (const dataTag of selector) {
       const tagIds = await this.getTagIds(dataTag as DataTag[]);
       tagIdSelector.push(tagIds);
     }
-    return tagIdSelector as IdSelector[];
+    return tagIdSelector;
   }
 
   async getTagIds(tags: DataTag[]): Promise<number[]> {
@@ -392,7 +408,7 @@ export default class Query {
 
     if (!tagItem) {
       throw new Error(
-        `Tag not found: ${tag.value} @ category: ${tag.category}`,
+        `Tag not found: ${tag.value} @ category: ${tag.category}`
       );
     }
 
@@ -404,10 +420,10 @@ export default class Query {
     modelizer: Modelizer,
     inputKeys: Keys,
     errors: QueryTransformationError[],
-    dump: QueryTransformationDump,
+    dump: QueryTransformationDump
   ) {
     for (const transform of transformations) {
-      if (transform.modelize && typeof transform.modelize === 'function') {
+      if (transform.modelize && typeof transform.modelize === "function") {
         const apply = await this.checkCondition(transform, modelizer);
         if (apply) {
           const args = <ModelizeArguments>{
@@ -434,7 +450,7 @@ export default class Query {
   }
 
   async checkCondition(transform, modelizer: Modelizer): Promise<boolean> {
-    if (transform.condition && typeof transform.condition === 'function') {
+    if (transform.condition && typeof transform.condition === "function") {
       if ((await transform.condition(modelizer)) !== true) {
         return false;
       }

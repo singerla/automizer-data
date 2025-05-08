@@ -163,9 +163,9 @@ export type CachedObject = {
 };
 
 export interface ICache {
-  exists: (selector: Selector, isNonGreedy: boolean) => boolean;
-  get: (selector: Selector, isNonGreedy: boolean) => CachedObject;
-  set: (selector: Selector, isNonGreedy: boolean, data: CachedObject) => void;
+  exists: (selector: IdSelector, isNonGreedy: boolean) => boolean;
+  get: (selector: IdSelector, isNonGreedy: boolean) => CachedObject;
+  set: (selector: IdSelector, isNonGreedy: boolean, data: CachedObject) => void;
 }
 
 export interface ITagsCache {
@@ -191,6 +191,7 @@ export type QueryOptions = {
   maxSheets?: number;
   cache?: ICache;
   tagsCache?: ITagsCache;
+  selectionValidator?: (tags: Tag[]) => boolean;
 };
 
 export type CategoryCount = {
