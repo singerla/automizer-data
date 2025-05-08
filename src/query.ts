@@ -156,9 +156,13 @@ export default class Query {
           this.cache.get(tagIds, isNonGreedy)
         );
         selectionTags = cachedObject.tags;
+        this.validateSelection(selectionTags);
+
         dataSheets = cachedObject.sheets;
       } else {
         selectionTags = await this.getTagInfo(tagIds);
+        this.validateSelection(selectionTags);
+
         dataSheets = await this.findSheets(selectionTags, isNonGreedy);
 
         this.cache?.set(
@@ -205,15 +209,20 @@ export default class Query {
     });
   }
 
-  async findSheets(tags: Tag[], isNonGreedy: boolean): Promise<Datasheet[]> {
+  validateSelection(tags: Tag[]) {
     if (typeof this.selectionValidator === "function") {
       const isValid = this.selectionValidator(tags);
       if (!isValid) {
-        const tagInfo = tags.map((tag) => `${tag.name} (${tag.id})`);
+        const tagInfo = tags.map(
+          (tag) => `${tag.name} (@Cat ${tag.categoryId})`
+        );
         throw "The selection is not valid: " + tagInfo.join("; ");
       }
     }
+    return true;
+  }
 
+  async findSheets(tags: Tag[], isNonGreedy: boolean): Promise<Datasheet[]> {
     let clause = getNestedClause(tags);
     if (!clause) return [];
 
