@@ -1,5 +1,5 @@
 import { PrismaClient, Tag } from "./client";
-import { getNestedClause, vd } from "./helper";
+import { getNestedClause } from "./helper";
 import _ from "lodash";
 
 import {
@@ -91,7 +91,11 @@ export default class Query {
       throw "Parse Selector failed";
     }
 
-    const { points, sheets, tags, inputKeys } = await this.getRawResult(tagIds);
+    const { points, sheets, tags, inputKeys } = await this.getRawResult(
+      tagIds
+    ).catch((e) => {
+      throw e;
+    });
 
     const modelizer = new Modelizer(
       {
@@ -117,7 +121,9 @@ export default class Query {
         inputKeys,
         errors,
         dump
-      );
+      ).catch((e) => {
+        throw e;
+      });
     }
 
     return {

@@ -11,6 +11,7 @@ import Query from "../query";
 import { InputKeys } from "../modelizer/modelizer-types";
 import Keys from "../keys";
 import mysql from "mysql2/promise";
+import { TableRow } from "pptx-automizer/dist";
 
 export type PrismaId = number;
 
@@ -242,6 +243,10 @@ export type DataPoint = {
 export type DataPointMeta = {
   key: string;
   value: ResultCell | NestedParentValue[];
+};
+
+export type TableRowWithMeta = TableRow & {
+  meta?: DataPointMeta[][];
 };
 
 export type Datasheet = {

@@ -1,4 +1,9 @@
-import { ResultColumn, ResultRow } from './types/types';
+import {
+  DataPointMeta,
+  ResultColumn,
+  ResultRow,
+  TableRowWithMeta,
+} from "./types/types";
 import {
   ChartBubble,
   ChartCategory,
@@ -6,12 +11,10 @@ import {
   ChartSeries,
   ChartValueStyle,
   TableData,
-  TableRow,
   TableRowStyle,
-} from 'pptx-automizer';
-import Modelizer from './modelizer/modelizer';
-import { Cell, Model, ProcessRowCb } from './modelizer/modelizer-types';
-import { vd } from './helper';
+} from "pptx-automizer";
+import Modelizer from "./modelizer/modelizer";
+import { Cell, Model, ProcessRowCb } from "./modelizer/modelizer-types";
 
 export default class Convert {
   modelizer: Modelizer;
@@ -148,7 +151,7 @@ export default class Convert {
     const firstRow = this.#getFirstRow();
 
     if (firstRow) {
-      series = [...this.modelizer.getLabels('column')];
+      series = [...this.modelizer.getLabels("column")];
       styles = this.#extractPointStyle<TableRowStyle>(firstRow);
     }
 
@@ -176,7 +179,7 @@ export default class Convert {
   }
 
   toTable(params?: any): TableData {
-    const body = <TableRow[]>[];
+    const body = <TableRowWithMeta[]>[];
     const firstRow = this.#getFirstRow();
 
     if (!firstRow) {
@@ -193,7 +196,7 @@ export default class Convert {
     if (params?.showColumnLabels) {
       const headerRow = [];
       if (params?.showRowLabels) {
-        headerRow.push('');
+        headerRow.push("");
       }
 
       const columnLabels = this.#getColumnLabels();
@@ -211,19 +214,31 @@ export default class Convert {
       });
     }
 
+    const sendMetaKeys = params?.sendMetaKeys || [];
+
     this.#forEachRow((row, r) => {
       const tableRow = [];
 
       const tableRowStyles: TableRowStyle[] = [];
+      const tableRowMeta: DataPointMeta[][] = [];
 
       if (params?.showRowLabels) {
         tableRow.push(String(row.getLabel()));
         const rowStyle = row.style.get();
         tableRowStyles.push(rowStyle);
+        tableRowMeta.push(null);
       }
 
       row.cells().forEach((cell, c) => {
         tableRow.push(cell.toCell());
+
+        if (sendMetaKeys.length) {
+          tableRowMeta.push(
+            cell
+              .getPoint()
+              ?.meta?.filter((meta) => sendMetaKeys.includes(meta.key))
+          );
+        }
       });
 
       tableRowStyles.push(...this.#extractPointStyle<TableRowStyle>(row));
@@ -231,15 +246,16 @@ export default class Convert {
       body.push({
         values: tableRow,
         styles: tableRowStyles,
+        meta: tableRowMeta,
       });
 
       const headerRow = [];
       const spansRow = <any>[];
       row.cells().forEach((cell, c) => {
-        const isHeader = cell.getPoint()?.getMeta('isHeader');
+        const isHeader = cell.getPoint()?.getMeta("isHeader");
         if (isHeader?.value) {
           headerRow.push(cell.toCell());
-          const spans = cell.getPoint()?.getMeta('spans');
+          const spans = cell.getPoint()?.getMeta("spans");
           if (spans?.value) {
             spansRow.push(spans.value);
           } else {
@@ -302,7 +318,7 @@ export default class Convert {
   }
 
   #getColumnLabels() {
-    return this.modelizer.getLabels('column');
+    return this.modelizer.getLabels("column");
   }
 
   #forEachRow(cb: ProcessRowCb) {
