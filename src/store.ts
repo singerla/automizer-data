@@ -255,8 +255,8 @@ export class Store {
       sheetData.tags.connect = connectTags;
       sheetData.tagKey = this.getTagKey(sheetData.tags.connect);
 
-      console.log("Duplicate sheet key: ");
-      console.log(sheetData);
+      // console.log("Duplicate sheet key: ");
+      // console.log(sheetData);
     }
   }
 

@@ -20,6 +20,7 @@ import {
 } from './modelizer-types';
 import Points from '../points';
 import { dumpBody, dumpCell, dumpFooter, dumpHeader } from './dump';
+import { vd } from "../helper";
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add

@@ -2,16 +2,66 @@ import {
   Datasheet,
   ParserOptions,
   RawResultData,
+  RawResultMeta,
   RawRow,
-} from '../types/types';
+} from "../types/types";
+import { Parser } from "./parser";
+import ExcelJS from "exceljs";
+import {
+  calculateCellConditionalStyle,
+  CellStyle,
+} from "../helper/conditionalFormatting";
+import { createColorConverter } from "../helper/convertWorkbookColors";
+import { indexedColors } from "../helper/defaultThemeColors";
+import { vd } from "../helper";
 
-import xlsx from 'node-xlsx';
-import { Parser } from './parser';
-import { vd } from '../helper';
+const path = require("path");
 
-const fs = require('fs');
-const path = require('path');
+type WorksheetData = {
+  value: ExcelJS.Cell["value"];
+  cell: ExcelJS.Cell;
+  conditionalStyle: CellStyle;
+  styleResult: {
+    bgColor?: string;
+  };
+}[][];
 
+type WorksheetWithFormattings = ExcelJS.Worksheet & {
+  conditionalFormattings: any;
+};
+
+type HeaderLevels = { [key: number]: Array<string | null> };
+
+interface ParsedHeaders {
+  headerLevels: HeaderLevels;
+  categories: Array<string | null>;
+}
+
+interface Slice {
+  start: number;
+  end: number;
+  tags: Array<{ value: string; category: string }>;
+}
+
+interface TableMeta {
+  key: string;
+  value: string;
+  data: any[];
+}
+
+interface TableData {
+  body: any[][];
+  meta: TableMeta[];
+  header: any[];
+  section: string;
+  topic: string;
+  vartitle: string;
+}
+
+interface InfoItem {
+  value: string;
+  key: string;
+}
 
 export class Tagged extends Parser {
   private mapCategories: any;
@@ -26,61 +76,82 @@ export class Tagged extends Parser {
   async fromXlsx(file: string): Promise<Datasheet[]> {
     this.file = path.basename(file);
 
-    const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file));
-    workSheetsFromBuffer.forEach(workSheet => {
-      this.parseWorksheet(workSheet.data);
-    });
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(file, {
+      cellStyles: true,
+      richTextParse: true,
+    } as any);
+
+    const colorConverter = createColorConverter(workbook, indexedColors.new);
+
+    for (const worksheet of workbook.worksheets as WorksheetWithFormattings[]) {
+      // Convert ExcelJS format to compatible format for existing parseWorksheet method
+      const data: WorksheetData = [];
+      const conditionalFormattings = worksheet.conditionalFormattings;
+
+      worksheet.eachRow((row, rowNumber) => {
+        const rowData: WorksheetData[number] = [];
+        row.eachCell((cell: any, colNumber) => {
+          const conditionalStyle = calculateCellConditionalStyle(
+            cell,
+            conditionalFormattings
+          );
+
+          const tmpCell = {
+            value:
+              typeof cell.value === "object" ? cell.value.result : cell.value,
+            cell,
+            conditionalStyle: null,
+            styleResult: {},
+          };
+
+          if (conditionalStyle && conditionalStyle?.fill?.bgColor) {
+            tmpCell.conditionalStyle = conditionalStyle;
+            tmpCell.styleResult = {
+              bgColor: colorConverter(conditionalStyle?.fill?.bgColor),
+            };
+          }
+
+          rowData[colNumber - 1] = tmpCell;
+        });
+        data.push(rowData);
+      });
+      this.parseWorksheet(data);
+    }
 
     return this.datasheets;
   }
 
-  parseWorksheet(data) {
-    console.log('File rows count: ' + String(data.length));
+  // async fromXlsxNode(file: string): Promise<Datasheet[]> {
+  //   this.file = path.basename(file);
+  //
+  //   const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file));
+  //   workSheetsFromBuffer.forEach((workSheet) => {
+  //     this.parseWorksheet(workSheet.data);
+  //   });
+  //
+  //   // vd(this.datasheets)
+  //
+  //   return this.datasheets;
+  // }
 
-    this.metaKey = this.config.metaKey || 'Base';
-    this.totalLabel = this.config.totalLabel || 'Total';
+  parseWorksheet(data: WorksheetData) {
+    console.log("File rows count: " + String(data.length));
+
+    this.metaKey = this.config.metaKey || "Base";
+    this.totalLabel = this.config.totalLabel || "Total";
     this.mapCategories = this.config.mapCategories || {};
-    this.tagsMarker = this.config.metaKey || '@Tags';
+    this.tagsMarker = this.config.metaKey || "@Tags";
 
     const header = this.parseHeader(data);
     const allTables = this.parseData(data);
+
     this.results = this.sliceTables(allTables, header);
 
     this.setDatasheets();
   }
 
-  parseHeaderLevels = (data) => {
-    const headerLevels = {};
-    const categories = [];
-    const colCountRow = data.find(row => row[1] === this.metaKey);
-
-    if (!colCountRow) {
-      console.error('Could not cound cols: no metaKey: ' + this.metaKey);
-      return { headerLevels, categories };
-    }
-
-    const colCount = colCountRow.length;
-
-    let isHeader = false;
-    data.forEach((row, r) => {
-      if (row?.length === 0) return;
-      if (row[0] && row[0].indexOf('@') === 0) {
-        isHeader = true;
-      } else if (row[0] && row[0].length > 0) {
-        isHeader = false;
-      } else if (isHeader) {
-        let cat = row[1];
-        categories.push(cat);
-        for (let c = 2; c <= colCount; c++) {
-          headerLevels[c] = headerLevels[c] || [];
-          headerLevels[c].push(row[c]);
-        }
-      }
-    });
-    return { headerLevels, categories };
-  };
-
-  parseHeader = (data) => {
+  parseHeader = (data: WorksheetData) => {
     const { headerLevels, categories } = this.parseHeaderLevels(data);
 
     const sliceAtCol = <Record<any, any>>{};
@@ -89,12 +160,12 @@ export class Tagged extends Parser {
     const headerCache = [];
     for (const colId in headerLevels) {
       headerLevels[colId].forEach((cell, level) => {
-        if (cell !== undefined) {
+        if (cell !== null) {
           previousValues[level] = cell;
         }
       });
 
-      const hasDefined = headerLevels[colId].find(cell => cell !== undefined);
+      const hasDefined = headerLevels[colId].find((cell) => cell !== null);
 
       if (hasDefined) {
         const tags = [];
@@ -117,9 +188,11 @@ export class Tagged extends Parser {
       }
     }
 
-    const colCount = data.find(row => row[1] === this.metaKey).length;
+    const colCount = data.find(
+      (row) => row[1] && row[1].value.toString() === this.metaKey
+    ).length;
 
-    Object.values(sliceAtCol).forEach(header => {
+    Object.values(sliceAtCol).forEach((header) => {
       // Last slice won't have an end; using colCount.
       if (header.end === null) {
         header.end = colCount;
@@ -130,205 +203,212 @@ export class Tagged extends Parser {
     return headerCache;
   };
 
-  parseData = (data) => {
-    const allTables = [];
+  parseHeaderLevels = (data: WorksheetData): ParsedHeaders => {
+    const headerLevels: HeaderLevels = {};
+    const categories: Array<string | null> = [];
+
+    // Find the row containing metaKey in the second column
+    const metaKeyRow = data.find(
+      (row) => row.length > 1 && row[1]?.value === this.metaKey
+    );
+
+    if (!metaKeyRow) {
+      console.error(`Could not count cols: no metaKey: ${this.metaKey}`);
+      return { headerLevels, categories };
+    }
+
+    const colCount = metaKeyRow.length;
+
+    let isHeader = false;
+
+    data.forEach((row) => {
+      // Skip empty rows
+      vd(row.map((row) => row.value));
+      if (!row?.length) return;
+
+      const firstCellValue = row[0]?.value;
+
+      // Check if this is the start of a header section
+      if (
+        firstCellValue &&
+        typeof firstCellValue === "string" &&
+        firstCellValue.startsWith("@")
+      ) {
+        isHeader = true;
+      }
+      // Check if this is the end of a header section
+      else if (firstCellValue && String(firstCellValue).length > 0) {
+        isHeader = false;
+      }
+      // Process header rows
+      else if (isHeader) {
+        // Get category from second column
+        const category = row[1]?.value.toString() ?? null;
+        categories.push(category);
+
+        // Process header levels starting from third column
+        for (let c = 2; c < colCount; c++) {
+          headerLevels[c] = headerLevels[c] || [];
+          headerLevels[c].push(row[c]?.value.toString() ?? null);
+        }
+      }
+    });
+
+    return { headerLevels, categories };
+  };
+
+  parseData = (data: WorksheetData): TableData[] => {
+    const allTables: TableData[] = [];
     let currentSection = this.totalLabel;
     let currentTopic = this.totalLabel;
     let currentVartitle = this.totalLabel;
-    let currentHeader = [];
+    let currentHeader: string[] = [];
 
-    data.forEach((row, r) => {
-      const firstCell = row[0];
-      const secondCell = row[1];
-      const dataCell = row[2];
-      const dataCellType = typeof dataCell;
-      const hasData = dataCell?.length > 0
-        || dataCellType === 'number';
+    data.forEach((row) => {
+      const firstCell = row[0]?.value;
+      const secondCell = row[1]?.value;
+      const dataCell = row[2]?.value;
 
+      // Check if the third cell has any meaningful data
+      const hasData =
+        dataCell !== undefined &&
+        (typeof dataCell === "number" ||
+          (typeof dataCell === "string" && dataCell.length > 0));
+
+      // Section change - only first cell has value
       if (firstCell && !secondCell) {
-        currentSection = firstCell;
+        currentSection = String(firstCell);
         currentTopic = this.totalLabel;
         currentVartitle = this.totalLabel;
       }
 
+      // Skip processing if we're in tags section
       if (currentSection === this.tagsMarker) {
         return;
       }
 
-      if (!firstCell && secondCell
-        && dataCellType === 'string') {
-        currentTopic = secondCell;
-        currentHeader = row;
+      // Topic change - header row
+      if (!firstCell && secondCell && typeof dataCell === "string") {
+        currentTopic = String(secondCell);
+        currentHeader = row.map((cell) => cell.value.toString());
       }
 
+      // Vartitle change - second cell but no data
       if (!firstCell && secondCell && !hasData) {
-        currentVartitle = secondCell;
+        currentVartitle = String(secondCell);
       }
 
-      if (!firstCell && secondCell
-        && dataCellType === 'number') {
+      // Data row - has second cell and numeric data
+      if (!firstCell && secondCell && typeof dataCell === "number") {
         const table = this.findOrCreateTable(
           currentSection,
           currentTopic,
           currentVartitle,
-          allTables,
+          allTables
         );
 
         table.header = currentHeader;
 
-        // It is a body row with meta info
+        // Meta row
         if (secondCell === this.metaKey) {
           table.meta.push({
-            key: 'base',
-            label: 'Basis',
-            data: row,
+            key: "base",
+            value: "Basis",
+            data: row.map((cell) => cell.value) as RawRow,
           });
         } else {
-          // It is a numeric body row
-          table.body.push(row);
+          // Regular data row
+          table.body.push(row.map((cell) => cell.value));
         }
       }
     });
+
     return allTables;
   };
 
-  sliceTables = (allTables, header) => {
-    const rawResult = [];
-    allTables.forEach(table => {
-      header.forEach(slice => {
-        const body = table.body.map(row => {
-          return [row[1], ...row.slice(slice.start, slice.end)];
-        });
-        const meta = [];
-        table.meta.forEach(tableMeta => {
-          const tmpRow = [...tableMeta.data];
-          meta.push({
-            key: tableMeta.key,
-            label: tableMeta.value,
-            data: ['Meta', ...tmpRow.slice(slice.start, slice.end)],
-          });
-        });
-        rawResult.push({
-          body,
-          meta,
-          header: [
-            table.header.slice(slice.start, slice.end),
-          ],
-          info: [
-            {
-              value: table.section,
-              key: this.mapCategories.section,
-            },
-            {
-              value: table.topic,
-              key: this.mapCategories.topic,
-            },
-            {
-              value: table.vartitle,
-              key: this.mapCategories.vartitle,
-            },
-            ...slice.tags.map(tmp => {
-              return {
-                value: tmp.value,
-                key: tmp.category,
-              };
-            }),
-          ],
-        });
-      });
-    });
-    return rawResult;
-  };
+  private findOrCreateTable = (
+    section: string,
+    topic: string,
+    vartitle: string,
+    tables: TableData[]
+  ): TableData => {
+    let table = tables.find(
+      (t) =>
+        t.section === section && t.topic === topic && t.vartitle === vartitle
+    );
 
-  findOrCreateTable = (section, topic, vartitle, allTables) => {
-    const key = [section, topic, vartitle].join('|');
-    const exists = allTables.find(table => table.key === key);
-    if (exists) return exists;
+    if (!table) {
+      table = {
+        section,
+        topic,
+        vartitle,
+        header: [],
+        meta: [],
+        body: [],
+      };
+      tables.push(table);
+    }
 
-    const table = {
-      key,
-      section,
-      topic,
-      vartitle,
-      header: [],
-      body: [],
-      meta: [],
-      info: [],
-    };
-
-    allTables.push(table);
     return table;
   };
 
-  removeSpecialChars = (arr) => {
-    arr.forEach((cell, i) => {
-      if (typeof cell === 'string') {
-        arr[i] = cell.replace(`\r\n`, ' ');
-      }
-    });
+  sliceTables = (
+    allTables: TableData[],
+    headerSlices: Slice[]
+  ): RawResultData[] => {
+    return allTables.flatMap((table) =>
+      headerSlices.map((slice) => this.processTableSlice(table, slice))
+    );
   };
 
-  autoDetectConfig(data: any) {
-    this.tableSeparator = !this.config.separator
-      ? data[0][0]
-      : this.config.separator;
-  }
+  private processTableSlice = (
+    table: TableData,
+    slice: Slice
+  ): RawResultData => {
+    return {
+      body: this.sliceTableBody(table.body, slice),
+      meta: this.sliceTableMeta(table.meta, slice),
+      header: [table.header.slice(slice.start, slice.end)],
+      info: this.createTableInfo(table, slice),
+    };
+  };
 
-  parseSections(data: RawRow): void {
-    const firstCell = String(data[0]).trim();
-    const secondCell = data[1];
+  private sliceTableBody = (body: any[][], slice: Slice): any[][] => {
+    return body.map((row) => [row[1], ...row.slice(slice.start, slice.end)]);
+  };
 
-    const hasFirstCell = data[0] && String(data[0]).length > 0;
-    const hasSecondCell =
-      typeof secondCell !== 'undefined' && String(data[1]).length > 0;
+  private sliceTableMeta = (
+    tableMeta: TableMeta[],
+    slice: Slice
+  ): RawResultMeta[] => {
+    return tableMeta.map((meta) => ({
+      key: meta.key,
+      label: meta.value,
+      data: ["Meta", ...meta.data.slice(slice.start, slice.end)],
+    }));
+  };
 
-    if (firstCell.indexOf(this.tableSeparator) !== -1) {
-      this.count++;
-      this.currentSection = 'info';
-      this.results[this.count] = <RawResultData>{
-        info: [
-          {
-            key: 'file',
-            value: this.file,
-          },
-        ],
-        header: [],
-        body: [],
-        meta: [],
-      };
-    }
+  private createTableInfo = (table: TableData, slice: Slice): InfoItem[] => {
+    const baseInfo: InfoItem[] = [
+      {
+        value: table.section,
+        key: this.mapCategories.section,
+      },
+      {
+        value: table.topic,
+        key: this.mapCategories.topic,
+      },
+      {
+        value: table.vartitle,
+        key: this.mapCategories.vartitle,
+      },
+    ];
 
-    if (
-      (firstCell.length === 0 && !hasSecondCell) ||
-      this.config.skipRows.indexOf(firstCell) > -1
-    ) {
-      return;
-    }
+    const tagInfo: InfoItem[] = slice.tags.map((tag) => ({
+      value: tag.value,
+      key: tag.category,
+    }));
 
-    if (this.results[this.count]) {
-      if (hasFirstCell && !hasSecondCell) {
-        this.results[this.count].info.push({
-          key: this.currentSection,
-          value: firstCell,
-        });
-      }
-
-      if (hasFirstCell && this.config.firstCell === firstCell) {
-        this.currentSection = 'header';
-        this.results[this.count].header.push(data);
-        return;
-      }
-
-      if (!hasFirstCell && hasSecondCell && this.currentSection !== 'body') {
-        this.currentSection = 'header';
-        this.results[this.count].header.push(data.slice(1));
-      }
-
-      if (hasFirstCell && hasSecondCell) {
-        this.currentSection = 'body';
-        this.results[this.count].body.push(data);
-      }
-    }
-  }
-
+    return [...baseInfo, ...tagInfo];
+  };
 }

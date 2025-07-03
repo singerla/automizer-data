@@ -1,19 +1,17 @@
 import {
-  RawResultData,
-  DataTag,
-  RawColumnSlice,
-  ParserOptions,
-  RawTable,
   Datasheet,
-  RawRow,
-  StoreSummary,
-  ResultCell,
-  RawResultMeta,
-  RawResultNestedParent,
-  RawResultNestedItem,
+  DataTag,
+  ParserOptions,
+  RawColumnSlice,
+  RawResultData,
   RawResultInfo,
+  RawResultMeta,
+  RawResultNestedItem,
+  RawResultNestedParent,
+  RawRow,
+  RawTable,
+  ResultCell,
 } from "../types/types";
-import { vd } from "../helper";
 
 export class Parser {
   results: RawResultData[];
@@ -85,6 +83,10 @@ export class Parser {
           }
         }
 
+        if (targetTags[0].value === this.config.tagsMarker) {
+          return;
+        }
+
         this.datasheets.push({
           tags: targetTags,
           columns: subgroup.columns,
@@ -97,11 +99,10 @@ export class Parser {
   }
 
   getTag(category: string, value: string): DataTag {
-    const tag = {
+    return {
       category: category,
       value: value,
     };
-    return tag;
   }
 
   removeCategoryDuplicates(tags: DataTag[]): void {
