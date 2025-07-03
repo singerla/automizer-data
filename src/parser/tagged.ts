@@ -223,8 +223,7 @@ export class Tagged extends Parser {
 
     data.forEach((row) => {
       // Skip empty rows
-      vd(row.map((row) => row.value));
-      if (!row?.length) return;
+      if (this.isRowEmpty(row)) return;
 
       const firstCellValue = row[0]?.value;
 
@@ -255,6 +254,13 @@ export class Tagged extends Parser {
     });
 
     return { headerLevels, categories };
+  };
+
+  private isRowEmpty = (row: WorksheetData[number]): boolean => {
+    return !row.some(cell => {
+      const value = cell?.value;
+      return value !== null && value !== undefined && value !== '';
+    });
   };
 
   parseData = (data: WorksheetData): TableData[] => {
@@ -308,6 +314,17 @@ export class Tagged extends Parser {
         );
 
         table.header = currentHeader;
+
+        if((secondCell !== this.metaKey)) {
+          const styleResults = row.map((cell) => cell.styleResult?.bgColor);
+          if(styleResults.some(styleResult => styleResult !== undefined)) {
+            table.meta.push({
+              key: "styleResults",
+              value: secondCell.toString(),
+              data: styleResults,
+            });
+          }
+        }
 
         // Meta row
         if (secondCell === this.metaKey) {

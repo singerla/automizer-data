@@ -1,16 +1,19 @@
-
 // Usage remains the same as before:
 import ExcelJS from "exceljs";
 import { extractThemeColorsFromXML } from "./themeParser";
-import { indexedColors } from "./defaultThemeColors";
-import { vd } from "../helper";
 
-export function createColorConverter(workbook: ExcelJS.Workbook, indexedColors) {
+export function createColorConverter(
+  workbook: ExcelJS.Workbook,
+  indexedColors: string[]
+) {
   const workbookThemeColors = extractThemeColorsFromXML(workbook);
 
-  vd(workbookThemeColors)
-
-  return function convertToARGB(color: { indexed?: number; theme?: number; tint?: number; argb?: string }): string {
+  return function convertToARGB(color: {
+    indexed?: number;
+    theme?: number;
+    tint?: number;
+    argb?: string;
+  }): string {
     if (color.argb) {
       return color.argb;
     }
@@ -29,7 +32,7 @@ export function createColorConverter(workbook: ExcelJS.Workbook, indexedColors) 
       return argb;
     }
 
-    return 'FF000000';
+    return "FF000000";
   };
 }
 
@@ -41,20 +44,21 @@ function applyTint(argb: string, tint: number): string {
   const blue = parseInt(argb.substr(6, 2), 16);
 
   // Apply tint transformation
-  const rgb = [red, green, blue].map(color => {
+  const rgb = [red, green, blue].map((color) => {
     if (tint < 0) {
       // Darken
       return Math.round(color * (1 + tint));
     } else {
       // Lighten
-      return Math.round(color + ((255 - color) * tint));
+      return Math.round(color + (255 - color) * tint);
     }
   });
 
   // Convert back to ARGB
-  return alpha +
-    rgb[0].toString(16).padStart(2, '0') +
-    rgb[1].toString(16).padStart(2, '0') +
-    rgb[2].toString(16).padStart(2, '0');
+  return (
+    alpha +
+    rgb[0].toString(16).padStart(2, "0") +
+    rgb[1].toString(16).padStart(2, "0") +
+    rgb[2].toString(16).padStart(2, "0")
+  );
 }
-
