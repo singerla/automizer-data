@@ -222,11 +222,20 @@ export class Parser {
 
   renderMeta(meta: RawResultMeta[], slice: RawColumnSlice, rawTable: RawTable) {
     meta.forEach((meta) => {
-      rawTable.meta.push({
+      const resultMeta: RawResultMeta = {
         key: meta.key,
         label: meta.label,
-        data: meta.data?.slice(slice.start + 1, slice.end + 1),
-      });
+      }
+
+      if(meta.data) {
+        resultMeta.data = meta.data?.slice(slice.start + 1, slice.end + 1)
+      }
+
+      if(meta.info) {
+        resultMeta.info = meta.info?.slice(slice.start + 1, slice.end + 1)
+      }
+
+      rawTable.meta.push(resultMeta);
     });
   }
 

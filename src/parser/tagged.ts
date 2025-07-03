@@ -46,7 +46,8 @@ interface Slice {
 interface TableMeta {
   key: string;
   value: string;
-  data: any[];
+  info?: any[];
+  data?: any[];
 }
 
 interface TableData {
@@ -321,7 +322,7 @@ export class Tagged extends Parser {
             table.meta.push({
               key: "styleResults",
               value: secondCell.toString(),
-              data: styleResults,
+              info: styleResults,
             });
           }
         }
@@ -384,7 +385,7 @@ export class Tagged extends Parser {
   ): RawResultData => {
     return {
       body: this.sliceTableBody(table.body, slice),
-      meta: this.sliceTableMeta(table.meta, slice),
+      meta: this.sliceTableMeta(table.meta, slice, table.header),
       header: [table.header.slice(slice.start, slice.end)],
       info: this.createTableInfo(table, slice),
     };
@@ -394,16 +395,41 @@ export class Tagged extends Parser {
     return body.map((row) => [row[1], ...row.slice(slice.start, slice.end)]);
   };
 
-  private sliceTableMeta = (
-    tableMeta: TableMeta[],
-    slice: Slice
-  ): RawResultMeta[] => {
-    return tableMeta.map((meta) => ({
-      key: meta.key,
-      label: meta.value,
-      data: ["Meta", ...meta.data.slice(slice.start, slice.end)],
-    }));
+  private sliceTableMeta = (tableMeta: TableMeta[], slice: Slice, header: any[]): RawResultMeta[] => {
+    return tableMeta.map(meta => {
+      const result: RawResultMeta = {
+        key: meta.key,
+        label: meta.value
+      };
+
+      if (meta.data) {
+        result.data = ['Meta', ...meta.data
+          .slice(slice.start, slice.end)
+        ];
+      }
+
+      if (meta.info) {
+        const info = meta.info
+          .slice(slice.start, slice.end)
+
+        if(info.find(infoVal => infoVal !== undefined)) {
+          const info: any = []
+          for(let c = slice.start; c < slice.end; c++) {
+            if(meta.info[c]) {
+              info.push({
+                key: meta.key,
+                value: header[c],
+                info: meta.info[c]
+              })
+            }
+          }
+          result.info = ['Info', ...info]
+        }
+      }
+      return result;
+    }).filter(meta => meta.data || meta.info);
   };
+
 
   private createTableInfo = (table: TableData, slice: Slice): InfoItem[] => {
     const baseInfo: InfoItem[] = [

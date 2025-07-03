@@ -249,7 +249,6 @@ export default class Points {
     c: number
   ): DataPointMeta[] {
     const pointMeta = <DataPointMeta[]>[];
-
     sheet.meta.forEach((metaContent: RawResultMeta) => {
       if (metaContent?.key === "nested") {
         Points.pushPointNestedMeta(metaContent, pointMeta, sheet, r, c);
@@ -284,7 +283,7 @@ export default class Points {
       (meta) => meta.value === sheet.columns[c]
     );
     if (hasMetaContent && hasMetaContent.info) {
-      Points.pushPointMeta(pointMeta, hasMetaContent.info, hasMetaContent.key);
+      Points.pushPointMeta(pointMeta, hasMetaContent.key, hasMetaContent.info);
     }
   }
 
