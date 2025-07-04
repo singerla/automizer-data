@@ -70,6 +70,7 @@ export type ParserOptions = {
   totalLabel?: string;
   mapCategories?: Record<string, string>;
   tagsMarker?: string;
+  calculateConditionalStyle?: boolean;
 };
 
 export type ParserOptionsMySQL = {

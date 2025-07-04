@@ -11,20 +11,28 @@ import {
   calculateCellConditionalStyle,
   CellStyle,
 } from "../helper/conditionalFormatting";
-import { createColorConverter } from "../helper/convertWorkbookColors";
+import {
+  ColorConverter,
+  createColorConverter,
+} from "../helper/convertWorkbookColors";
 import { indexedColors } from "../helper/defaultThemeColors";
 import { vd } from "../helper";
+import { TimeTracker } from "../helper/timeTracker";
+
+export const timer = new TimeTracker();
 
 const path = require("path");
 
-type WorksheetData = {
+type WorksheetDataCell = {
   value: ExcelJS.Cell["value"];
   cell: ExcelJS.Cell;
   conditionalStyle: CellStyle;
   styleResult: {
     bgColor?: string;
   };
-}[][];
+};
+
+type WorksheetData = WorksheetDataCell[][];
 
 type WorksheetWithFormattings = ExcelJS.Worksheet & {
   conditionalFormattings: any;
@@ -88,17 +96,13 @@ export class Tagged extends Parser {
     for (const worksheet of workbook.worksheets as WorksheetWithFormattings[]) {
       // Convert ExcelJS format to compatible format for existing parseWorksheet method
       const data: WorksheetData = [];
-      const conditionalFormattings = worksheet.conditionalFormattings;
+
+      timer.start('worksheet');
 
       worksheet.eachRow((row, rowNumber) => {
-        const rowData: WorksheetData[number] = [];
+        const rowData: WorksheetDataCell[] = [];
         row.eachCell((cell: any, colNumber) => {
-          const conditionalStyle = calculateCellConditionalStyle(
-            cell,
-            conditionalFormattings
-          );
-
-          const tmpCell = {
+          const tmpCell: WorksheetDataCell = {
             value:
               typeof cell.value === "object" ? cell.value.result : cell.value,
             cell,
@@ -106,22 +110,49 @@ export class Tagged extends Parser {
             styleResult: {},
           };
 
-          if (conditionalStyle && conditionalStyle?.fill?.bgColor) {
-            tmpCell.conditionalStyle = conditionalStyle;
-            tmpCell.styleResult = {
-              bgColor: colorConverter(conditionalStyle?.fill?.bgColor),
-            };
+          if (this.config.calculateConditionalStyle) {
+            this.calculateConditionalStyle(
+              tmpCell,
+              cell,
+              worksheet,
+              colorConverter
+            );
           }
 
           rowData[colNumber - 1] = tmpCell;
         });
         data.push(rowData);
       });
+
+      timer.stop('worksheet');
+
+      console.log("finished parsing data: " + data.length + " rows");
+
       this.parseWorksheet(data);
     }
 
+    timer.printStats();
+
     return this.datasheets;
   }
+
+  calculateConditionalStyle = (
+    tmpCell: WorksheetDataCell,
+    cell: ExcelJS.Cell,
+    worksheet: WorksheetWithFormattings,
+    colorConverter: ColorConverter
+  ) => {
+    const conditionalStyle = calculateCellConditionalStyle(
+      cell,
+      worksheet.conditionalFormattings
+    );
+    if (conditionalStyle && conditionalStyle?.fill?.bgColor) {
+      tmpCell.conditionalStyle = conditionalStyle;
+      tmpCell.styleResult = {
+        bgColor: colorConverter(conditionalStyle?.fill?.bgColor),
+      };
+    }
+  };
 
   // async fromXlsxNode(file: string): Promise<Datasheet[]> {
   //   this.file = path.basename(file);
@@ -258,9 +289,9 @@ export class Tagged extends Parser {
   };
 
   private isRowEmpty = (row: WorksheetData[number]): boolean => {
-    return !row.some(cell => {
+    return !row.some((cell) => {
       const value = cell?.value;
-      return value !== null && value !== undefined && value !== '';
+      return value !== null && value !== undefined && value !== "";
     });
   };
 
@@ -316,9 +347,9 @@ export class Tagged extends Parser {
 
         table.header = currentHeader;
 
-        if((secondCell !== this.metaKey)) {
+        if (secondCell !== this.metaKey) {
           const styleResults = row.map((cell) => cell.styleResult?.bgColor);
-          if(styleResults.some(styleResult => styleResult !== undefined)) {
+          if (styleResults.some((styleResult) => styleResult !== undefined)) {
             table.meta.push({
               key: "styleResults",
               value: secondCell.toString(),
@@ -395,41 +426,43 @@ export class Tagged extends Parser {
     return body.map((row) => [row[1], ...row.slice(slice.start, slice.end)]);
   };
 
-  private sliceTableMeta = (tableMeta: TableMeta[], slice: Slice, header: any[]): RawResultMeta[] => {
-    return tableMeta.map(meta => {
-      const result: RawResultMeta = {
-        key: meta.key,
-        label: meta.value
-      };
+  private sliceTableMeta = (
+    tableMeta: TableMeta[],
+    slice: Slice,
+    header: any[]
+  ): RawResultMeta[] => {
+    return tableMeta
+      .map((meta) => {
+        const result: RawResultMeta = {
+          key: meta.key,
+          label: meta.value,
+        };
 
-      if (meta.data) {
-        result.data = ['Meta', ...meta.data
-          .slice(slice.start, slice.end)
-        ];
-      }
-
-      if (meta.info) {
-        const info = meta.info
-          .slice(slice.start, slice.end)
-
-        if(info.find(infoVal => infoVal !== undefined)) {
-          const info: any = []
-          for(let c = slice.start; c < slice.end; c++) {
-            if(meta.info[c]) {
-              info.push({
-                key: meta.key,
-                value: header[c],
-                info: meta.info[c]
-              })
-            }
-          }
-          result.info = ['Info', ...info]
+        if (meta.data) {
+          result.data = ["Meta", ...meta.data.slice(slice.start, slice.end)];
         }
-      }
-      return result;
-    }).filter(meta => meta.data || meta.info);
-  };
 
+        if (meta.info) {
+          const info = meta.info.slice(slice.start, slice.end);
+
+          if (info.find((infoVal) => infoVal !== undefined)) {
+            const info: any = [];
+            for (let c = slice.start; c < slice.end; c++) {
+              if (meta.info[c]) {
+                info.push({
+                  key: meta.key,
+                  value: header[c],
+                  info: meta.info[c],
+                });
+              }
+            }
+            result.info = ["Info", ...info];
+          }
+        }
+        return result;
+      })
+      .filter((meta) => meta.data || meta.info);
+  };
 
   private createTableInfo = (table: TableData, slice: Slice): InfoItem[] => {
     const baseInfo: InfoItem[] = [

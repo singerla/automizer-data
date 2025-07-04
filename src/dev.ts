@@ -7,7 +7,7 @@ import { Tagged } from "./parser/tagged";
 
 const run = async () => {
   const tmpDir = `${__dirname}/../__test__/tmp`;
-  const filename = `${__dirname}/../__test__/data/tbsc-test.xlsx`;
+  const filename = `${__dirname}/../__test__/data/test.xlsx`;
 
   const store = new Store(new PrismaClient(), {
     filename: filename,
@@ -28,6 +28,7 @@ const run = async () => {
     metaMap: {},
     skipRows: [],
     tagsMarker: "@Tags",
+    calculateConditionalStyle: true,
     renderRow: (row) => {
       return row.map(cell => {
         if(cell === ' ') {
@@ -51,7 +52,7 @@ const run = async () => {
 
   const parse = new Tagged(config);
   const datasheets = await parse.fromXlsx(filename);
-  vd(datasheets);
+  vd(datasheets.length);
 
   // const summary = await store
   //   .run(datasheets)

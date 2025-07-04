@@ -2,10 +2,19 @@
 import ExcelJS from "exceljs";
 import { extractThemeColorsFromXML } from "./themeParser";
 
+interface ExcelColor {
+  indexed?: number;
+  theme?: number;
+  tint?: number;
+  argb?: string;
+}
+
+export type ColorConverter = (color: ExcelColor) => string;
+
 export function createColorConverter(
   workbook: ExcelJS.Workbook,
   indexedColors: string[]
-) {
+):ColorConverter {
   const workbookThemeColors = extractThemeColorsFromXML(workbook);
 
   return function convertToARGB(color: {
