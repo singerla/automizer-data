@@ -47,8 +47,9 @@
     "lodash": "^4.17.21",
     "mysql2": "^3.9.6",
     "node-xlsx": "^0.21.0",
-    "pptx-automizer": "^0.6.6",
-    "typescript": "5.1.6"
+    "pptx-automizer": "^0.7.2",
+    "typescript": "5.1.6",
+    "@xmldom/xmldom": "^0.9.7"
   },
   "engines": {
     "node": ">=12.2.0"

@@ -969,10 +969,10 @@
   dependencies:
     "@types/node" "*"
 
-"@xmldom/xmldom@^0.9.4":
-  version "0.9.7"
-  resolved "https://registry.yarnpkg.com/@xmldom/xmldom/-/xmldom-0.9.7.tgz#f21bebdcde4af682a810062b14585c89bb7fab07"
-  integrity sha512-syvR8iIJjpTZ/stv7l89UAViwGFh6lbheeOaqSxkYx9YNmIVvPTRH+CT/fpykFtUx5N+8eSMDRvggF9J8GEPzQ==
+"@xmldom/xmldom@^0.9.6", "@xmldom/xmldom@^0.9.7":
+  version "0.9.8"
+  resolved "https://registry.yarnpkg.com/@xmldom/xmldom/-/xmldom-0.9.8.tgz#1471e82bdff9e8f20ee8bbe60d4ffa8a516e78d8"
+  integrity sha512-p96FSY54r+WJ50FIOsCOjyj/wavs8921hG5+kVMmZgKcvIKxMXHTrjNJvRgWa/zuX3B6t2lijLNFaOyuxUH+2A==
 
 abbrev@1:
   version "1.1.1"
@@ -3066,12 +3066,12 @@ pkg-dir@^4.2.0:
   dependencies:
     find-up "^4.0.0"
 
-pptx-automizer@^0.6.6:
-  version "0.6.6"
-  resolved "https://registry.yarnpkg.com/pptx-automizer/-/pptx-automizer-0.6.6.tgz#13fb0e290813bc3c199cff27c16fdd06975c0dae"
-  integrity sha512-BGxu4Iy0usfEduEawKwxsORNDHcqOPvGU6Px+KgiXLK6/eisEeI+P0TpwxASjeFKB8B2Qw7ajYkEH1HKPiy48g==
+pptx-automizer@^0.7.2:
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/pptx-automizer/-/pptx-automizer-0.7.2.tgz#61d3b90c3df9a054e426a33178a53c9f383cc662"
+  integrity sha512-FfNZEYJIMJ2SNejUmid+ANP7DQ/aIlRR90Wo/Kc52q3f1b1AVQhuzvpxtfH04yyYwp2NzDhCDYLAktSo0aW/2Q==
   dependencies:
-    "@xmldom/xmldom" "^0.9.4"
+    "@xmldom/xmldom" "^0.9.6"
     extract-zip "^2.0.1"
     jszip "^3.10.1"
     pptxgenjs "^3.12.0"
