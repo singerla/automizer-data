@@ -11,6 +11,7 @@ import {
   RawRow,
   RawTable,
   ResultCell,
+  SplitDatasheetsRule,
 } from "../types/types";
 
 export class Parser {
@@ -95,6 +96,10 @@ export class Parser {
           meta: subgroup.meta,
         });
       });
+    }
+
+    if (this.config.renderDatasheets) {
+      this.datasheets = this.config.renderDatasheets(this.datasheets, this);
     }
   }
 
@@ -225,14 +230,14 @@ export class Parser {
       const resultMeta: RawResultMeta = {
         key: meta.key,
         label: meta.label,
+      };
+
+      if (meta.data) {
+        resultMeta.data = meta.data?.slice(slice.start + 1, slice.end + 1);
       }
 
-      if(meta.data) {
-        resultMeta.data = meta.data?.slice(slice.start + 1, slice.end + 1)
-      }
-
-      if(meta.info) {
-        resultMeta.info = meta.info?.slice(slice.start + 1, slice.end + 1)
+      if (meta.info) {
+        resultMeta.info = meta.info?.slice(slice.start + 1, slice.end + 1);
       }
 
       rawTable.meta.push(resultMeta);
@@ -290,5 +295,86 @@ export class Parser {
         info: info,
       });
     }
+  };
+
+  // Called by `renderDatasheets`
+  splitDatasheets = (
+    datasheets: Datasheet[],
+    rules: SplitDatasheetsRule[]
+  ): Datasheet[] => {
+    const drops = [];
+    this.datasheets.forEach((datasheet, d) => {
+      rules.forEach((rule) => {
+        const matchMeta = datasheet.meta
+          .filter((meta) => meta.key === rule.matchMeta.key)
+          .filter((meta) => rule.matchMeta.value(meta));
+
+        if (!matchMeta.length) {
+          return;
+        }
+
+        switch (rule.method) {
+          case "extractRows":
+            this.extractRows(rule, datasheet, datasheets, matchMeta, d, drops);
+        }
+      });
+    });
+    return datasheets.filter((_, d) => !drops.includes(d));
+  };
+
+  extractRows = (
+    rule: SplitDatasheetsRule,
+    datasheet: Datasheet,
+    datasheets: Datasheet[],
+    matchMeta: RawResultMeta[],
+    d: number,
+    drops: number[]
+  ): Datasheet[] => {
+    const keepMetaKeys = ['base']
+    const matchRows = matchMeta.map((matchedMeta) => matchedMeta.label);
+
+    if (matchRows.length) {
+      const matchedRows = [];
+      const matchedData = [];
+
+      datasheet.rows.forEach((row, r) => {
+        if (matchRows.includes(row)) {
+          matchedRows.push(row);
+          matchedData.push(datasheet.data[r]);
+        }
+      });
+
+      const addDataSheet = {
+        tags: [...datasheet.tags],
+        columns: [...datasheet.columns],
+        rows: matchedRows,
+        data: matchedData,
+        meta: [
+          ...datasheet.meta.filter((meta) => {
+            return matchedRows.includes(meta.label) || keepMetaKeys.includes(meta.key);
+          }),
+        ],
+      };
+
+      addDataSheet.tags.push(...rule.tags);
+
+      datasheets.push(addDataSheet);
+      drops.push(d);
+    }
+    return datasheets;
+  };
+
+  clearDatasheetMeta = (
+    datasheets: Datasheet[],
+    stripMetaKeys: string[]
+  ): Datasheet[] => {
+    return datasheets.map((datasheet) => {
+      return {
+        ...datasheet,
+        meta: datasheet.meta.filter(
+          (meta) => !stripMetaKeys.includes(meta.key)
+        ),
+      };
+    });
   };
 }

@@ -14,13 +14,15 @@ import {
 import {
   ColorConverter,
   createColorConverter,
+  ExcelColor,
 } from "../helper/convertWorkbookColors";
 import { indexedColors } from "../helper/defaultThemeColors";
 import { TimeTracker } from "../helper/timeTracker";
 
 export const timer = new TimeTracker();
 
-const path = require("path");
+import path from "path";
+import { vd } from "../helper";
 
 type WorksheetDataCell = {
   value: ExcelJS.Cell["value"];
@@ -28,6 +30,7 @@ type WorksheetDataCell = {
   conditionalStyle: CellStyle;
   styleResult: {
     bgColor?: string;
+    fontColor?: string;
   };
 };
 
@@ -71,11 +74,27 @@ interface InfoItem {
   key: string;
 }
 
+interface RowStyle {
+  bgColor?: string;
+}
+
+interface RowStyle {
+  bgColor?: string;
+}
+
+interface MetaEntry {
+  key: string;
+  value: string;
+  info: any[];
+}
+
+
 export class Tagged extends Parser {
   private mapCategories: any;
   private tagsMarker: string;
   private metaKey: string;
   private totalLabel: string;
+  private colorConverter: ColorConverter;
 
   constructor(config: ParserOptions) {
     super(config);
@@ -90,7 +109,7 @@ export class Tagged extends Parser {
       richTextParse: true,
     } as any);
 
-    const colorConverter = createColorConverter(workbook, indexedColors.new);
+    this.colorConverter = createColorConverter(workbook, indexedColors.new);
 
     for (const worksheet of workbook.worksheets as WorksheetWithFormattings[]) {
       // Convert ExcelJS format to compatible format for existing parseWorksheet method
@@ -110,12 +129,7 @@ export class Tagged extends Parser {
           };
 
           if (this.config.calculateConditionalStyle) {
-            this.calculateConditionalStyle(
-              tmpCell,
-              cell,
-              worksheet,
-              colorConverter
-            );
+            this.calculateConditionalStyle(tmpCell, cell, worksheet);
           }
 
           rowData[colNumber - 1] = tmpCell;
@@ -138,33 +152,27 @@ export class Tagged extends Parser {
   calculateConditionalStyle = (
     tmpCell: WorksheetDataCell,
     cell: ExcelJS.Cell,
-    worksheet: WorksheetWithFormattings,
-    colorConverter: ColorConverter
+    worksheet: WorksheetWithFormattings
   ) => {
     const conditionalStyle = calculateCellConditionalStyle(
       cell,
       worksheet.conditionalFormattings
     );
-    if (conditionalStyle && conditionalStyle?.fill?.bgColor) {
+    if (conditionalStyle) {
       tmpCell.conditionalStyle = conditionalStyle;
-      tmpCell.styleResult = {
-        bgColor: colorConverter(conditionalStyle?.fill?.bgColor),
-      };
+      tmpCell.styleResult = {};
+      if (conditionalStyle?.fill?.bgColor) {
+        tmpCell.styleResult.bgColor = this.colorConverter(
+          conditionalStyle?.fill.bgColor
+        );
+      }
+      if (conditionalStyle?.font?.color) {
+        tmpCell.styleResult.fontColor = this.colorConverter(
+          conditionalStyle?.font.color
+        );
+      }
     }
   };
-
-  // async fromXlsxNode(file: string): Promise<Datasheet[]> {
-  //   this.file = path.basename(file);
-  //
-  //   const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file));
-  //   workSheetsFromBuffer.forEach((workSheet) => {
-  //     this.parseWorksheet(workSheet.data);
-  //   });
-  //
-  //   // vd(this.datasheets)
-  //
-  //   return this.datasheets;
-  // }
 
   parseWorksheet(data: WorksheetData) {
     console.log("File rows count: " + String(data.length));
@@ -346,17 +354,6 @@ export class Tagged extends Parser {
 
         table.header = currentHeader;
 
-        if (secondCell !== this.metaKey) {
-          const styleResults = row.map((cell) => cell.styleResult?.bgColor);
-          if (styleResults.some((styleResult) => styleResult !== undefined)) {
-            table.meta.push({
-              key: "styleResults",
-              value: secondCell.toString(),
-              info: styleResults,
-            });
-          }
-        }
-
         // Meta row
         if (secondCell === this.metaKey) {
           table.meta.push({
@@ -367,6 +364,7 @@ export class Tagged extends Parser {
         } else {
           // Regular data row
           table.body.push(row.map((cell) => cell.value));
+          this.processTableMeta(row, secondCell, table);
         }
       }
     });
@@ -378,7 +376,7 @@ export class Tagged extends Parser {
     section: string,
     topic: string,
     vartitle: string,
-    tables: TableData[]
+    tables: TableData[],
   ): TableData => {
     let table = tables.find(
       (t) =>
@@ -399,6 +397,61 @@ export class Tagged extends Parser {
 
     return table;
   };
+
+  processTableMeta(
+    row: any[],
+    secondCell: any,
+    table: TableData
+  ): void {
+    const styleResultsEntry = this.processStyleResults(row, secondCell);
+    if (styleResultsEntry) {
+      table.meta.push(styleResultsEntry);
+    }
+
+    const rowStyleEntry = this.processRowStyles(row, secondCell);
+    if (rowStyleEntry) {
+      table.meta.push(rowStyleEntry);
+    }
+  }
+
+  processStyleResults(row: any[], secondCell: any): MetaEntry | null {
+    const styleResults = row.map(cell => cell.styleResult);
+
+    if (!styleResults.some(styleResult => Object.keys(styleResult).length)) {
+      return null;
+    }
+
+    return {
+      key: "styleResults",
+      value: secondCell.toString(),
+      info: styleResults,
+    };
+  }
+
+  processRowStyles(row: any[], secondCell: any) {
+    const rowStyle = this.extractRowStyle(row[1].cell.style);
+
+    if (!Object.keys(rowStyle).length) {
+      return null;
+    }
+
+    const styleResults = row.map(cell => rowStyle);
+
+    return {
+      key: "rowStyle",
+      value: secondCell.toString(),
+      info: styleResults,
+    };
+  }
+
+  extractRowStyle(cellStyle: any): RowStyle {
+    const rowStyle: RowStyle = {};
+
+    if (cellStyle?.fill?.fgColor) {
+      rowStyle.bgColor = this.colorConverter(cellStyle.fill.fgColor);
+    }
+    return rowStyle;
+  }
 
   sliceTables = (
     allTables: TableData[],

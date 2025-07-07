@@ -218,9 +218,10 @@ export class Gesstabs extends Parser {
     cells.forEach((cell, c) => {
       const split = cell.split(headerSeparator);
       if (split[1]) {
+        // ToDo: Needed to switch this to make it tagged-style compatible
         signiMeta.info?.push({
-          key: split[0],
-          value: split[1],
+          key: split[1],
+          value: split[0],
         });
         cells[c] = split[0];
       }

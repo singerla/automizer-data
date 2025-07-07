@@ -57,6 +57,10 @@ export type ParserOptions = {
     tags: DataTag[],
     parser: ParserType
   ) => void;
+  renderDatasheets?: (
+    datasheets: Datasheet[],
+    parser: ParserType
+  ) => Datasheet[];
   metaMap: MetaMap;
   significance?: ParserOptionsSignificance;
   overcodes?: Overcodes[];
@@ -72,6 +76,18 @@ export type ParserOptions = {
   tagsMarker?: string;
   calculateConditionalStyle?: boolean;
 };
+
+interface MatchMeta {
+  key: string;
+  value: (meta: RawResultMeta) => boolean;
+}
+
+export interface SplitDatasheetsRule {
+  matchMeta: MatchMeta;
+  stripMetaKeys?: string[];
+  method: "extractRows"; // Can be expanded with more methods if needed
+  tags: DataTag[];
+}
 
 export type ParserOptionsMySQL = {
   connection: mysql.ConnectionOptions;
@@ -458,7 +474,7 @@ export type RawResultMeta = {
 export type RawResultInfo = {
   key: string;
   value: string;
-  info?: string;
+  info?: any;
 };
 
 export type RawResultNestedParent = {
