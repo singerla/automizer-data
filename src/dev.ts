@@ -57,52 +57,55 @@ const run = async () => {
     },
     renderDatasheets: (datasheets: Datasheet[], parser: any) => {
       const stripMetaKeys = ["rowStyle"];
+      const matchTag =
+        {
+          category: "Variable",
+          value: "P1 6-9",
+        }
+      ;
+      const method = "extractRows";
+      const targetCategory = "Thema";
+      const matchByBgColor = (color) => {
+        return {
+          key: "rowStyle",
+            value: (meta) => {
+              const first = meta.info[0];
+              return first?.info?.bgColor === color;
+            }
+        }
+      };
+
       const rules: SplitDatasheetsRule[] = [
         {
-          matchMeta: {
-            key: "rowStyle",
-            value: (meta: RawResultMeta) => {
-              const first = meta.info[0];
-              return first?.info?.bgColor === "FFf2f2f2";
-            },
-          },
-          method: "extractRows",
+          matchMeta: matchByBgColor("FFf2f2f2"),
+          matchTag,
+          method,
           tags: [
             {
-              category: "Info",
+              category: targetCategory,
               value: "Others",
             },
           ],
         },
         {
-          matchMeta: {
-            key: "rowStyle",
-            value: (meta: RawResultMeta) => {
-              const first = meta.info[0];
-              return first?.info?.bgColor === "FFb3b1a9";
-            },
-          },
-          method: "extractRows",
+          matchMeta: matchByBgColor("FFb3b1a9"),
+          matchTag,
+          method,
           tags: [
             {
-              category: "Info",
-              value: "Top Sender",
+              category: targetCategory,
+              value: "Top",
             },
           ],
         },
         {
-          matchMeta: {
-            key: "rowStyle",
-            value: (meta: RawResultMeta) => {
-              const first = meta.info[0];
-              return first?.info?.bgColor === "FFfcd5b5";
-            },
-          },
-          method: "extractRows",
+          matchMeta: matchByBgColor("FFfcd5b5"),
+          matchTag,
+          method,
           tags: [
             {
-              category: "Info",
-              value: "Super Sender",
+              category: targetCategory,
+              value: "Schrott",
             },
           ],
         },
@@ -117,7 +120,7 @@ const run = async () => {
 
   const parse = new Tagged(config);
   const datasheets = await parse.fromXlsx(filename);
-  vd(datasheets);
+  vd(datasheets.length);
 
   // const summary = await store
   //   .run(datasheets)

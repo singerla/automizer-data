@@ -84,7 +84,7 @@ interface MatchMeta {
 
 export interface SplitDatasheetsRule {
   matchMeta: MatchMeta;
-  stripMetaKeys?: string[];
+  matchTag?: DataTag;
   method: "extractRows"; // Can be expanded with more methods if needed
   tags: DataTag[];
 }

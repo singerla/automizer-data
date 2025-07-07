@@ -305,6 +305,17 @@ export class Parser {
     const drops = [];
     this.datasheets.forEach((datasheet, d) => {
       rules.forEach((rule) => {
+        const matchTag = datasheet.tags.find(
+          (tag) =>
+            tag.category === rule.matchTag.category &&
+            tag.value === rule.matchTag.value
+        );
+        const tagMatches = !rule.matchTag || matchTag?.category
+
+        if(!tagMatches) {
+          return;
+        }
+
         const matchMeta = datasheet.meta
           .filter((meta) => meta.key === rule.matchMeta.key)
           .filter((meta) => rule.matchMeta.value(meta));
