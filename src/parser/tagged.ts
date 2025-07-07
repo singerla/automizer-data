@@ -16,7 +16,6 @@ import {
   createColorConverter,
 } from "../helper/convertWorkbookColors";
 import { indexedColors } from "../helper/defaultThemeColors";
-import { vd } from "../helper";
 import { TimeTracker } from "../helper/timeTracker";
 
 export const timer = new TimeTracker();
@@ -97,7 +96,7 @@ export class Tagged extends Parser {
       // Convert ExcelJS format to compatible format for existing parseWorksheet method
       const data: WorksheetData = [];
 
-      timer.start('worksheet');
+      timer.start("worksheet");
 
       worksheet.eachRow((row, rowNumber) => {
         const rowData: WorksheetDataCell[] = [];
@@ -124,7 +123,7 @@ export class Tagged extends Parser {
         data.push(rowData);
       });
 
-      timer.stop('worksheet');
+      timer.stop("worksheet");
 
       console.log("finished parsing data: " + data.length + " rows");
 

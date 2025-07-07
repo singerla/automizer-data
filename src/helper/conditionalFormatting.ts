@@ -123,26 +123,31 @@ function parseAddress(address: string): { col: string; row: number } {
 }
 
 function isAddressInRange(address: string, rangeStr: string): boolean {
-  // Split range into start and end addresses
-  const [start, end] = rangeStr.split(":");
+  // Split multiple ranges by space and check each range
+  const ranges = rangeStr.split(" ");
 
-  // Parse addresses without regex
-  const cell = parseAddress(address);
-  const startAddr = parseAddress(start);
-  const endAddr = parseAddress(end);
+  return ranges.some((range) => {
+    // Split single range into start and end addresses
+    const [start, end] = range.split(":");
 
-  // Convert columns only once and use cached values
-  const cellColNum = colToNumber(cell.col);
-  const startColNum = colToNumber(startAddr.col);
-  const endColNum = colToNumber(endAddr.col);
+    // Parse addresses without regex
+    const cell = parseAddress(address);
+    const startAddr = parseAddress(start);
+    const endAddr = parseAddress(end);
 
-  // Check if cell is within range
-  return (
-    cellColNum >= startColNum &&
-    cellColNum <= endColNum &&
-    cell.row >= startAddr.row &&
-    cell.row <= endAddr.row
-  );
+    // Convert columns only once and use cached values
+    const cellColNum = colToNumber(cell.col);
+    const startColNum = colToNumber(startAddr.col);
+    const endColNum = colToNumber(endAddr.col);
+
+    // Check if cell is within this range
+    return (
+      cellColNum >= startColNum &&
+      cellColNum <= endColNum &&
+      cell.row >= startAddr.row &&
+      cell.row <= endAddr.row
+    );
+  });
 }
 
 function doesRuleMatch(
