@@ -307,8 +307,8 @@ export class Parser {
       rules.forEach((rule) => {
         const matchTag = datasheet.tags.find(
           (tag) =>
-            tag.category === rule.matchTag.category &&
-            tag.value === rule.matchTag.value
+            tag.category === rule.matchTag?.category &&
+            tag.value === rule.matchTag?.value
         );
         const tagMatches = !rule.matchTag || matchTag?.category
 
