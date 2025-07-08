@@ -78,10 +78,6 @@ interface RowStyle {
   bgColor?: string;
 }
 
-interface RowStyle {
-  bgColor?: string;
-}
-
 interface MetaEntry {
   key: string;
   value: string;
@@ -417,6 +413,9 @@ export class Tagged extends Parser {
   processStyleResults(row: any[], secondCell: any): MetaEntry | null {
     const styleResults = row.map(cell => cell.styleResult);
 
+    // const styleResultsRaw = row.map(cell => cell.conditionalStyle);
+    // vd(styleResultsRaw)
+
     if (!styleResults.some(styleResult => Object.keys(styleResult).length)) {
       return null;
     }
@@ -450,6 +449,7 @@ export class Tagged extends Parser {
     if (cellStyle?.fill?.fgColor) {
       rowStyle.bgColor = this.colorConverter(cellStyle.fill.fgColor);
     }
+
     return rowStyle;
   }
 

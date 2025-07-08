@@ -49,7 +49,7 @@ export const indexedColorsNew = [
   'FFFF99FF', // 47 Pink
   'FF99CCFF', // 48 Light Blue
   'FFFF99CC', // 49 Light Rose
-  'FFCC99FF', // 50 Light Lavender
+  'FF99CC00', // 50 Light Lavender // mod: CC99FF
   'FFFFCC99', // 51 Light Orange
   'FF3366FF', // 52 Azure
   'FF33CCCC', // 53 Aqua
