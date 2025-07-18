@@ -210,6 +210,15 @@ export type QueryOptions = {
   cache?: ICache;
   tagsCache?: ITagsCache;
   selectionValidator?: (tags: Tag[]) => boolean;
+  api?: {
+    driver: 'DuckDB'
+    endpoint: string,
+    mapCategoryIds: {
+      row: number,
+      column: number,
+      file: number
+    }
+  },
 };
 
 export type CategoryCount = {

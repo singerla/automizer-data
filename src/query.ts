@@ -1,5 +1,10 @@
 import { PrismaClient, Tag } from "./client";
-import { getNestedClause, vd } from "./helper";
+import {
+  extractTagGroups,
+  generateTagCombinations,
+  getNestedClause,
+  vd,
+} from "./helper";
 import _ from "lodash";
 
 import {
@@ -30,9 +35,12 @@ import Points from "./points";
 import Modelizer from "./modelizer/modelizer";
 import Convert from "./convert";
 import Keys from "./keys";
+import { DuckDBConnector } from "./external/DuckDB";
 
 export default class Query {
   prisma: PrismaClient | any;
+  private duckDBConnector: DuckDBConnector;
+
   grid: DataGrid;
   options: QueryOptions;
   modelizer: Modelizer;
@@ -45,9 +53,11 @@ export default class Query {
   private cache: ICache;
 
   private selectionValidator: QueryOptions["selectionValidator"];
+  private api: QueryOptions["api"];
 
   constructor(prisma: PrismaClient | any) {
     this.prisma = prisma;
+    this.duckDBConnector = new DuckDBConnector();
 
     return this;
   }
@@ -74,6 +84,7 @@ export default class Query {
     this.selector = options.selector || this.selector;
 
     this.selectionValidator = options.selectionValidator;
+    this.api = options.api;
 
     return this;
   }
@@ -169,7 +180,11 @@ export default class Query {
         selectionTags = await this.getTagInfo(tagIds);
         this.validateSelection(selectionTags);
 
-        dataSheets = await this.findSheets(selectionTags, isNonGreedy);
+        if (this.api) {
+          dataSheets = await this.findInDuckDB(selectionTags);
+        } else {
+          dataSheets = await this.findSheets(selectionTags, isNonGreedy);
+        }
 
         this.cache?.set(
           tagIds,
@@ -226,6 +241,40 @@ export default class Query {
       }
     }
     return true;
+  }
+
+  async findInDuckDB(tags: Tag[]): Promise<Datasheet[]> {
+    // Extract row_var, col_var, and file_path from tags
+    if (!tags || tags.length === 0) {
+      console.error("No tags provided for DuckDB query");
+      return [];
+    }
+
+    const groupedTags = extractTagGroups(tags, this.api.mapCategoryIds);
+    vd(groupedTags);
+    // Then, generate all possible combinations
+    const combinations = generateTagCombinations(groupedTags);
+    vd(combinations);
+
+    const datasheets = [];
+    for (const combination of combinations) {
+      const { row, column, file } = combination;
+      console.log(
+        `Row: ${row.name}, Column: ${column.name}, File: ${file.name}`
+      );
+
+      const datasheet = await this.duckDBConnector.query(
+        row,
+        column,
+        file,
+        tags as any
+      );
+      if (datasheet) {
+        datasheets.push(datasheet);
+      }
+    }
+
+    return datasheets;
   }
 
   async findSheets(tags: Tag[], isNonGreedy: boolean): Promise<Datasheet[]> {

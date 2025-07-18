@@ -34,6 +34,84 @@ export const getTagGroupsByCategory = (selectionTags: Tag[]): PrismaId[][] => {
   return Object.values(groups);
 };
 
+/**
+ * Groups tags by their category types (row, column, file).
+ * Uses category IDs to identify which tags belong to which group.
+ *
+ * @param tags - Array of tags to be grouped
+ * @param categoryMapping - Mapping of category IDs to types (row, column, file)
+ * @returns An object containing grouped tags by type
+ */
+export function extractTagGroups(
+  tags: Tag[],
+  categoryMapping: {
+    row: number,
+    column: number,
+    file: number
+  }
+): {
+  row: Tag[],
+  column: Tag[],
+  file: Tag[]
+} {
+  // Initialize result with empty arrays
+  const result = {
+    row: [] as Tag[],
+    column: [] as Tag[],
+    file: [] as Tag[]
+  };
+
+  // Destructure category IDs from the mapping
+  const { row: rowCatId, column: columnCatId, file: fileCatId } = categoryMapping;
+
+  // Group tags by their category IDs
+  tags.forEach(tag => {
+    if (tag.categoryId === rowCatId) {
+      result.row.push(tag);
+    } else if (tag.categoryId === columnCatId) {
+      result.column.push(tag);
+    } else if (tag.categoryId === fileCatId) {
+      result.file.push(tag);
+    }
+    // Tags with other category IDs are ignored
+  });
+
+  return result;
+}
+
+/**
+ * Generates all possible combinations of row, column, and file tags.
+ * Takes the grouped tags from extractTagGroups and returns an array of all possible combinations.
+ *
+ * @param groupedTags - Object containing row, column, and file tags
+ * @returns Array of combinations, each containing one row, one column, and one file tag
+ */
+export function generateTagCombinations(
+  groupedTags: {
+    row: Tag[],
+    column: Tag[],
+    file: Tag[]
+  }
+): { row: Tag, column: Tag, file: Tag }[] {
+  const { row, column, file } = groupedTags;
+  const combinations: { row: Tag, column: Tag, file: Tag }[] = [];
+
+  // Generate all possible combinations
+  for (const rowTag of row) {
+    for (const columnTag of column) {
+      for (const fileTag of file) {
+        combinations.push({
+          row: rowTag,
+          column: columnTag,
+          file: fileTag
+        });
+      }
+    }
+  }
+
+  return combinations;
+}
+
 export const clauseCallback = (ids: PrismaId[]): NestedClause => {
   const selector = ids.length > 1 ? { in: ids } : ids[0];
   return {
