@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { vd } from "../helper";
 
 export interface CellStyle {
   fill?: {
@@ -76,6 +77,9 @@ export function calculateCellConditionalStyle(
   const resultStyle: CellStyle = {};
 
   for (const rule of matchingRules) {
+    if (!rule.style) {
+      continue;
+    }
     if (rule.style.fill) resultStyle.fill = { ...rule.style.fill };
     if (rule.style.font) resultStyle.font = { ...rule.style.font };
     if (rule.style.alignment)
@@ -122,13 +126,24 @@ function parseAddress(address: string): { col: string; row: number } {
   };
 }
 
+function parseRange(range: string): { start: string; end: string } {
+  if (range.includes(":")) {
+    const [start, end] = range.split(":");
+    return { start, end };
+  } else {
+    // If there's no colon, it's a single cell reference
+    return { start: range, end: range };
+  }
+}
+
 function isAddressInRange(address: string, rangeStr: string): boolean {
   // Split multiple ranges by space and check each range
   const ranges = rangeStr.split(" ");
 
   return ranges.some((range) => {
-    // Split single range into start and end addresses
-    const [start, end] = range.split(":");
+    // Before attempting to parse start and end, check if the range contains a colon
+    // If not, treat it as a single cell reference (start = end)
+    const { start, end } = parseRange(range);
 
     // Parse addresses without regex
     const cell = parseAddress(address);
