@@ -9,7 +9,7 @@ import { Parser } from "./parser";
 import ExcelJS from "exceljs";
 import {
   calculateCellConditionalStyle,
-  CellStyle,
+  CellStyle, getRuleGroups,
 } from "../helper/conditionalFormatting";
 import {
   ColorConverter,
@@ -107,10 +107,15 @@ export class Tagged extends Parser {
 
     this.colorConverter = createColorConverter(workbook, indexedColors.new);
 
+    timer.reset()
+
     for (const worksheet of workbook.worksheets as WorksheetWithFormattings[]) {
       // Convert ExcelJS format to compatible format for existing parseWorksheet method
       const data: WorksheetData = [];
 
+      const conditionalFormattings = getRuleGroups(worksheet.conditionalFormattings)
+
+      console.log('Reduced ' + worksheet.conditionalFormattings.length + ' conditionalFormattings to ' + conditionalFormattings.length)
       timer.start("worksheet");
 
       worksheet.eachRow((row, rowNumber) => {
@@ -125,7 +130,7 @@ export class Tagged extends Parser {
           };
 
           if (this.config.calculateConditionalStyle) {
-            this.calculateConditionalStyle(tmpCell, cell, worksheet);
+            this.calculateConditionalStyle(tmpCell, cell, conditionalFormattings);
           }
 
           rowData[colNumber - 1] = tmpCell;
@@ -148,11 +153,11 @@ export class Tagged extends Parser {
   calculateConditionalStyle = (
     tmpCell: WorksheetDataCell,
     cell: ExcelJS.Cell,
-    worksheet: WorksheetWithFormattings
+    cleanedConditionalFormattings: any
   ) => {
     const conditionalStyle = calculateCellConditionalStyle(
       cell,
-      worksheet.conditionalFormattings
+      cleanedConditionalFormattings
     );
     if (conditionalStyle) {
       tmpCell.conditionalStyle = conditionalStyle;

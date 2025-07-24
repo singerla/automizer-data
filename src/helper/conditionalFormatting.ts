@@ -1,6 +1,22 @@
 import ExcelJS from "exceljs";
 import { vd } from "../helper";
 
+interface NumericRef {
+  startColString: string;  // Original column letter (e.g., "A")
+  endColString: string;    // Original column letter (e.g., "Z")
+  startCol: number;        // Numeric column index (e.g., 1 for "A")
+  endCol: number;          // Numeric column index (e.g., 26 for "Z")
+  startRow: number;        // Row number
+  endRow: number;          // Row number
+}
+
+
+interface ConditionalFormatting {
+  ref: string;
+  numericRef: NumericRef;
+  rules: ConditionalFormattingRule[];
+}
+
 export interface CellStyle {
   fill?: {
     type?: string;
@@ -29,14 +45,221 @@ export interface CellStyle {
 interface ConditionalFormattingRule {
   type: string;
   operator: string;
+  priority: number;
+  timePeriod?: any;
+  percent?: any;
+  bottom?: any;
+  rank?: any;
+  aboveAverage?: any;
   formulae: string[];
   style: CellStyle;
-  priority: number;
 }
 
-interface ConditionalFormatting {
-  ref: string;
-  rules: ConditionalFormattingRule[];
+type RuleGroups = Map<
+  string,
+  {
+    refs: string[];
+    numericRefs: any[];
+    rules: ConditionalFormattingRule[];
+  }
+>;
+
+export function getRuleGroups(
+  conditionalFormattings: ConditionalFormatting[]
+): ConditionalFormatting[] {
+  // Create a map to group similar rules
+  const ruleGroups: RuleGroups = new Map();
+
+  if (!conditionalFormattings || conditionalFormattings.length === 0) {
+    return [];
+  }
+
+  // Process each formatting
+  for (const formatting of conditionalFormattings) {
+    // Create a fingerprint for each rule
+    const ruleFingerprints = formatting.rules.map((rule) => {
+      // Create a unique key for each rule excluding ref and priority
+      return JSON.stringify({
+        type: rule.type,
+        operator: rule.operator,
+        formulae: rule.formulae,
+        style: rule.style,
+        timePeriod: rule.timePeriod,
+        percent: rule.percent,
+        bottom: rule.bottom,
+        rank: rule.rank,
+        aboveAverage: rule.aboveAverage,
+      });
+    });
+
+    // Create a fingerprint for the entire rule set
+    const formattingKey = ruleFingerprints.sort().join("|");
+
+    // Get or create a group for this rule set
+    if (!ruleGroups.has(formattingKey)) {
+      ruleGroups.set(formattingKey, {
+        refs: [],
+        numericRefs: [],
+        rules: formatting.rules.map((rule) => ({ ...rule })), // Clone rules
+      });
+    }
+
+    const numericRef = parseRangeRef(formatting.ref);
+    // Add this ref to the group
+    ruleGroups.get(formattingKey)!.numericRefs.push(numericRef);
+    ruleGroups.get(formattingKey)!.refs.push(formatting.ref);
+  }
+
+  // Convert rule groups back to ConditionalFormatting[]
+  const mergedFormattings: ConditionalFormatting[] = [];
+
+  for (const group of ruleGroups.values()) {
+    // Merge adjacent regions for each group
+    const mergedRefs = mergeAdjacentRefs(group.numericRefs);
+
+    // Create conditional formatting for each merged ref
+    for (const mergedRef of mergedRefs) {
+      mergedFormattings.push({
+        ref: `${columnNumberToString(mergedRef.startCol)}${mergedRef.startRow}:${columnNumberToString(mergedRef.endCol)}${mergedRef.endRow}`,
+        numericRef: mergedRef,
+        rules: group.rules.map((rule, idx) => ({
+          ...rule,
+          priority: idx + 1 // Adjust priority if needed
+        }))
+      });
+    }
+  }
+
+  return mergedFormattings;
+}
+
+/**
+ * Merge adjacent numeric references
+ */
+function mergeAdjacentRefs(refs: NumericRef[]): NumericRef[] {
+  if (refs.length <= 1) return refs;
+
+  // Sort refs by start column and start row
+  const sortedRefs = refs.sort((a, b) =>
+    a.startCol !== b.startCol
+      ? a.startCol - b.startCol
+      : a.startRow - b.startRow
+  );
+
+  const mergedRefs: NumericRef[] = [sortedRefs[0]];
+
+  for (let i = 1; i < sortedRefs.length; i++) {
+    const lastMerged = mergedRefs[mergedRefs.length - 1];
+    const currentRef = sortedRefs[i];
+
+    // Check if references can be merged
+    const canMergeColumns =
+      currentRef.startCol <= lastMerged.endCol + 1 &&
+      currentRef.startRow === lastMerged.startRow &&
+      currentRef.endRow === lastMerged.endRow;
+
+    const canMergeRows =
+      currentRef.startCol === lastMerged.startCol &&
+      currentRef.endCol === lastMerged.endCol &&
+      currentRef.startRow <= lastMerged.endRow + 1;
+
+    if (canMergeColumns) {
+      // Extend the last merged ref's end column
+      lastMerged.endCol = Math.max(lastMerged.endCol, currentRef.endCol);
+    } else if (canMergeRows) {
+      // Extend the last merged ref's end row
+      lastMerged.endRow = Math.max(lastMerged.endRow, currentRef.endRow);
+    } else {
+      // Cannot merge, add as new ref
+      mergedRefs.push(currentRef);
+    }
+  }
+
+  return mergedRefs;
+}
+
+/**
+ * Convert column number to Excel column string (1 -> A, 27 -> AA)
+ */
+function columnNumberToString(columnNumber: number): string {
+  let columnString = '';
+  let dividend = columnNumber;
+  let modulo: number;
+
+  while (dividend > 0) {
+    modulo = (dividend - 1) % 26;
+    columnString = String.fromCharCode(65 + modulo) + columnString;
+    dividend = Math.floor((dividend - modulo) / 26);
+  }
+
+  return columnString;
+}
+
+
+/**
+ * Parse an Excel range reference into its components
+ */
+function parseRangeRef(ref: string): NumericRef | null {
+  // Split multiple ranges and just take the first one for now
+  const rangeParts = ref.split(" ")[0];
+  const [startRef, endRef] = rangeParts.split(":");
+
+  if (!startRef) return null;
+
+  // If no end reference, use start as end (single cell)
+  const end = endRef || startRef;
+
+  // Parse column letters and row numbers
+  let startColString = "";
+  let i = 0;
+  while (i < startRef.length && /[A-Z]/i.test(startRef[i])) {
+    startColString += startRef[i++];
+  }
+  const startRow = parseInt(startRef.substring(i));
+
+  let endColString = "";
+  i = 0;
+  while (i < end.length && /[A-Z]/i.test(end[i])) {
+    endColString += end[i++];
+  }
+  const endRow = parseInt(end.substring(i));
+
+  if (isNaN(startRow) || isNaN(endRow)) return null;
+
+  // Convert column letters to numeric indices
+  const startCol = colToNumber(startColString);
+  const endCol = colToNumber(endColString);
+
+  return {
+    startColString,
+    endColString,
+    startCol,
+    endCol,
+    startRow,
+    endRow,
+  };
+}
+
+
+/**
+ * Convert Excel column letter to numeric index (A=1, B=2, Z=26, AA=27, etc.)
+ */
+const columnCache: { [key: string]: number } = {};
+
+function colToNumber(col: string): number {
+  if (columnCache[col] !== undefined) {
+    return columnCache[col];
+  }
+
+  const length = col.length;
+  let number = 0;
+
+  for (let i = 0; i < length; i++) {
+    number += (col.charCodeAt(i) - 64) * Math.pow(26, length - i - 1);
+  }
+
+  columnCache[col] = number;
+  return number;
 }
 
 export function calculateCellConditionalStyle(
@@ -44,12 +267,17 @@ export function calculateCellConditionalStyle(
   conditionalFormattings: ConditionalFormatting[]
 ): CellStyle | null {
   // Get cell address (e.g., 'C15')
-  const cellAddress = cell.address;
+  const cellAddress = parseAddress(cell.address);
+  const cellAddressNumeric = {
+    row: cellAddress.row,
+    col: colToNumber(cellAddress.col)
+  }
+
   const cellValue = cell.value as number;
 
   // Find all conditional formatting rules that apply to this cell
   const applicableFormattings = conditionalFormattings.filter((formatting) => {
-    return isAddressInRange(cellAddress, formatting.ref);
+    return isAddressInRangeNumeric(cellAddressNumeric, formatting.numericRef);
   });
 
   if (applicableFormattings.length === 0) {
@@ -91,24 +319,6 @@ export function calculateCellConditionalStyle(
   }
 
   return resultStyle;
-}
-
-const columnCache: { [key: string]: number } = {};
-
-function colToNumber(col: string): number {
-  if (columnCache[col] !== undefined) {
-    return columnCache[col];
-  }
-
-  const length = col.length;
-  let number = 0;
-
-  for (let i = 0; i < length; i++) {
-    number += (col.charCodeAt(i) - 64) * Math.pow(26, length - i - 1);
-  }
-
-  columnCache[col] = number;
-  return number;
 }
 
 function parseAddress(address: string): { col: string; row: number } {
@@ -164,6 +374,27 @@ function isAddressInRange(address: string, rangeStr: string): boolean {
     );
   });
 }
+
+/**
+ * Check if a numeric address is within a specified range.
+ *
+ * @param address - The address to check, in the form { col: number, row: number }.
+ * @param range - The range to check against, represented as a NumericRef.
+ * @returns True if the address is within the range, false otherwise.
+ */
+function isAddressInRangeNumeric(
+  address: { col: number; row: number },
+  range: NumericRef
+): boolean {
+  // Check if the column and row of the address fall within the range
+  return (
+    address.col >= range.startCol &&
+    address.col <= range.endCol &&
+    address.row >= range.startRow &&
+    address.row <= range.endRow
+  );
+}
+
 
 function doesRuleMatch(
   rule: ConditionalFormattingRule,
