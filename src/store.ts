@@ -92,6 +92,8 @@ export class Store {
       await this.storeData(datasheets[i]);
     }
 
+    await this.runAfter(datasheets);
+
     // await this.prisma.$disconnect()
 
     return this.summary;
@@ -107,6 +109,12 @@ export class Store {
       const deletedTags = await this.prisma.tag.deleteMany();
       await this.options.tagsCache.init(this.prisma);
       console.log("Deleted " + String(deletedTags.count) + " tags");
+    }
+  }
+
+  async runAfter(datasheets) {
+    if (this.options?.runAfter && typeof this.options?.runAfter === 'function') {
+      await this.options?.runAfter(datasheets, this)
     }
   }
 

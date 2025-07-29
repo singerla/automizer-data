@@ -1,6 +1,6 @@
 import { PrismaClient, Sheet, Tag } from "../client";
 import { Gesstabs } from "../parser/gesstabs";
-import { Generic } from "../index";
+import {Generic, Store} from '../index';
 import { Parser } from "../parser/parser";
 import ResultClass from "../convert";
 import Convert from "../convert";
@@ -25,6 +25,7 @@ export type StoreOptions = {
   userId?: PrismaId;
   statusTracker?: StatusTracker["next"];
   tagsCache?: ITagsCache;
+  runAfter?: (datasheets: Datasheet[], parent: Store) => Promise<void>
 };
 
 export type ParserType = Parser | Generic | Gesstabs;

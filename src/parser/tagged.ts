@@ -9,7 +9,8 @@ import { Parser } from "./parser";
 import ExcelJS from "exceljs";
 import {
   calculateCellConditionalStyle,
-  CellStyle, getRuleGroups,
+  CellStyle,
+  getRuleGroups,
 } from "../helper/conditionalFormatting";
 import {
   ColorConverter,
@@ -84,7 +85,6 @@ interface MetaEntry {
   info: any[];
 }
 
-
 export class Tagged extends Parser {
   private mapCategories: any;
   private tagsMarker: string;
@@ -107,15 +107,25 @@ export class Tagged extends Parser {
 
     this.colorConverter = createColorConverter(workbook, indexedColors.new);
 
-    timer.reset()
+    timer.reset();
 
     for (const worksheet of workbook.worksheets as WorksheetWithFormattings[]) {
       // Convert ExcelJS format to compatible format for existing parseWorksheet method
       const data: WorksheetData = [];
 
-      const conditionalFormattings = getRuleGroups(worksheet.conditionalFormattings)
+      const conditionalFormattings = [];
+      if (this.config.calculateConditionalStyle) {
+        conditionalFormattings.push(
+          ...getRuleGroups(worksheet.conditionalFormattings)
+        );
+        console.log(
+          "Reduced " +
+            worksheet.conditionalFormattings.length +
+            " conditionalFormattings to " +
+            conditionalFormattings.length
+        );
+      }
 
-      console.log('Reduced ' + worksheet.conditionalFormattings.length + ' conditionalFormattings to ' + conditionalFormattings.length)
       timer.start("worksheet");
 
       worksheet.eachRow((row, rowNumber) => {
@@ -130,7 +140,11 @@ export class Tagged extends Parser {
           };
 
           if (this.config.calculateConditionalStyle) {
-            this.calculateConditionalStyle(tmpCell, cell, conditionalFormattings);
+            this.calculateConditionalStyle(
+              tmpCell,
+              cell,
+              conditionalFormattings
+            );
           }
 
           rowData[colNumber - 1] = tmpCell;
@@ -377,7 +391,7 @@ export class Tagged extends Parser {
     section: string,
     topic: string,
     vartitle: string,
-    tables: TableData[],
+    tables: TableData[]
   ): TableData => {
     let table = tables.find(
       (t) =>
@@ -399,11 +413,7 @@ export class Tagged extends Parser {
     return table;
   };
 
-  processTableMeta(
-    row: any[],
-    secondCell: any,
-    table: TableData
-  ): void {
+  processTableMeta(row: any[], secondCell: any, table: TableData): void {
     const styleResultsEntry = this.processStyleResults(row, secondCell);
     if (styleResultsEntry) {
       table.meta.push(styleResultsEntry);
@@ -416,12 +426,12 @@ export class Tagged extends Parser {
   }
 
   processStyleResults(row: any[], secondCell: any): MetaEntry | null {
-    const styleResults = row.map(cell => cell.styleResult);
+    const styleResults = row.map((cell) => cell.styleResult);
 
     // const styleResultsRaw = row.map(cell => cell.conditionalStyle);
     // vd(styleResultsRaw)
 
-    if (!styleResults.some(styleResult => Object.keys(styleResult).length)) {
+    if (!styleResults.some((styleResult) => Object.keys(styleResult).length)) {
       return null;
     }
 
@@ -439,7 +449,7 @@ export class Tagged extends Parser {
       return null;
     }
 
-    const styleResults = row.map(cell => rowStyle);
+    const styleResults = row.map((cell) => rowStyle);
 
     return {
       key: "rowStyle",
