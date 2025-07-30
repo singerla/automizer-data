@@ -218,7 +218,13 @@ export type QueryOptions = {
       row: number,
       column: number,
       file: number
-    }
+    },
+    mapFilterTags?: {
+      categoryId: number,
+      variable: string,
+      label: string,
+      code: string
+    }[]
   },
 };
 

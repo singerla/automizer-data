@@ -32,7 +32,7 @@ export class DuckDBConnector {
     this.apiToken = apiToken;
   }
 
-  async query(rowVarTag, colVarTag, filePathTag, tags: DataTag[]) {
+  async query(rowVarTag, colVarTag, filePathTag, where_clause: string, tags: DataTag[]) {
     if (!rowVarTag || !colVarTag || !filePathTag) {
       console.error("Missing required tag attributes for DuckDB query");
       return [];
@@ -56,7 +56,7 @@ export class DuckDBConnector {
         true, // include_totals
         '', // normalize
         true, // value labels
-        undefined // where_clause
+        where_clause // where_clause
       );
 
       // Convert the response to a Datasheet

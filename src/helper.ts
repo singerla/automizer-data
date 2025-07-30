@@ -1,5 +1,10 @@
 import { Tag } from "../src/client";
-import { NestedClause, NestedClauseTagGroup, PrismaId } from "./types/types";
+import {
+  NestedClause,
+  NestedClauseTagGroup,
+  PrismaId,
+  QueryOptions,
+} from "./types/types";
 
 export const getNestedClause = (selectionTags: Tag[]): NestedClause | false => {
   const tagGroups = getTagGroupsByCategory(selectionTags);
@@ -44,28 +49,28 @@ export const getTagGroupsByCategory = (selectionTags: Tag[]): PrismaId[][] => {
  */
 export function extractTagGroups(
   tags: Tag[],
-  categoryMapping: {
-    row: number,
-    column: number,
-    file: number
-  }
+  categoryMapping: QueryOptions["api"]["mapCategoryIds"]
 ): {
-  row: Tag[],
-  column: Tag[],
-  file: Tag[]
+  row: Tag[];
+  column: Tag[];
+  file: Tag[];
 } {
   // Initialize result with empty arrays
   const result = {
     row: [] as Tag[],
     column: [] as Tag[],
-    file: [] as Tag[]
+    file: [] as Tag[],
   };
 
   // Destructure category IDs from the mapping
-  const { row: rowCatId, column: columnCatId, file: fileCatId } = categoryMapping;
+  const {
+    row: rowCatId,
+    column: columnCatId,
+    file: fileCatId,
+  } = categoryMapping;
 
   // Group tags by their category IDs
-  tags.forEach(tag => {
+  tags.forEach((tag) => {
     if (tag.categoryId === rowCatId) {
       result.row.push(tag);
     } else if (tag.categoryId === columnCatId) {
@@ -79,6 +84,43 @@ export function extractTagGroups(
   return result;
 }
 
+export function extractFilterTags(
+  tags: Tag[],
+  categoryMapping: QueryOptions["api"]["mapFilterTags"]
+): string {
+  const clause = [];
+
+  const filterTags = [];
+  const usedCategories = [];
+  categoryMapping.forEach((categoryMap) => {
+    const selected = tags.find(
+      (tag) =>
+        tag.name === categoryMap.label &&
+        categoryMap.categoryId === tag.categoryId
+    );
+    if (selected) {
+      usedCategories.push(categoryMap.categoryId);
+      filterTags.push({
+        categoryMap,
+        selected,
+      });
+    }
+  });
+
+  usedCategories.forEach((categoryId) => {
+    const variableConditions = filterTags
+      .filter((filterTag) => filterTag.categoryMap.categoryId === categoryId)
+      .map(
+        (filterTag) =>
+          `${filterTag.categoryMap.variable} = '${filterTag.categoryMap.code}'`
+      )
+      .join(" OR ");
+    clause.push(variableConditions);
+  });
+
+  return clause.join(" AND ");
+}
+
 /**
  * Generates all possible combinations of row, column, and file tags.
  * Takes the grouped tags from extractTagGroups and returns an array of all possible combinations.
@@ -86,15 +128,13 @@ export function extractTagGroups(
  * @param groupedTags - Object containing row, column, and file tags
  * @returns Array of combinations, each containing one row, one column, and one file tag
  */
-export function generateTagCombinations(
-  groupedTags: {
-    row: Tag[],
-    column: Tag[],
-    file: Tag[]
-  }
-): { row: Tag, column: Tag, file: Tag }[] {
+export function generateTagCombinations(groupedTags: {
+  row: Tag[];
+  column: Tag[];
+  file: Tag[];
+}): { row: Tag; column: Tag; file: Tag }[] {
   const { row, column, file } = groupedTags;
-  const combinations: { row: Tag, column: Tag, file: Tag }[] = [];
+  const combinations: { row: Tag; column: Tag; file: Tag }[] = [];
 
   // Generate all possible combinations
   for (const rowTag of row) {
@@ -103,7 +143,7 @@ export function generateTagCombinations(
         combinations.push({
           row: rowTag,
           column: columnTag,
-          file: fileTag
+          file: fileTag,
         });
       }
     }

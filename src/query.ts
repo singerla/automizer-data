@@ -1,9 +1,10 @@
 import { PrismaClient, Tag } from "./client";
 import {
+  extractFilterTags,
   extractTagGroups,
   generateTagCombinations,
   getNestedClause,
-  vd,
+  vd
 } from "./helper";
 import _ from "lodash";
 
@@ -251,10 +252,9 @@ export default class Query {
     }
 
     const groupedTags = extractTagGroups(tags, this.api.mapCategoryIds);
-    vd(groupedTags);
+    const whereClause = extractFilterTags(tags, this.api.mapFilterTags);
     // Then, generate all possible combinations
     const combinations = generateTagCombinations(groupedTags);
-    vd(combinations);
 
     const datasheets = [];
     for (const combination of combinations) {
@@ -267,7 +267,8 @@ export default class Query {
         row,
         column,
         file,
-        tags as any
+        whereClause,
+        tags as any,
       );
       if (datasheet) {
         datasheets.push(datasheet);
