@@ -36,6 +36,7 @@ model Category {
 model Tag {
   id         Int         @id @default(autoincrement())
   name       String
+  params     String?
   category   Category    @relation(fields: [categoryId], references: [id])
   categoryId Int
   sheets     Sheet[]
