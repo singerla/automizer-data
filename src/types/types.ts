@@ -76,6 +76,7 @@ export type ParserOptions = {
   mapCategories?: Record<string, string>;
   tagsMarker?: string;
   calculateConditionalStyle?: boolean;
+  parseCellStyle?: boolean;
 };
 
 interface MatchMeta {
@@ -214,19 +215,16 @@ export type QueryOptions = {
   api?: {
     driver: 'DuckDB'
     endpoint: string,
-    mapCategoryIds: {
-      row: number,
-      column: number,
-      file: number
-    },
-    mapFilterTags?: {
-      categoryId: number,
-      variable: string,
-      label: string,
-      code: string
-    }[]
+    variableCategoryId: number,
+    splitCategoryId: number,
+    mapCategoryIds: CategoryMap[],
   },
 };
+
+export type CategoryMap = {
+  key: string,
+  id: number
+}
 
 export type CategoryCount = {
   sheetId: PrismaId;

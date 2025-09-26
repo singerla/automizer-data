@@ -15,15 +15,13 @@ import {
 import {
   ColorConverter,
   createColorConverter,
-  ExcelColor,
 } from "../helper/convertWorkbookColors";
 import { indexedColors } from "../helper/defaultThemeColors";
 import { TimeTracker } from "../helper/timeTracker";
-
-export const timer = new TimeTracker();
-
 import path from "path";
 import { vd } from "../helper";
+
+export const timer = new TimeTracker();
 
 type WorksheetDataCell = {
   value: ExcelJS.Cell["value"];
@@ -31,6 +29,7 @@ type WorksheetDataCell = {
   conditionalStyle: CellStyle;
   styleResult: {
     bgColor?: string;
+    fgColor?: string;
     fontColor?: string;
   };
 };
@@ -147,6 +146,10 @@ export class Tagged extends Parser {
             );
           }
 
+          if (this.config.parseCellStyle) {
+            this.parseCellStyle(tmpCell, cell);
+          }
+
           rowData[colNumber - 1] = tmpCell;
         });
         data.push(rowData);
@@ -173,19 +176,30 @@ export class Tagged extends Parser {
       cell,
       cleanedConditionalFormattings
     );
+
     if (conditionalStyle) {
-      tmpCell.conditionalStyle = conditionalStyle;
-      tmpCell.styleResult = {};
-      if (conditionalStyle?.fill?.bgColor) {
-        tmpCell.styleResult.bgColor = this.colorConverter(
-          conditionalStyle?.fill.bgColor
-        );
-      }
-      if (conditionalStyle?.font?.color) {
-        tmpCell.styleResult.fontColor = this.colorConverter(
-          conditionalStyle?.font.color
-        );
-      }
+      this.applyCellStyle(tmpCell, conditionalStyle);
+    }
+  };
+
+  parseCellStyle = (tmpCell: WorksheetDataCell, cell: ExcelJS.Cell) => {
+    if (cell.style) {
+      this.applyCellStyle(tmpCell, cell.style);
+    }
+  };
+
+  applyCellStyle = (tmpCell: WorksheetDataCell, style) => {
+    tmpCell.conditionalStyle = style;
+    tmpCell.styleResult = {};
+
+    if (style?.fill?.bgColor) {
+      tmpCell.styleResult.bgColor = this.colorConverter(style?.fill.bgColor);
+    }
+    if (style?.fill?.fgColor) {
+      tmpCell.styleResult.fgColor = this.colorConverter(style?.fill.fgColor);
+    }
+    if (style?.font?.color) {
+      tmpCell.styleResult.fontColor = this.colorConverter(style?.font.color);
     }
   };
 
