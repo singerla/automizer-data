@@ -1,11 +1,5 @@
 import { PrismaClient, Tag } from "./client";
-import {
-  extractFilterTags,
-  extractTagGroups,
-  generateTagCombinations,
-  getNestedClause,
-  vd
-} from "./helper";
+import { getNestedClause, vd } from "./helper";
 import _ from "lodash";
 
 import {
@@ -37,6 +31,18 @@ import Modelizer from "./modelizer/modelizer";
 import Convert from "./convert";
 import Keys from "./keys";
 import { DuckDBConnector } from "./external/DuckDB";
+
+type ParsedTag = Tag & {
+  code: number;
+  value: string;
+};
+
+export type RequestCategory = {
+  key: string;
+  id: number;
+  tags: ParsedTag[];
+  ids: (number|string)[];
+};
 
 export default class Query {
   prisma: PrismaClient | any;
@@ -198,6 +204,7 @@ export default class Query {
       }
 
       const datapoints = this.extractDataPoints(dataSheets, Number(level));
+
       inputKeys.addPoints(datapoints);
 
       usedDatapoints.push(...datapoints);
@@ -251,31 +258,79 @@ export default class Query {
       return [];
     }
 
-    const groupedTags = extractTagGroups(tags, this.api.mapCategoryIds);
-    const whereClause = extractFilterTags(tags, this.api.mapFilterTags);
-    // Then, generate all possible combinations
-    const combinations = generateTagCombinations(groupedTags);
+    const variable = tags.find(
+      (tag) => tag.categoryId === this.api.variableCategoryId
+    );
 
-    const datasheets = [];
-    for (const combination of combinations) {
-      const { row, column, file } = combination;
-      console.log(
-        `Row: ${row.name}, Column: ${column.name}, File: ${file.name}`
-      );
+    const splits = tags.filter(
+      (tag) => tag.categoryId === this.api.splitCategoryId
+    );
 
-      const datasheet = await this.duckDBConnector.query(
-        row,
-        column,
-        file,
-        whereClause,
-        tags as any,
-      );
-      if (datasheet) {
-        datasheets.push(datasheet);
+    const requestCategories: RequestCategory[] = this.api.mapCategoryIds.map((categoryMap) => {
+      const parsedTags = this.parseCodeInfo(tags, categoryMap.id)
+      return {
+        ...categoryMap,
+        tags: parsedTags,
+        ids: parsedTags.map(parsedTag => parsedTag.code)
       }
-    }
+    });
 
-    return datasheets;
+    const resultSheets = [];
+    const datasheets = await this.duckDBConnector.query(
+      variable.name,
+      splits.map(split => split.name),
+      requestCategories
+    );
+
+    vd('Got ' + datasheets.length + ' sheets')
+
+    datasheets.forEach((datasheet) => {
+      const targetTags = [];
+      targetTags.push({
+        ...variable,
+      });
+
+      datasheet.tags.forEach((tag) => {
+        const requestCat = requestCategories.find(cat => cat.key === tag.category)
+
+        if(requestCat) {
+          targetTags.push({
+            categoryId: requestCat.id,
+            name: tag.value
+          });
+        }
+
+        if(tag.category === 'split') {
+          targetTags.push({
+            categoryId: this.api.splitCategoryId,
+            name: tag.value
+          });
+        }
+      });
+
+      datasheet.tags = targetTags.map((targetTag) => {
+        return {
+          value: targetTag.name,
+          categoryId: targetTag.categoryId,
+        };
+      });
+
+      resultSheets.push(datasheet);
+    });
+
+    return resultSheets;
+  }
+
+  parseCodeInfo(tags: Tag[], categoryId: number): ParsedTag[] {
+    return tags
+      .filter((tag) => tag.categoryId === categoryId)
+      .map((tag) => {
+        return {
+          ...tag,
+          code: JSON.parse(tag.params).code,
+          value: tag.name,
+        };
+      });
   }
 
   async findSheets(tags: Tag[], isNonGreedy: boolean): Promise<Datasheet[]> {
