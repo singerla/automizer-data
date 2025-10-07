@@ -366,6 +366,7 @@ export default class Query {
     const dataSheets = sheets.map((sheet) => {
       return <Datasheet>{
         id: sheet.id,
+        importId: sheet.importId,
         tags: sheet.tags.map((tag) => {
           return {
             id: tag.id,

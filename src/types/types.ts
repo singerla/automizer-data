@@ -282,6 +282,7 @@ export type TableRowWithMeta = TableRow & {
 
 export type Datasheet = {
   id?: number;
+  importId?: number;
   tags: DataTag[];
   columns: string[];
   rows: string[];
