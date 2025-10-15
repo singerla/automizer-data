@@ -516,7 +516,7 @@ export class Tagged extends Parser {
       .map((meta) => {
         const result: RawResultMeta = {
           key: meta.key,
-          label: meta.value,
+          label: meta.value?.trim(),
         };
 
         if (meta.data) {
