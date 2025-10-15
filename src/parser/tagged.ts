@@ -451,7 +451,7 @@ export class Tagged extends Parser {
 
     return {
       key: "styleResults",
-      value: secondCell.toString(),
+      value: secondCell.toString().trim(),
       info: styleResults,
     };
   }
@@ -467,7 +467,7 @@ export class Tagged extends Parser {
 
     return {
       key: "rowStyle",
-      value: secondCell.toString(),
+      value: secondCell.toString().trim(),
       info: styleResults,
     };
   }
