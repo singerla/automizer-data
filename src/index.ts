@@ -7,6 +7,7 @@ import Modelizer from './modelizer/modelizer';
 import Keys from './keys';
 
 import { Store } from './store';
+import Helper from './helper/helper';
 import TagsCache from './helper/tagsCache';
 import { Parser } from './parser/parser';
 import { Gesstabs } from './parser/gesstabs';
@@ -128,7 +129,7 @@ export type {
   QueryResult,
 };
 export { Query, Parser, Gesstabs, Pspp, MySQL, Generic, Tagged, Store, filter, cell };
-export { Points, Convert, Modelizer, Model, Keys };
+export { Points, Convert, Modelizer, Model, Keys, Helper };
 export { TagsCache };
 export { getNestedClause, getTagGroupsByCategory };
 export { PrismaClient };

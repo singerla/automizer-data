@@ -10,6 +10,7 @@ import {
 } from "./types/types";
 import crypto from "crypto";
 import TagsCache from "./helper/tagsCache";
+import Helper from "./helper/helper";
 
 type CreateSheetData = Prisma.SheetCreateArgs["data"] & {
   tags: {
@@ -29,6 +30,7 @@ export class Store {
   importId: number;
   status: StatusTracker;
   tagValueMaxLength: number;
+  helper: Helper
 
   constructor(prisma: PrismaClient, options?: StoreOptions) {
     this.prisma = prisma;
@@ -74,6 +76,8 @@ export class Store {
       },
       next: this.options.statusTracker,
     };
+
+    this.helper = new Helper()
   }
 
   async run(datasheets: Datasheet[]): Promise<StoreSummary> {
@@ -261,7 +265,7 @@ export class Store {
       ] as CreateSheetTagsConnect;
 
       sheetData.tags.connect = connectTags;
-      sheetData.tagKey = this.getTagKey(sheetData.tags.connect);
+      sheetData.tagKey = this.helper.getTagKey(sheetData.tags.connect);
 
       // console.log("Duplicate sheet key: ");
       // console.log(sheetData);
@@ -333,33 +337,6 @@ export class Store {
   }
 
   getSheetKeys(datasheet: Datasheet) {
-    const keys = {
-      rowKey: this.createHashFromArray(datasheet.rows),
-      columnKey: this.createHashFromArray(datasheet.columns),
-      tagKey: this.getTagKey(datasheet.tags),
-      sheetKey: null,
-    };
-    keys.sheetKey = this.createHashFromObject(keys);
-    return keys;
-  }
-
-  getTagKey(tags): string {
-    return this.createHashFromArray(tags.map((tag: any) => tag.id));
-  }
-
-  createHashFromObject(obj: Object): string {
-    const str = JSON.stringify(obj);
-    return this.createHash(str);
-  }
-
-  createHashFromArray(arr: string[]): string {
-    const str = arr.join("|");
-    return this.createHash(str);
-  }
-
-  createHash(str: string): string {
-    const sha256Hasher = crypto.createHmac("sha256", "123");
-    const hash = sha256Hasher.update(str).digest("hex");
-    return hash;
+    return this.helper.getSheetKeys(datasheet)
   }
 }
