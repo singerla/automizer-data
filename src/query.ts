@@ -15,6 +15,7 @@ import {
   DumpedData,
   ICache,
   IdSelector,
+  ITagsCache,
   ModelizeArguments,
   QueryOptions,
   QueryResult,
@@ -31,6 +32,7 @@ import Modelizer from "./modelizer/modelizer";
 import Convert from "./convert";
 import Keys from "./keys";
 import { DuckDBConnector } from "./external/DuckDB";
+import TagsCache from "./helper/tagsCache";
 
 type ParsedTag = Tag & {
   code: number;
@@ -41,7 +43,7 @@ export type RequestCategory = {
   key: string;
   id: number;
   tags: ParsedTag[];
-  ids: (number|string)[];
+  ids: (number | string)[];
 };
 
 export default class Query {
@@ -61,6 +63,8 @@ export default class Query {
 
   private selectionValidator: QueryOptions["selectionValidator"];
   private api: QueryOptions["api"];
+
+  tagsCache: ITagsCache;
 
   constructor(prisma: PrismaClient | any) {
     this.prisma = prisma;
@@ -91,6 +95,8 @@ export default class Query {
     this.selector = options.selector || this.selector;
 
     this.selectionValidator = options.selectionValidator;
+    this.tagsCache = options.tagsCache;
+
     this.api = options.api;
 
     return this;
@@ -107,6 +113,13 @@ export default class Query {
       tagIds = this.parseSelector(this.selector);
     } catch (e) {
       throw "Parse Selector failed";
+    }
+
+    if (this.api && !this.tagsCache) {
+      vd("setting up tags cache");
+      const tagsCache = new TagsCache();
+      await tagsCache.init(this.prisma, true);
+      this.tagsCache = tagsCache;
     }
 
     const { points, sheets, tags, inputKeys } = await this.getRawResult(
@@ -266,47 +279,66 @@ export default class Query {
       (tag) => tag.categoryId === this.api.splitCategoryId
     );
 
-    const requestCategories: RequestCategory[] = this.api.mapCategoryIds.map((categoryMap) => {
-      const parsedTags = this.parseCodeInfo(tags, categoryMap.id)
-      return {
-        ...categoryMap,
-        tags: parsedTags,
-        ids: parsedTags.map(parsedTag => parsedTag.code)
+    const requestCategories: RequestCategory[] = this.api.mapCategoryIds.map(
+      (categoryMap) => {
+        const parsedTags = this.parseCodeInfo(tags, categoryMap.id);
+        return {
+          ...categoryMap,
+          tags: parsedTags,
+          ids: parsedTags.map((parsedTag) => parsedTag.code),
+        };
       }
-    });
+    );
 
     const resultSheets = [];
+
     const datasheets = await this.duckDBConnector.query(
       variable.name,
-      splits.map(split => split.name),
+      splits.map((split) => split.name),
       requestCategories
     );
 
-    vd('Got ' + datasheets.length + ' sheets')
+    vd("Got " + datasheets.length + " sheets");
 
-    datasheets.forEach((datasheet) => {
+    for (const datasheet of datasheets) {
       const targetTags = [];
       targetTags.push({
         ...variable,
       });
 
-      datasheet.tags.forEach((tag) => {
-        const requestCat = requestCategories.find(cat => cat.key === tag.category)
-
-        if(requestCat) {
-          targetTags.push({
-            categoryId: requestCat.id,
-            name: tag.value
-          });
-        }
-
-        if(tag.category === 'split') {
+      for (const tag of datasheet.tags) {
+        if (tag.category === "split") {
           targetTags.push({
             categoryId: this.api.splitCategoryId,
-            name: tag.value
+            name: tag.value,
+          });
+          continue;
+        }
+
+        const targetCategory = this.api.mapCategoryIds.find(
+          (mapCat) => mapCat.key === tag.category
+        );
+
+        if (targetCategory?.decode) {
+          const tags = await this.tagsCache.getMany(targetCategory.id);
+          const targetCode = Math.round(tag.value);
+          const sourceTag = tags.find(
+            (sourceTag: any) => sourceTag.params?.code === targetCode
+          );
+          if (sourceTag) {
+            targetTags.push({
+              categoryId: targetCategory.id,
+              name: sourceTag.name,
+              id: sourceTag.id,
+            });
+          }
+        } else if(targetCategory) {
+          targetTags.push({
+            categoryId: targetCategory.id,
+            name: tag.value,
           });
         }
-      });
+      }
 
       datasheet.tags = targetTags.map((targetTag) => {
         return {
@@ -316,7 +348,7 @@ export default class Query {
       });
 
       resultSheets.push(datasheet);
-    });
+    }
 
     return resultSheets;
   }

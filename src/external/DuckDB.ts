@@ -2,6 +2,7 @@
 
 import { vd } from "../helper";
 import { RequestCategory } from "../query";
+import TagsCache from "../helper/tagsCache";
 
 interface CrossTabResponse {
   success: boolean;
@@ -30,7 +31,7 @@ export class DuckDBConnector {
 
   constructor(
     apiUrl: string = "http://localhost:5000",
-    apiToken: string = process.env.STATISTICS_API_TOKEN || ""
+    apiToken: string = process.env.STATISTICS_API_TOKEN || "",
   ) {
     this.apiUrl = apiUrl;
     this.apiToken = apiToken;
@@ -43,7 +44,7 @@ export class DuckDBConnector {
   ) {
     const requestIds = {}
     requestCategories.forEach(cat => {
-      requestIds[cat.key + '_ids'] = cat.tags.map(tag => tag.code)
+      requestIds[cat.key] = cat.tags.map(tag => tag.code)
     })
 
     vd({
@@ -51,6 +52,7 @@ export class DuckDBConnector {
       split_variable_names,
       ...requestIds
     })
+
 
     try {
       // Fetch data from DuckDB API

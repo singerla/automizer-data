@@ -1,21 +1,40 @@
-import { PrismaClient, Tag } from '@prisma/client';
-import { ITagsCache } from '../types/types';
+import { PrismaClient, Tag } from "@prisma/client";
+import { ITagsCache } from "../types/types";
 
 export default class TagsCache implements ITagsCache {
   prisma: PrismaClient;
   buffer: Tag[] = [];
+  parseParams: boolean;
 
-  init = async (prisma: PrismaClient) => {
+  init = async (prisma: PrismaClient, parseParams?: boolean) => {
     this.setPrismaClient(prisma);
     this.buffer = await this.prisma.tag.findMany();
-    console.log('TagsCache initalized with ' + this.buffer.length + ' tags');
+
+    if (parseParams) {
+      this.parseParams = parseParams;
+    }
+
+    this.parseJsonParams();
+
+    console.log("TagsCache initalized with " + this.buffer.length + " tags");
   };
+  parseJsonParams = () => {
+    if (this.parseParams === true) {
+      this.buffer.forEach((tag) => {
+        this._parseJsonParams(tag)
+      });
+    }
+  };
+  _parseJsonParams = (tag) => {
+    tag.params = JSON.parse(tag.params);
+  }
   setPrismaClient = (prisma: PrismaClient) => {
     this.prisma = prisma;
   };
   reset = async () => {
     this.buffer = await this.prisma.tag.findMany();
-    console.log('TagsCache reset with ' + this.buffer.length + ' tags');
+    this.parseJsonParams();
+    console.log("TagsCache reset with " + this.buffer.length + " tags");
   };
   exists = (name: string, categoryId: number): boolean => {
     return !!this.get(name, categoryId);
@@ -34,7 +53,7 @@ export default class TagsCache implements ITagsCache {
   };
   get = (name: string, categoryId: number): Tag | null => {
     return this.buffer.find(
-      (obj) => obj.name === name && obj.categoryId === categoryId,
+      (obj) => obj.name === name && obj.categoryId === categoryId
     );
   };
   getByValue = (name: string): Tag[] => {
@@ -52,12 +71,15 @@ export default class TagsCache implements ITagsCache {
         },
       },
     });
-    console.log('TagsCache created tag with id ' + newTag.id + '');
+    console.log("TagsCache created tag with id " + newTag.id + "");
     this.set(newTag);
     return newTag;
   };
   set = (tag: Tag): void => {
     if (!this.tagExists(tag)) {
+      if (this.parseParams) {
+        this._parseJsonParams(tag)
+      }
       this.buffer.push(tag);
     }
   };

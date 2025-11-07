@@ -12,6 +12,7 @@ import { InputKeys } from "../modelizer/modelizer-types";
 import Keys from "../keys";
 import mysql from "mysql2/promise";
 import { TableRow } from "pptx-automizer/dist";
+import TagsCache from "../helper/tagsCache";
 
 export type PrismaId = number;
 
@@ -223,7 +224,8 @@ export type QueryOptions = {
 
 export type CategoryMap = {
   key: string,
-  id: number
+  id: number,
+  decode?: boolean
 }
 
 export type CategoryCount = {
