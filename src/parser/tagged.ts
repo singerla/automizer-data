@@ -131,8 +131,7 @@ export class Tagged extends Parser {
         const rowData: WorksheetDataCell[] = [];
         row.eachCell((cell: any, colNumber) => {
           const tmpCell: WorksheetDataCell = {
-            value:
-              typeof cell.value === "object" ? cell.value.result : cell.value,
+            value: this.renderCellValue(cell.value),
             cell,
             conditionalStyle: null,
             styleResult: {},
@@ -165,6 +164,40 @@ export class Tagged extends Parser {
     timer.printStats();
 
     return this.datasheets;
+  }
+
+  /**
+   * Renders a cell value as a plain string, disregarding any formatting.
+   * Handles simple values, formula results, and rich text objects.
+   * @param cellValue - The cell value to render
+   * @returns A string or number representation of the cell value
+   */
+  private renderCellValue(cellValue: ExcelJS.Cell["value"]): string | number {
+    if (cellValue === null || cellValue === undefined) {
+      return "";
+    }
+
+    // Handle simple string or number values
+    if (typeof cellValue === "string" || typeof cellValue === "number") {
+      return cellValue;
+    }
+
+    // Handle objects
+    if (typeof cellValue === "object") {
+      // Handle formula results
+      if ("result" in cellValue && cellValue.result !== undefined) {
+        return this.renderCellValue(cellValue.result);
+      }
+
+      // Handle rich text
+      if ("richText" in cellValue && Array.isArray(cellValue.richText)) {
+        return cellValue.richText
+          .map((segment: any) => segment.text || "")
+          .join("");
+      }
+    }
+
+    return String(cellValue);
   }
 
   calculateConditionalStyle = (
@@ -257,7 +290,7 @@ export class Tagged extends Parser {
     }
 
     const colCount = data.find(
-      (row) => row[1] && row[1].value.toString() === this.metaKey
+      (row) => row[1] && row[1].value?.toString() === this.metaKey
     ).length;
 
     Object.values(sliceAtCol).forEach((header) => {
