@@ -41,6 +41,10 @@ export class Parser {
     for (const r in this.results) {
       const table = <RawResultData>this.results[r];
 
+      if (this.config.renderRawResultDataBefore) {
+        this.config.renderRawResultDataBefore(table, this);
+      }
+
       const tagsObj = {
         tags: <DataTag[]>[],
         push(cat: string, value: string) {

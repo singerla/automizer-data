@@ -21,6 +21,8 @@ import {
 import Points from '../points';
 import { dumpBody, dumpCell, dumpFooter, dumpHeader } from './dump';
 import { vd } from "../helper";
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Modelizer class needs some datapoints to work. Each datapoint will add
@@ -80,6 +82,91 @@ export default class Modelizer {
       this.addPoints(options.points);
     }
     this.query = query;
+
+    if (options?.cachePath) {
+      this.fromCache(options.cachePath);
+    }
+  }
+
+  /**
+   * Restore Modelizer state from a given JSON file.
+   * @param cachePath
+   */
+  fromCache(cachePath: string): this {
+    if (!fs.existsSync(cachePath)) {
+      return this;
+    }
+    const data = JSON.parse(fs.readFileSync(cachePath, 'utf-8'));
+    this.strict = data.strict;
+    this.#setKeys('row', data.keys.row);
+    this.#setKeys('column', data.keys.column);
+    this.#meta = data.meta;
+
+    this.#cells = [];
+    data.cells.forEach((cellData: any) => {
+      const cell = this.#defaultCell(cellData.rowKey, cellData.columnKey);
+      Object.assign(cell, cellData);
+      if (cell.points) {
+        cell.points = cell.points.map(p => Points.dataPointFactory(p.row, p.column, p.tags, p.meta, p.value));
+      }
+      this.#pushCells(cell);
+    });
+
+    this.#rows = [];
+    data.rows.forEach((rowData: any) => {
+      const model = this.createModel(rowData.key, 'row');
+      model.label = rowData.label;
+      model.style.assign(rowData.style);
+      this.#rows.push(model);
+    });
+
+    this.#columns = [];
+    data.columns.forEach((colData: any) => {
+      const model = this.createModel(colData.key, 'column');
+      model.label = colData.label;
+      model.style.assign(colData.style);
+      this.#columns.push(model);
+    });
+
+    return this;
+  }
+
+  /**
+   * Store Modelizer state to a given cache directory as a json file.
+   * @param cacheDir
+   * @param filename
+   */
+  toCache(cacheDir: string, filename?: string): string {
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+    }
+    const cacheFile = path.join(cacheDir, filename || 'modelizer-cache.json');
+    const data = {
+      strict: this.strict,
+      keys: this.#keys,
+      meta: this.#meta,
+      cells: this.#cells.map(cell => ({
+        value: cell.value,
+        rowKey: cell.rowKey,
+        columnKey: cell.columnKey,
+        meta: cell.meta,
+        targetPoint: cell.targetPoint,
+        selections: cell.selections,
+        points: cell.points,
+      })),
+      rows: this.#rows.map(row => ({
+        key: row.key,
+        label: row.label,
+        style: row.style.get(),
+      })),
+      columns: this.#columns.map(col => ({
+        key: col.key,
+        label: col.label,
+        style: col.style.get(),
+      })),
+    };
+    fs.writeFileSync(cacheFile, JSON.stringify(data, null, 2));
+    return cacheFile;
   }
 
   /**

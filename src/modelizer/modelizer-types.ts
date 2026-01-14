@@ -22,6 +22,7 @@ export interface Meta {
 export type ModelizerOptions = {
   strict?: boolean;
   points?: DataPoint[];
+  cachePath?: string;
 };
 
 export type InputKeys = {

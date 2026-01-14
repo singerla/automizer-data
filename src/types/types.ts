@@ -53,6 +53,7 @@ export type ParserOptions = {
     parser: ParserType
   ) => ResultCell[];
   renderLabel?: (label: string) => string;
+  renderRawResultDataBefore?: (data: RawResultData, parser: ParserType) => void;
   renderRawResultData?: (data: RawResultData, parser: ParserType) => void;
   renderRawTables?: (
     rawTables: RawTable[],
@@ -190,7 +191,7 @@ export interface ICache {
 }
 
 export interface ITagsCache {
-  init: (prisma: PrismaClient) => Promise<void>;
+  init: (prisma: PrismaClient, parseParams?: boolean) => Promise<void>;
   setPrismaClient: (prisma: PrismaClient) => void;
   exists: (name: string, categoryId: number) => boolean;
   tagExists: (tag: Tag) => boolean;
@@ -218,6 +219,7 @@ export type QueryOptions = {
     endpoint: string,
     variableCategoryId: number,
     splitCategoryId: number,
+    apiCategoryId?: number,
     mapCategoryIds: CategoryMap[],
   },
 };
@@ -225,7 +227,8 @@ export type QueryOptions = {
 export type CategoryMap = {
   key: string,
   id: number,
-  decode?: boolean
+  decode?: boolean,
+  type?: 'VARCHAR' | 'INTEGER'
 }
 
 export type CategoryCount = {

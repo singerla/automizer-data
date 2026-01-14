@@ -38,9 +38,10 @@ export class DuckDBConnector {
   }
 
   async query(
-    variable_name: string,
+    variable_names: string[],
     split_variable_names: string[],
-    requestCategories: RequestCategory[]
+    requestCategories: RequestCategory[],
+    apiUrl: string,
   ) {
     const requestIds = {}
     requestCategories.forEach(cat => {
@@ -56,10 +57,10 @@ export class DuckDBConnector {
 
     try {
       // Fetch data from DuckDB API
-      const response = await this.fetchCrossTabs({
-        variable_name,
+      const response = await this.fetchCrossTabs(apiUrl, {
+        variable_name: variable_names,
         split_variable_names,
-        ...requestIds
+        ...requestIds,
       });
 
       vd("Query took " + response.processing_time_ms + "ms");
@@ -74,9 +75,10 @@ export class DuckDBConnector {
   /**
    * Fetches cross-tabulation data from the DuckDB API
    */
-  async fetchCrossTabs(vars: any): Promise<any> {
+  async fetchCrossTabs(url: string, vars: any): Promise<any> {
     try {
-      const response = await fetch(`${this.apiUrl}/analyze/count`, {
+      const apiUrl = url || this.apiUrl
+      const response = await fetch(`${apiUrl}/analyze/count`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

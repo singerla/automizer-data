@@ -50,6 +50,9 @@ export class Gesstabs extends Parser {
       this.parseSections(<RawRow>row);
     });
     this.setDatasheets();
+
+    // vd(this.datasheets.map((ds) => ds.tags))
+
     return this.datasheets;
   }
 

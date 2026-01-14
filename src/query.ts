@@ -271,12 +271,21 @@ export default class Query {
       return [];
     }
 
-    const variable = tags.find(
+    const variables = tags.filter(
       (tag) => tag.categoryId === this.api.variableCategoryId
     );
 
+    if (variables.length === 0) {
+      console.error("No variable provided for DuckDB query");
+      return [];
+    }
+
     const splits = tags.filter(
       (tag) => tag.categoryId === this.api.splitCategoryId
+    );
+
+    const apiInfoTag = tags.find(
+      (tag) => tag.categoryId === this.api.apiCategoryId
     );
 
     const requestCategories: RequestCategory[] = this.api.mapCategoryIds.map(
@@ -292,18 +301,28 @@ export default class Query {
 
     const resultSheets = [];
 
+    let apiUrl = "";
+    if (apiInfoTag) {
+      const params = JSON.parse(apiInfoTag.params);
+      if (params.endpoint) {
+        apiUrl = params.endpoint;
+      }
+    }
+
     const datasheets = await this.duckDBConnector.query(
-      variable.name,
+      variables.map((variable) => variable.name),
       splits.map((split) => split.name),
-      requestCategories
+      requestCategories,
+      apiUrl
     );
 
     vd("Got " + datasheets.length + " sheets");
 
     for (const datasheet of datasheets) {
       const targetTags = [];
+
       targetTags.push({
-        ...variable,
+        ...apiInfoTag,
       });
 
       for (const tag of datasheet.tags) {
@@ -315,15 +334,28 @@ export default class Query {
           continue;
         }
 
+        if (tag.category === "variable") {
+          targetTags.push({
+            categoryId: this.api.variableCategoryId,
+            name: tag.value,
+          });
+          continue;
+        }
+
         const targetCategory = this.api.mapCategoryIds.find(
           (mapCat) => mapCat.key === tag.category
         );
 
         if (targetCategory?.decode) {
           const tags = await this.tagsCache.getMany(targetCategory.id);
-          const targetCode = Math.round(tag.value);
+          let targetCode = tag.value;
+
+          if (targetCategory.type !== "VARCHAR") {
+            targetCode = parseInt(targetCode);
+          }
+
           const sourceTag = tags.find(
-            (sourceTag: any) => sourceTag.params?.code === targetCode
+            (sourceTag: any) => sourceTag.params?.code == targetCode
           );
           if (sourceTag) {
             targetTags.push({
@@ -332,7 +364,7 @@ export default class Query {
               id: sourceTag.id,
             });
           }
-        } else if(targetCategory) {
+        } else if (targetCategory) {
           targetTags.push({
             categoryId: targetCategory.id,
             name: tag.value,
@@ -359,10 +391,11 @@ export default class Query {
       .map((tag) => {
         return {
           ...tag,
-          code: JSON.parse(tag.params).code,
+          code: JSON.parse(tag.params)?.code,
           value: tag.name,
         };
-      });
+      })
+      .filter((tag) => typeof tag.code === "number");
   }
 
   async findSheets(tags: Tag[], isNonGreedy: boolean): Promise<Datasheet[]> {
@@ -588,6 +621,7 @@ export default class Query {
           try {
             await transform.modelize(modelizer, args);
           } catch (e) {
+            console.error(e);
             errors.push({
               errorMessage: e.message,
               lineNumber: e.lineNumber,
