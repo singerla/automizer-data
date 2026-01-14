@@ -48,12 +48,13 @@ export class DuckDBConnector {
       requestIds[cat.key] = cat.tags.map(tag => tag.code)
     })
 
-    vd({
-      variable_name,
-      split_variable_names,
-      ...requestIds
-    })
-
+    // vd({
+    //   apiUrl,
+    //   variable_name,
+    //   split_variable_names,
+    //   ...requestIds
+    // })
+    //
 
     try {
       // Fetch data from DuckDB API

@@ -1,6 +1,6 @@
 // Usage remains the same as before:
 import ExcelJS from "exceljs";
-import { extractThemeColorsFromXML } from "./themeParser";
+// import { extractThemeColorsFromXML } from "./themeParser";
 
 export interface ExcelColor {
   indexed?: number;
@@ -15,7 +15,8 @@ export function createColorConverter(
   workbook: ExcelJS.Workbook,
   indexedColors: string[]
 ): ColorConverter {
-  const workbookThemeColors = extractThemeColorsFromXML(workbook);
+  // const workbookThemeColors = extractThemeColorsFromXML(workbook);
+  const workbookThemeColors = [];
 
   return function convertToARGB(color: {
     indexed?: number;

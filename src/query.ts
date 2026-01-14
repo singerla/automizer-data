@@ -96,7 +96,6 @@ export default class Query {
 
     this.selectionValidator = options.selectionValidator;
     this.tagsCache = options.tagsCache;
-
     this.api = options.api;
 
     return this;
@@ -316,7 +315,7 @@ export default class Query {
       apiUrl
     );
 
-    vd("Got " + datasheets.length + " sheets");
+    // vd("Got " + datasheets.length + " sheets");
 
     for (const datasheet of datasheets) {
       const targetTags = [];

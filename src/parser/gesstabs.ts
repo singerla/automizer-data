@@ -10,10 +10,12 @@ import {
 
 import xlsx from "node-xlsx";
 import { Parser } from "./parser";
+import { vd } from "../helper";
 
 const csv = require("csv-parser");
 const fs = require("fs");
 const path = require("path");
+import { Workbook } from 'exceljs';
 
 export class Gesstabs extends Parser {
   constructor(config: ParserOptions) {
@@ -38,8 +40,20 @@ export class Gesstabs extends Parser {
 
   async fromXlsx(file: string): Promise<Datasheet[]> {
     this.file = path.basename(file);
-    const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file));
-    const data = workSheetsFromBuffer[0].data;
+
+    const workbook = new Workbook();
+    await workbook.xlsx.readFile(file);
+
+    const worksheet = workbook.worksheets[0];
+    const data: any[] = [];
+
+    worksheet.eachRow((row) => {
+      const values = row.values as any
+      const rowValues = values.slice(1);
+      data.push(rowValues);
+    });
+
+    console.log("Read " + data.length + " rows");
 
     this.autoDetectConfig(data);
 
@@ -49,6 +63,7 @@ export class Gesstabs extends Parser {
     data.forEach((row) => {
       this.parseSections(<RawRow>row);
     });
+
     this.setDatasheets();
 
     // vd(this.datasheets.map((ds) => ds.tags))

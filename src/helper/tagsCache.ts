@@ -7,6 +7,10 @@ export default class TagsCache implements ITagsCache {
   parseParams: boolean;
 
   init = async (prisma: PrismaClient, parseParams?: boolean) => {
+    if (this.buffer.length) {
+      return;
+    }
+
     this.setPrismaClient(prisma);
     this.buffer = await this.prisma.tag.findMany();
 
@@ -21,13 +25,13 @@ export default class TagsCache implements ITagsCache {
   parseJsonParams = () => {
     if (this.parseParams === true) {
       this.buffer.forEach((tag) => {
-        this._parseJsonParams(tag)
+        this._parseJsonParams(tag);
       });
     }
   };
   _parseJsonParams = (tag) => {
     tag.params = JSON.parse(tag.params);
-  }
+  };
   setPrismaClient = (prisma: PrismaClient) => {
     this.prisma = prisma;
   };
@@ -78,7 +82,7 @@ export default class TagsCache implements ITagsCache {
   set = (tag: Tag): void => {
     if (!this.tagExists(tag)) {
       if (this.parseParams) {
-        this._parseJsonParams(tag)
+        this._parseJsonParams(tag);
       }
       this.buffer.push(tag);
     }
