@@ -50,10 +50,11 @@ export class DuckDBConnector {
 
     // vd({
     //   apiUrl,
-    //   variable_name,
+    //   requestCategories,
+    //   variable_names,
     //   split_variable_names,
-    //   ...requestIds
-    // })
+    //   ...requestIds,
+    // });
     //
 
     try {

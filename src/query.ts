@@ -394,7 +394,7 @@ export default class Query {
           value: tag.name,
         };
       })
-      .filter((tag) => typeof tag.code === "number");
+      .filter((tag) => typeof tag.code !== "undefined");
   }
 
   async findSheets(tags: Tag[], isNonGreedy: boolean): Promise<Datasheet[]> {
