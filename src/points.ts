@@ -8,6 +8,7 @@ import {
   ModArgsExclude,
   ModArgsFilter,
   ModArgsMap,
+  ModArgsMapTags,
   ModArgsRename,
   ModArgsStringTolabel,
   ModArgsTagTolabel,
@@ -181,6 +182,19 @@ export default class Points {
         targetValue: targetValue,
       });
       point[target] = targetValue;
+    });
+  }
+
+  mapTags(args: ModArgsMapTags, points?: DataPoint[]): void {
+    const { categoryId, sourceValues, targetValue } = args;
+    this.targetPoints(points).forEach((point) => {
+      point.tags
+        .filter((tag) => tag.categoryId === categoryId)
+        .forEach((tag) => {
+          if (sourceValues.includes(tag.value)) {
+            tag.value = targetValue;
+          }
+        });
     });
   }
 

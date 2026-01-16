@@ -214,6 +214,10 @@ export type QueryOptions = {
   cache?: ICache;
   tagsCache?: ITagsCache;
   selectionValidator?: (tags: Tag[]) => boolean;
+  modelizerCache?: {
+    key: string,
+    path: string
+  },
   api?: {
     driver: 'DuckDB'
     endpoint: string,
@@ -313,6 +317,7 @@ export type QueryResult = {
   info?: Record<string, any>;
   errors?: QueryTransformationError[];
   dumpedData?: DumpedData[];
+  isCached: boolean;
 };
 
 export type QueryTransformationError = {
@@ -560,6 +565,7 @@ export type ModifierCommandArgument =
   | ModArgsAddMeta
   | ModArgsAddPointInfo
   | ModArgsMap
+  | ModArgsMapTags
   | ModArgsRename;
 
 export type ModArgsCustom = {
@@ -646,6 +652,12 @@ export type ModArgsAddPointInfo = {
 export type ModArgsMap = {
   source: number | DataPointTarget;
   target: DataPointTarget;
+};
+
+export type ModArgsMapTags = {
+  categoryId: number;
+  sourceValues: string[];
+  targetValue: string
 };
 
 export type ModArgsRename = {

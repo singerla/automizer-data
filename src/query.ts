@@ -33,6 +33,8 @@ import Convert from "./convert";
 import Keys from "./keys";
 import { DuckDBConnector } from "./external/DuckDB";
 import TagsCache from "./helper/tagsCache";
+import fs from "fs";
+import path from "path";
 
 type ParsedTag = Tag & {
   code: number;
@@ -63,6 +65,7 @@ export default class Query {
 
   private selectionValidator: QueryOptions["selectionValidator"];
   private api: QueryOptions["api"];
+  private modelizerCache: QueryOptions["modelizerCache"];
 
   tagsCache: ITagsCache;
 
@@ -97,6 +100,7 @@ export default class Query {
     this.selectionValidator = options.selectionValidator;
     this.tagsCache = options.tagsCache;
     this.api = options.api;
+    this.modelizerCache = options.modelizerCache;
 
     return this;
   }
@@ -127,6 +131,27 @@ export default class Query {
       throw e;
     });
 
+    if (this.modelizerCache) {
+      const cacheFile = path.join(
+        this.modelizerCache.path,
+        this.modelizerCache.key
+      );
+      if (fs.existsSync(cacheFile)) {
+        const modelizer = new Modelizer({ strict: false }, this);
+        modelizer.fromCache(cacheFile);
+
+        return this.getModelizerResult(
+          modelizer,
+          [...sheets.slice(0,1)],
+          tags,
+          inputKeys,
+          [],
+          [],
+          true
+        );
+      }
+    }
+
     const modelizer = new Modelizer(
       {
         points,
@@ -156,13 +181,46 @@ export default class Query {
       });
     }
 
+    const result: QueryResult = this.getModelizerResult(
+      modelizer,
+      sheets,
+      tags,
+      inputKeys,
+      errors,
+      dumpedData,
+      false
+    );
+
+    if (this.modelizerCache && !errors.length && sheets.length && modelizer.getCells().length) {
+      modelizer.toCache(this.modelizerCache.path, this.modelizerCache.key);
+    }
+
+    return result;
+  }
+
+  getModelizerResult(
+    modelizer: Modelizer,
+    sheets: Datasheet[],
+    tags: {
+      name: string;
+      id: number;
+      params: string;
+      categoryId: number;
+    }[][],
+    inputKeys: Keys,
+    errors: QueryTransformationError[],
+    dumpedData: DumpedData[],
+    isCached: boolean
+  ) {
     return {
       modelizer,
       sheets,
       tags,
       inputKeys: inputKeys.getInputKeys(),
-      convert: (tmpModelizer?) => new Convert(tmpModelizer || modelizer),
+      convert: (tmpModelizer?: Modelizer) =>
+        new Convert(tmpModelizer || modelizer),
       isValid: () => !!modelizer.getFirstPoint(),
+      isCached,
       visibleKeys: {
         row: modelizer.getLabels("row"),
         column: modelizer.getLabels("column"),
