@@ -137,18 +137,22 @@ export default class Query {
         this.modelizerCache.key
       );
       if (fs.existsSync(cacheFile)) {
-        const modelizer = new Modelizer({ strict: false }, this);
-        modelizer.fromCache(cacheFile);
+        if (this.modelizerCache.clear) {
+          fs.unlinkSync(cacheFile);
+        } else {
+          const modelizer = new Modelizer({ strict: false }, this);
+          modelizer.fromCache(cacheFile);
 
-        return this.getModelizerResult(
-          modelizer,
-          [...sheets.slice(0,1)],
-          tags,
-          inputKeys,
-          [],
-          [],
-          true
-        );
+          return this.getModelizerResult(
+            modelizer,
+            [...sheets.slice(0, 1)],
+            tags,
+            inputKeys,
+            [],
+            [],
+            true
+          );
+        }
       }
     }
 
@@ -191,7 +195,12 @@ export default class Query {
       false
     );
 
-    if (this.modelizerCache && !errors.length && sheets.length && modelizer.getCells().length) {
+    if (
+      this.modelizerCache &&
+      !errors.length &&
+      sheets.length &&
+      modelizer.getCells().length
+    ) {
       modelizer.toCache(this.modelizerCache.path, this.modelizerCache.key);
     }
 
@@ -362,7 +371,10 @@ export default class Query {
     if (apiInfoTag) {
       const params = JSON.parse(apiInfoTag.params);
       if (params.endpoint) {
-        apiUrl = params.endpoint;
+        const mapEndpoints = this.api.mapEndpoints
+        const endpoint = params.endpoint;
+
+        apiUrl = mapEndpoints[endpoint] || endpoint;
       }
     }
 

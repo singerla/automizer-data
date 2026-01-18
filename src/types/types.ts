@@ -216,11 +216,13 @@ export type QueryOptions = {
   selectionValidator?: (tags: Tag[]) => boolean;
   modelizerCache?: {
     key: string,
-    path: string
+    path: string,
+    clear?: boolean
   },
   api?: {
     driver: 'DuckDB'
     endpoint: string,
+    mapEndpoints: Record<string, string>,
     variableCategoryId: number,
     splitCategoryId: number,
     apiCategoryId?: number,
