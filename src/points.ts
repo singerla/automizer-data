@@ -9,6 +9,7 @@ import {
   ModArgsFilter,
   ModArgsMap,
   ModArgsMapTags,
+  ModArgsMoveTagsToMeta,
   ModArgsRename,
   ModArgsStringTolabel,
   ModArgsTagTolabel,
@@ -195,6 +196,23 @@ export default class Points {
             tag.value = targetValue;
           }
         });
+    });
+  }
+
+  moveTagsToMeta(args: ModArgsMoveTagsToMeta, points?: DataPoint[]): void {
+    const { categoryId, metaKey, deleteTag } = args;
+    this.targetPoints(points).forEach((point) => {
+      const targetTags = point.tags.filter(
+        (tag) => tag.categoryId === categoryId
+      );
+
+      targetTags.forEach((targetTag) => {
+        point.setMeta(metaKey, targetTag.value);
+      });
+
+      if (deleteTag) {
+        point.tags = point.tags.filter((tag) => tag.categoryId !== categoryId);
+      }
     });
   }
 

@@ -50,6 +50,13 @@ export default class Modelizer {
     row: [],
     column: [],
   };
+  #keyIndex: {
+    row: Map<string, number>;
+    column: Map<string, number>;
+  } = {
+    row: new Map(),
+    column: new Map(),
+  };
   /**
    * Stores all Model rows. Each model holds an array of referenced cells and
    * some useful methods to modelize row data.
@@ -57,6 +64,7 @@ export default class Modelizer {
    * @private
    */
   #rows: Model[] = [];
+  #rowsByKey: Map<string, Model> = new Map();
   /**
    * Stores all Model columns. Each model holds an array of referenced cells and
    * some useful methods to modelize column data.
@@ -64,11 +72,13 @@ export default class Modelizer {
    * @private
    */
   #columns: Model[] = [];
+  #columnsByKey: Map<string, Model> = new Map();
   /**
    * Stores all Cells. Cells are referenced by rows and columns.
    * @private
    */
   #cells: Cell[] = [];
+  #cellsByKeys: Map<string, Cell> = new Map();
   /**
    * Stores an array of Metadata for the current instance. Useful to buffer e.g.
    * Min/Max information.
@@ -113,19 +123,23 @@ export default class Modelizer {
     });
 
     this.#rows = [];
+    this.#rowsByKey.clear();
     data.rows.forEach((rowData: any) => {
       const model = this.createModel(rowData.key, 'row');
       model.label = rowData.label;
       model.style.assign(rowData.style);
       this.#rows.push(model);
+      this.#rowsByKey.set(rowData.key, model);
     });
 
     this.#columns = [];
+    this.#columnsByKey.clear();
     data.columns.forEach((colData: any) => {
       const model = this.createModel(colData.key, 'column');
       model.label = colData.label;
       model.style.assign(colData.style);
       this.#columns.push(model);
+      this.#columnsByKey.set(colData.key, model);
     });
 
     return this;
@@ -320,10 +334,11 @@ export default class Modelizer {
 
   #addKey(key: string, mode: KeyMode): number {
     const keys = this.#getKeys(mode);
-    if (!keys.includes(key)) {
-      this.#addKeyByMode(mode, key);
+    const existingIndex = this.#keyIndex[mode].get(key);
+    if (existingIndex !== undefined) {
+      return existingIndex;
     }
-    return keys.indexOf(key);
+    return this.#addKeyByMode(mode, key);
   }
 
   #getKeys(mode: KeyMode): string[] {
@@ -340,19 +355,67 @@ export default class Modelizer {
     return labels;
   }
 
-  #addKeyByMode(mode, key): void {
-    this.#keys[mode].push(key);
+  #addKeyByMode(mode: KeyMode, key: string): number {
+    const keys = this.#getKeys(mode);
+    const index = keys.push(key) - 1;
+    this.#keyIndex[mode].set(key, index);
+
+    // Also update model maps
+    const map = mode === 'row' ? this.#rowsByKey : this.#columnsByKey;
+    if (!map.has(key)) {
+      const model = this.createModel(key, mode);
+      const models = mode === 'row' ? this.#rows : this.#columns;
+      models.push(model);
+      map.set(key, model);
+    }
+
+    return index;
   }
 
   #setKeys(mode: KeyMode, keys: string[]): void {
-    this.#keys[mode] = keys;
+    this.#keys[mode] = [...keys];
+    this.#keyIndex[mode].clear();
+
+    const models = mode === 'row' ? this.#rows : this.#columns;
+    const map = mode === 'row' ? this.#rowsByKey : this.#columnsByKey;
+    const newModels = [];
+    const newMap = new Map<string, Model>();
+
+    keys.forEach((key, index) => {
+      this.#keyIndex[mode].set(key, index);
+      let model = map.get(key);
+      if (!model) {
+        model = this.createModel(key, mode);
+      }
+      newModels.push(model);
+      newMap.set(key, model);
+    });
+
+    if (mode === 'row') {
+      this.#rows = newModels;
+      this.#rowsByKey = newMap;
+    } else {
+      this.#columns = newModels;
+      this.#columnsByKey = newMap;
+    }
   }
 
   #updateKey(mode: KeyMode, index: number, key: string): void {
     if (!this.#keys[mode][index]) {
       this.#handleError('Can\'t update key at index ' + index);
     }
+    const oldKey = this.#keys[mode][index];
+    this.#keyIndex[mode].delete(oldKey);
     this.#keys[mode][index] = key;
+    this.#keyIndex[mode].set(key, index);
+
+    const map = mode === 'row' ? this.#rowsByKey : this.#columnsByKey;
+    const model = map.get(oldKey);
+    if (model) {
+      model.key = key;
+      map.delete(oldKey);
+      map.set(key, model);
+    }
   }
 
   #getKey(key: Key, mode: KeyMode): string {
@@ -402,30 +465,39 @@ export default class Modelizer {
    * @return A model row/column object containing all cells.
    */
   getByMode(mode: KeyMode, key: Key): Model {
-    if (mode === 'row') {
-      return this.getRow(key);
-    } else {
-      return this.getColumn(key);
+    const k = this.#getKey(key, mode);
+    const map = mode === 'row' ? this.#rowsByKey : this.#columnsByKey;
+    let model = map.get(k);
+
+    if (model) {
+      return model;
     }
+
+    model = this.createModel(k, mode);
+    const models = mode === 'row' ? this.#rows : this.#columns;
+    models.push(model);
+    map.set(k, model);
+
+    return model;
   }
 
   getRow(key: Key): Model {
-    return this.findOrCreateModel(this.#rows, 'row', key);
+    return this.getByMode('row', key);
   }
 
   getColumn(key: Key): Model {
-    return this.findOrCreateModel(this.#columns, 'column', key);
+    return this.getByMode('column', key);
   }
 
   findOrCreateModel(models: Model[], mode: KeyMode, key: Key) {
     const modelKey = this.#getKey(key, mode);
-    const existing = models.find((model) => model.key === modelKey || model.getLabel() === modelKey);
-    if (existing) {
-      return existing;
+    const map = mode === 'row' ? this.#rowsByKey : this.#columnsByKey;
+    let model = map.get(modelKey);
+    if (!model) {
+      model = this.createModel(modelKey, mode);
+      models.push(model);
+      map.set(modelKey, model);
     }
-
-    const model = this.createModel(modelKey, mode);
-    models.push(model);
     return model;
   }
 
@@ -643,14 +715,12 @@ export default class Modelizer {
   }
 
   findCell(rowKey: string, columnKey: string): Cell {
-    const existingCell = this.#cells.find(
-      (cell) => cell.rowKey === rowKey && cell.columnKey === columnKey,
-    );
-    return existingCell;
+    return this.#cellsByKeys.get(`${rowKey}|${columnKey}`);
   }
 
   #pushCells(cell: Cell) {
     this.#cells.push(cell);
+    this.#cellsByKeys.set(`${cell.rowKey}|${cell.columnKey}`, cell);
   }
 
   #filterCells(mode: KeyMode, key: string): Cell[] {
@@ -676,15 +746,15 @@ export default class Modelizer {
     const keys = this.#getKeys(mode);
 
     if (typeof key === 'number') {
-      if (keys[key]) return key;
+      if (keys[key] !== undefined) return key;
       this.#handleError(
         `Key of '${mode}' not found: ${key}. Length is: ${keys.length}`,
       );
     }
 
     if (typeof key === 'string') {
-      const index = keys.indexOf(key);
-      if (index < 0) {
+      const index = this.#keyIndex[mode].get(key);
+      if (index === undefined) {
         return this.#createOrFailKey(key, mode, keys);
       }
       return index;
@@ -938,7 +1008,7 @@ export default class Modelizer {
     const sortCols = this.getKeys('column');
     const sortRows = this.getKeys('row');
 
-    const tmpRows: Model[] = ([] = []);
+    const tmpRows: Model[] = [];
     sortRows.forEach((rowKey) => {
       tmpRows.push(this.getRow(rowKey));
     });
@@ -948,22 +1018,27 @@ export default class Modelizer {
       tmpColumns.push(this.getColumn(columnKey));
     });
 
-    this.#keys.row = [];
-    this.#keys.column = [];
+    this.#setKeys('row', []);
+    this.#setKeys('column', []);
     this.#rows = [];
+    this.#rowsByKey.clear();
     this.#columns = [];
+    this.#columnsByKey.clear();
 
     tmpColumns.forEach((column) => {
       column.mode = 'row';
       this.#rows.push(column);
-      this.#keys.row.push(column.key);
+      this.#rowsByKey.set(column.key, column);
+      this.#addKey(column.key, 'row');
     });
     tmpRows.forEach((row) => {
       row.mode = 'column';
       this.#columns.push(row);
-      this.#keys.column.push(row.key);
+      this.#columnsByKey.set(row.key, row);
+      this.#addKey(row.key, 'column');
     });
 
+    const newCellsByKeys = new Map<string, Cell>();
     this.#cells.forEach((cell) => {
       const rowKey = cell.rowKey;
       const colKey = cell.columnKey;
@@ -975,7 +1050,9 @@ export default class Modelizer {
 
       cell.rowKey = colKey;
       cell.columnKey = rowKey;
+      newCellsByKeys.set(`${cell.rowKey}|${cell.columnKey}`, cell);
     });
+    this.#cellsByKeys = newCellsByKeys;
   }
 
   /**

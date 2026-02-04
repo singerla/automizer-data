@@ -568,6 +568,7 @@ export type ModifierCommandArgument =
   | ModArgsAddPointInfo
   | ModArgsMap
   | ModArgsMapTags
+  | ModArgsMoveTagsToMeta
   | ModArgsRename;
 
 export type ModArgsCustom = {
@@ -660,6 +661,12 @@ export type ModArgsMapTags = {
   categoryId: number;
   sourceValues: string[];
   targetValue: string
+};
+
+export type ModArgsMoveTagsToMeta = {
+  categoryId: number;
+  metaKey: string;
+  deleteTag: boolean;
 };
 
 export type ModArgsRename = {
