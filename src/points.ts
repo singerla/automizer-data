@@ -188,15 +188,45 @@ export default class Points {
 
   mapTags(args: ModArgsMapTags, points?: DataPoint[]): void {
     const { categoryId, sourceValues, targetValue } = args;
+
     this.targetPoints(points).forEach((point) => {
+      if (args.condition) {
+        if (!this.tagsConditionMatcher(args.condition, point)) {
+          return;
+        }
+      }
+
       point.tags
         .filter((tag) => tag.categoryId === categoryId)
         .forEach((tag) => {
           if (sourceValues.includes(tag.value)) {
+            point.setMeta("mapTagsOrigin", {
+              categoryId: tag.categoryId,
+              value: tag.value,
+              targetValue: targetValue,
+            });
+
             tag.value = targetValue;
           }
         });
     });
+  }
+
+  tagsConditionMatcher(
+    conditions: ModArgsMapTags["condition"],
+    point: DataPoint
+  ) {
+    conditions.forEach((condition) => {
+      const tagMatches = point.tags.find(
+        (tag) =>
+          tag.categoryId === condition.categoryId &&
+          tag.value === condition.value
+      );
+      if (!tagMatches) {
+        return false;
+      }
+    });
+    return true;
   }
 
   moveTagsToMeta(args: ModArgsMoveTagsToMeta, points?: DataPoint[]): void {

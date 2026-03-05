@@ -660,7 +660,11 @@ export type ModArgsMap = {
 export type ModArgsMapTags = {
   categoryId: number;
   sourceValues: string[];
-  targetValue: string
+  targetValue: string;
+  condition?: {
+    categoryId: number;
+    value: string;
+  }[]
 };
 
 export type ModArgsMoveTagsToMeta = {
