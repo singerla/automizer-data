@@ -216,17 +216,14 @@ export default class Points {
     conditions: ModArgsMapTags["condition"],
     point: DataPoint
   ) {
-    conditions.forEach((condition) => {
-      const tagMatches = point.tags.find(
+    const matchedConditions = conditions.filter((condition) => {
+      return point.tags.find(
         (tag) =>
           tag.categoryId === condition.categoryId &&
           tag.value === condition.value
       );
-      if (!tagMatches) {
-        return false;
-      }
     });
-    return true;
+    return matchedConditions.length === conditions.length;
   }
 
   moveTagsToMeta(args: ModArgsMoveTagsToMeta, points?: DataPoint[]): void {
