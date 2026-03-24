@@ -26,7 +26,8 @@ export type StoreOptions = {
   userId?: PrismaId;
   statusTracker?: StatusTracker["next"];
   tagsCache?: ITagsCache;
-  runAfter?: (datasheets: Datasheet[], parent: Store) => Promise<void>
+  runBeforeStore?: (datasheets: Datasheet[], parent: Store) => Promise<void>;
+  runAfter?: (datasheets: Datasheet[], parent: Store) => Promise<void>;
 };
 
 export type ParserType = Parser | Generic | Gesstabs;

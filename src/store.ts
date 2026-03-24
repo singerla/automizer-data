@@ -30,7 +30,7 @@ export class Store {
   importId: number;
   status: StatusTracker;
   tagValueMaxLength: number;
-  helper: Helper
+  helper: Helper;
 
   constructor(prisma: PrismaClient, options?: StoreOptions) {
     this.prisma = prisma;
@@ -77,7 +77,7 @@ export class Store {
       next: this.options.statusTracker,
     };
 
-    this.helper = new Helper()
+    this.helper = new Helper();
   }
 
   async run(datasheets: Datasheet[]): Promise<StoreSummary> {
@@ -89,6 +89,8 @@ export class Store {
     await this.getImport();
     await this.getCategories();
     await this.getTags();
+
+    await this.runBeforeStore(datasheets);
 
     for (let i in datasheets) {
       this.status.info = "store datasheets";
@@ -116,9 +118,21 @@ export class Store {
     }
   }
 
+  async runBeforeStore(datasheets) {
+    if (
+      this.options?.runBeforeStore &&
+      typeof this.options?.runBeforeStore === "function"
+    ) {
+      await this.options?.runBeforeStore(datasheets, this);
+    }
+  }
+
   async runAfter(datasheets) {
-    if (this.options?.runAfter && typeof this.options?.runAfter === 'function') {
-      await this.options?.runAfter(datasheets, this)
+    if (
+      this.options?.runAfter &&
+      typeof this.options?.runAfter === "function"
+    ) {
+      await this.options?.runAfter(datasheets, this);
     }
   }
 
@@ -337,6 +351,6 @@ export class Store {
   }
 
   getSheetKeys(datasheet: Datasheet) {
-    return this.helper.getSheetKeys(datasheet)
+    return this.helper.getSheetKeys(datasheet);
   }
 }
