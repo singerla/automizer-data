@@ -1,5 +1,11 @@
 import { PrismaClient } from "../src/client";
 import { Store } from "../src/store";
+import { WRITE_STORE_DB } from "./setup/dbConfig";
+
+// Write to an isolated database so this import never pollutes the seeded read DB.
+beforeAll(() => {
+  process.env.DATABASE_URL = WRITE_STORE_DB;
+});
 
 test("store demo data with prisma client", async () => {
   const data = require("./data/test-data.json");

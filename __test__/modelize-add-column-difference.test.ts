@@ -10,7 +10,7 @@ test("Use modelizer to add a difference column.", async () => {
       },
       {
         category: "subgroup",
-        value: "Gender",
+        value: "Age",
       },
     ],
   ];
@@ -21,14 +21,17 @@ test("Use modelizer to add a difference column.", async () => {
 
   const mod = query.modelizer;
 
+  // Add a "Difference" column holding Total minus the "19-29" age group.
+  const vsColumn = "19-29";
   mod.getColumn("Difference").each((cell) => {
     const totalCell = cell.getRow().getCell("Total").toNumber();
-    const vsCell = cell.getRow().getCell("female").toNumber();
+    const vsCell = cell.getRow().getCell(vsColumn).toNumber();
     cell.setValue(totalCell - vsCell);
   });
 
   const diffs = mod.getColumn("Difference").collect();
-  const fixture = [8, 15, -27];
+  // Golden values from the seeded demo data (Total - "19-29" per row).
+  const fixture = [11, 20, -9, 6];
 
   expect(diffs).toStrictEqual(fixture);
 });

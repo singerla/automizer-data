@@ -9,6 +9,7 @@ workspace.code-workspace
 
 ### Testing
 __tests__/
+__test__/.tmp/
 coverage/
 
 

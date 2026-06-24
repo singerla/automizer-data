@@ -7,9 +7,15 @@ import {
   StatusTracker,
 } from "../src/types/types";
 import { Gesstabs } from "../src/parser/gesstabs";
+import { WRITE_XLSX_DB } from "./setup/dbConfig";
 
 // Progress bar is not available inside a running test.
 const cliProgress = require("cli-progress");
+
+// Write to an isolated database so this import never pollutes the seeded read DB.
+beforeAll(() => {
+  process.env.DATABASE_URL = WRITE_XLSX_DB;
+});
 
 test("store demo xlsx-data from Gesstabs with prisma client", async () => {
   const filename = `${__dirname}/data/test-data.xlsx`;

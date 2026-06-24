@@ -9,7 +9,7 @@ test("Use modelizer to add a difference row.", async () => {
       },
       {
         category: "subgroup",
-        value: "Gender",
+        value: "Age",
       },
     ],
   ];

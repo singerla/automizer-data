@@ -9,7 +9,7 @@ test("Use modelizer to hide 'Total' column.", async () => {
       },
       {
         category: "subgroup",
-        value: "Gender",
+        value: "Age",
       },
     ],
   ];
