@@ -16,7 +16,16 @@ const summary = await store.run(datasheets)
  ```
 Please refer to [this example](https://github.com/singerla/automizer-data#example-usage) for parser options.
 
-At the moment, GESStabs is the only parser type available.  
+## Available parser modes
+There are several parser subtypes, each tuned for a different data source. Pick the one that matches your input — or extend the shared `Parser` base for a brand new format.
+
+| Parser | Entry method(s) | Input | Use it for |
+| --- | --- | --- | --- |
+| [`Gesstabs`](#gesstabs) | `fromXlsx(file)` | `.xlsx` | Crosstab exports from [GESStabs](https://gessgroup.de/software/gesstabs/) |
+| [`Generic`](#generic) | `fromXlsx(file)`, `fromCustomXlsx(file)` | `.xlsx` | Simple, well-structured tables with a single header row, or a fully custom layout via callback |
+| [`Tagged`](#tagged) | `fromXlsx(file)` | `.xlsx` | Tables that carry their tags inline, incl. Excel cell styles & conditional-formatting colors |
+| [`Pspp`](#pspp) | `fromSav(file)` | `.sav` | SPSS/PSPP system files, parsed by driving the PSPP binary with generated syntax |
+| [`MySQL`](#mysql) | `fromDatabase(connectionString)` | MySQL/MariaDB | Reading datasheets straight from a relational database |
 
 ## GESStabs
 [GESStabs](https://gessgroup.de/software/gesstabs/) is a popular tool for statistical analysis in market research.
@@ -111,3 +120,75 @@ renderTags: (info: RawResultInfo[], tags: Tagger): void => {
   })
 }
 ```
+
+## Generic
+The `Generic` parser is the lightweight option for tabular `.xlsx` files that are already reasonably well structured (e.g. a single header row followed by data rows). It reuses the same `info`/`header`/`body`/`meta` sectioning as GESStabs, but keeps configuration to a minimum.
+
+```ts
+const parse = new Generic(config)
+const datasheets = await parse.fromXlsx(filename)
+```
+
+Key behaviour and options:
+- `config.worksheetId` — the index of the worksheet to read (defaults to `0`).
+- `config.separator` — string that marks a new table. If omitted, the parser auto-detects it from the very first cell (`A1`) of the sheet (`autoDetectConfig()`).
+- `config.firstCell` — when a row's first cell equals this value, the row is treated as the column **header** instead of body.
+- `config.skipRows` — rows whose first cell matches one of these labels are dropped.
+- Header rows can also be detected implicitly: a row with an empty first cell but a filled second cell (while not yet inside the `body`) is stored as `header`.
+
+### Fully custom layouts
+If your file does not fit any sectioning logic at all, provide a `config.customXlsx` callback and call `fromCustomXlsx()`. The raw worksheet `data` and the file name are handed to your callback, which must return the parser's `results` structure directly:
+
+```ts
+const parse = new Generic(config) // config.customXlsx is your callback
+const datasheets = await parse.fromCustomXlsx(filename)
+```
+
+> `Generic` also exposes a static helper `Generic.shuffleRow(row, r)` that adds a little randomness to imported values — handy for generating anonymized demo data.
+
+## Tagged
+The `Tagged` parser targets `.xlsx` files whose tables already carry their tagging information inline, so you do not need a `renderTags()` callback. It is built on [ExcelJS](https://github.com/exceljs/exceljs) (instead of `node-xlsx`), which lets it read far richer cell information.
+
+```ts
+const parse = new Tagged(config)
+const datasheets = await parse.fromXlsx(filename)
+```
+
+Highlights:
+- **Reads cell styling** — background, foreground and font colors are resolved through a workbook color converter and can be carried over into metadata.
+- **Conditional formatting** — set `config.calculateConditionalStyle = true` to evaluate the worksheet's conditional-formatting rules and capture the resulting colors (e.g. for significance / heatmap cells).
+- **Inline tagging** — categories and tags are read directly from dedicated columns/rows of the sheet, so the table describes itself.
+- Iterates over **all worksheets** in the workbook, parsing each one in turn.
+
+## Pspp
+The `Pspp` parser reads SPSS/PSPP system files (`.sav`). Instead of parsing a spreadsheet, it generates PSPP syntax from your configuration, runs the local PSPP binary, and parses the CSV output it produces.
+
+```ts
+const parse = new Pspp(config)
+const datasheets = await parse.fromSav(filename)
+```
+
+Everything is configured under `config.pspp`:
+- `binary` — path to the `pspp` executable to invoke.
+- `commands` — the crosstab/aggregation commands to run (each becomes a table).
+- `filters` — subgroup filters applied to the data (e.g. by age, region…).
+- `labels` — value/variable label overrides.
+- `addTags` — additional tags attached to every resulting datasheet.
+- `keys` — overrides for the localized output keys PSPP emits.
+- `psppLanguage` — language of the PSPP output (defaults to `"en"`), used to pick the right set of result keys.
+
+Under the hood the parser writes a temporary `.sps` syntax file, calls PSPP via `callPspp()`, then transforms the generated CSV into the intermediate JSON datasheets.
+
+## MySQL
+The `MySQL` parser pulls datasheets straight out of a MySQL/MariaDB database, which is useful when your statistics already live in a relational store.
+
+```ts
+const parse = new MySQL(config)
+const datasheets = await parse.fromDatabase()
+```
+
+Configured under `config.mysql`:
+- `connection` — the [`mysql2`](https://github.com/sidorares/node-mysql2) connection options used to open the database connection.
+- `callback(connection, datasheets)` — your function that runs queries against the live `connection` and pushes the resulting `Datasheet` objects into the `datasheets` array.
+
+This keeps full control over the SQL in your hands while reusing the same storage pipeline as every other parser.

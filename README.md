@@ -1,13 +1,28 @@
-# Parse, tag and query xlsx-data
-This package is used to parse structured tabular data from CSV or XLSX.
-Stored data can be browsed and transformed into a desired two-dimensional result table.
+# automizer-data
 
-Its primary purpose is to deliver data for [pptx-automizer](https://github.com/singerla/pptx-automizer).
-This project is *Work in progress*.
-Nevertheless, you might already use `automizer-data` to handle table files coming from statistical analytics software.
-The [example-xlsx](https://github.com/singerla/automizer-data/blob/main/__test__/data/test-data.xlsx) in `__test__/data`-folder is based on [GESStabs](https://gessgroup.de/software/gesstabs/).
+**Parse, tag, store and reshape statistical tabular data — then feed it straight into your PowerPoint charts and tables.**
 
-Storage and querying is done with [Prisma](https://github.com/prisma/prisma) ORM tools.
+`automizer-data` is the data engine behind [pptx-automizer](https://github.com/singerla/pptx-automizer). It ingests the messy crosstab exports that come out of statistical software (CSV/XLSX), slices them into clean, tagged two-dimensional tables, stores them in a database, and lets you query and transform them into exactly the result table your slide needs — ready to be rendered as a chart or table.
+
+## What problems does it solve?
+
+- **Crosstab chaos.** Exports from tools like [GESStabs](https://gessgroup.de/software/gesstabs/) or PSPP are huge, repetitive and human-formatted. `automizer-data` parses them into structured, queryable datasets automatically.
+- **"Where is that number?"** Every table is tagged with the categories that describe it (country, variable, subgroup, measure…), so you select data by *meaning* instead of by cell coordinates.
+- **Reshaping by hand.** The built-in **`Modelizer`** grid engine lets you filter, rename, transpose, map tags, compute differences/sums and run custom callbacks to morph raw data points into the precise layout a chart expects.
+- **Last-mile to PowerPoint.** The `Convert` helper turns a result grid directly into [pptx-automizer](https://github.com/singerla/pptx-automizer) chart and table objects — bar/line series, combo, scatter, bubble and full tables.
+
+> This project is *work in progress*, but already powers real reporting pipelines. Storage and querying is done with [Prisma](https://github.com/prisma/prisma) ORM tools.
+
+## ✨ Key features
+
+- **Multiple parsers out of the box** — `Gesstabs`, `Pspp`, `MySQL`, `Generic` and a flexible `Tagged` parser, all built on a shared `Parser` base. Tagged mode even reads Excel cell styles and conditional-formatting colors.
+- **Tag-based data model** — categories, tags, sheets, rows, columns, metadata and significance markers, stored and browsable via Prisma.
+- **The `Modelizer` grid engine** — a cell/row/column model with caching (`toCache`/`fromCache`), key-based indexing, transpose, and a rich set of modifiers (filter, map, mapTags, rename, exclude, calcDifference, calcSum, moveTagsToMeta, custom callbacks).
+- **External statistics querying** — a `DuckDB` connector to fetch aggregated crosstab results from a statistics API, with tag caching and multi-variable support.
+- **Direct pptx-automizer output** — `Convert` emits `toSeriesCategories`, `toVerticalLines`, `toCombo`, `toScatter`, `toBubbles` and `toTable` chart/table data.
+- **Caching & performance** — modelizer result caching and tags caching keep repeated queries fast.
+
+The [example-xlsx](https://github.com/singerla/automizer-data/blob/main/__test__/data/test-data.xlsx) in the `__test__/data` folder is based on [GESStabs](https://gessgroup.de/software/gesstabs/).
 
 ## Installation
 ### As a package
@@ -36,6 +51,12 @@ You can open prisma studio and take a look at the data:
 $ yarn prisma studio
 ```
 A lot of good stuff can be found at [prisma.io](https://www.prisma.io/).
+
+## Tests
+The project ships with a [Jest](https://jestjs.io/) test suite that runs against an isolated, seeded SQLite database, so you can run it without touching your real data:
+```
+$ yarn test
+```
 
 # Import Data
 According to parser's configuration, parsed data will sliced, tagged and separated into two-dimensional tables.
@@ -119,6 +140,8 @@ const datasheets = await parse.fromXlsx(filename)
 const summary = await store.run(datasheets)
 ```
 
+> Besides `Gesstabs`, you can use the `Pspp`, `MySQL`, `Generic` or `Tagged` parsers in the same way — pick the one that matches your data source, or extend the shared `Parser` base for a new format.
+
 # Intermediate JSON
 Xlsx-Parser will tranform tabular data into an intermediate JSON object. The closer your input data comes to this format, the easier it will be to implement a new parser type. 
 ```json
@@ -193,7 +216,21 @@ const grid = {
 const result = await getData(selector, grid)
 
 // automizer-data will convert the result directly into
-// a pptx-automizer-object. 
+// a pptx-automizer-object.
 const chartData = result.toSeriesCategories()
 ```
+
+## Reshaping with Modelizer & Convert
+Under the hood, every query result is backed by a `Modelizer` grid. You can transform it before handing it over to a chart, and `Convert` offers a range of output formats for [pptx-automizer](https://github.com/singerla/pptx-automizer):
+
+- `toSeriesCategories()` — classic bar/line/pie series with categories
+- `toVerticalLines()` — vertical line charts
+- `toCombo()` — combined chart types
+- `toScatter()` / `toBubbles()` — XY and bubble charts
+- `toTable()` — full table data (row labels, column labels and body)
+
+Modelizer also lets you `filter`, `rename`, `transpose`, `mapTags`, `moveTagsToMeta`, `calcDifference`, `calcSum` or apply custom callbacks, and can cache its state via `toCache()` / `fromCache()` for fast repeated rendering.
+
+## External statistics API (DuckDB)
+Instead of (or in addition to) the local Prisma store, `automizer-data` can fetch pre-aggregated crosstabs from an external statistics service through the `DuckDB` connector. It supports multi-variable queries, tag caching and a configurable API endpoint/token, making it easy to plug into a remote analytics backend.
 
