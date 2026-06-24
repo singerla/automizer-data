@@ -54,6 +54,7 @@ export default class Convert {
         label: row.getLabel(),
         y: r + yValueOffset,
         values: row.cells().map((column) => column.toNumberOrEmpty() as number),
+        styles: this.#extractPointStyle(row),
       });
     });
 

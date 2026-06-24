@@ -36,6 +36,7 @@ export type ParserOptions = {
   separator?: string;
   firstCell?: string;
   renderTags: (info: RawResultInfo[], pushCb: Tagger) => void;
+  renderTargetTags?: (targetTags: DataTag[]) => DataTag[];
   renderHeader?: (
     cells: string[],
     meta: RawResultMeta[],

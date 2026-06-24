@@ -71,7 +71,7 @@ export class Parser {
       const subgroups = this.sliceColumns(table, table.header, slices, tags);
 
       subgroups.forEach((subgroup) => {
-        const targetTags = [...tags];
+        let targetTags = [...tags];
 
         if (subgroup.label.length) {
           if (this.config.renderHeaderTags) {
@@ -90,6 +90,10 @@ export class Parser {
 
         if (targetTags[0].value === this.config.tagsMarker) {
           return;
+        }
+
+        if(this.config.renderTargetTags) {
+          targetTags = this.config.renderTargetTags(targetTags);
         }
 
         this.datasheets.push({
