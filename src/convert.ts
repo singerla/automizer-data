@@ -302,7 +302,11 @@ export default class Convert {
   }
 
   getSeries = (): ChartSeries[] => {
-    return this.#getFirstRow()
+    const firstRow = this.#getFirstRow();
+    if (!firstRow) {
+      return [];
+    }
+    return firstRow
       .cells()
       .map((col) => {
         const column = this.modelizer.getColumn(col.columnKey);
@@ -314,7 +318,14 @@ export default class Convert {
       });
   };
 
-  #getFirstRow() {
+  #getFirstRow(): Model | undefined {
+    // An empty grid is a legitimate state (e.g. an intentionally empty
+    // result). In strict mode getRow(0) would throw on it, which made every
+    // `if (!firstRow)` guard in this class unreachable — check first and let
+    // callers produce empty output instead.
+    if (this.modelizer.getKeys("row").length === 0) {
+      return undefined;
+    }
     return this.modelizer.getRow(0);
   }
 
