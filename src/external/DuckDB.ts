@@ -43,10 +43,10 @@ export class DuckDBConnector {
     requestCategories: RequestCategory[],
     apiUrl: string,
   ) {
-    const requestIds = {}
-    requestCategories.forEach(cat => {
-      requestIds[cat.key] = cat.tags.map(tag => tag.code)
-    })
+    const requestIds = {};
+    requestCategories.forEach((cat) => {
+      requestIds[cat.key] = cat.tags.map((tag) => tag.code);
+    });
 
     // vd({
     //   apiUrl,
@@ -65,7 +65,7 @@ export class DuckDBConnector {
         ...requestIds,
       });
 
-      vd("Query took " + response.processing_time_ms + "ms");
+      // vd("Query took " + response.processing_time_ms + "ms");
 
       return response.data;
     } catch (error) {
@@ -79,7 +79,7 @@ export class DuckDBConnector {
    */
   async fetchCrossTabs(url: string, vars: any): Promise<any> {
     try {
-      const apiUrl = url || this.apiUrl
+      const apiUrl = url || this.apiUrl;
       const response = await fetch(`${apiUrl}/analyze/count`, {
         method: "POST",
         headers: {
@@ -92,7 +92,7 @@ export class DuckDBConnector {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          `DuckDB API error: ${errorData.error || response.statusText}`
+          `DuckDB API error: ${errorData.error || response.statusText}`,
         );
       }
 
