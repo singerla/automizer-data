@@ -711,7 +711,10 @@ export default class Query {
         return false;
       }
     }
-    if (!modelizer.getFirstPoint()) {
+    // An empty modelizer skips the whole transform chain unless a transform
+    // explicitly opts in with `runOnEmpty` (e.g. to seed a dummy point so
+    // subsequent imports/calculations still run on a no-data selection).
+    if (!modelizer.getFirstPoint() && transform.runOnEmpty !== true) {
       return false;
     }
     return true;

@@ -403,6 +403,12 @@ export type DataGridTransformation = SortableModification & {
   modelize?: (mod: Modelizer, args: ModelizeArguments) => void | Promise<void>;
   condition?: (args: any) => Promise<boolean>;
   params?: Record<string, any>;
+  /**
+   * Run this transform even when the modelizer holds no data points. By
+   * default an empty modelizer skips every transform; a seeding transform can
+   * opt in to guarantee a (dummy-filled) grid for the rest of the chain.
+   */
+  runOnEmpty?: boolean;
 };
 
 export type SortableModification = {
