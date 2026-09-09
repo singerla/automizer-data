@@ -1,4 +1,4 @@
-import { vd } from "./helper";
+import { pushAll, vd } from "./helper";
 import {
   DataPoint,
   DataPointMeta,
@@ -295,7 +295,7 @@ export default class Points {
   }
 
   push(addPoints: DataPoint[]) {
-    this.points.push(...addPoints);
+    pushAll(this.points, addPoints);
   }
 
   dump(points?: DataPoint[]) {

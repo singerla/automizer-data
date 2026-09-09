@@ -68,3 +68,17 @@ export const vd = (v: any, keys?: boolean): void => {
   console.dir(v, { depth: 10 });
   console.log();
 };
+
+/**
+ * Append all items to an existing array, in place.
+ * `target.push(...items)` passes every item as a function argument and throws
+ * a RangeError ("Maximum call stack size exceeded") as soon as items exceeds
+ * V8's argument limit (~125k). A single query level can easily hold more
+ * datapoints than that (up to maxSheets datasheets, each a full matrix), so
+ * datapoint- and cell-sized arrays must never be spread into push.
+ */
+export const pushAll = <T>(target: T[], items: T[]): void => {
+  for (let i = 0; i < items.length; i++) {
+    target.push(items[i]);
+  }
+};

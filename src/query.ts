@@ -1,5 +1,5 @@
 import { PrismaClient, Tag } from "./client";
-import { getNestedClause, vd } from "./helper";
+import { getNestedClause, pushAll, vd } from "./helper";
 import _ from "lodash";
 
 import {
@@ -61,6 +61,7 @@ export default class Query {
 
   private nonGreedySelector: number[] = [];
   private maxSheets: number = 150;
+  private maxDataPoints: number = 0;
   private cache: ICache;
 
   private selectionValidator: QueryOptions["selectionValidator"];
@@ -85,6 +86,7 @@ export default class Query {
 
   setOptions(options: QueryOptions): this {
     this.maxSheets = options.maxSheets ?? this.maxSheets;
+    this.maxDataPoints = options.maxDataPoints ?? this.maxDataPoints;
     this.grid = options.grid || {
       modify: [],
       transform: [],
@@ -243,9 +245,11 @@ export default class Query {
     const modifiedDataPoints = <DataPoint[]>[];
     const usedTags: Tag[][] = [];
     const usedDatasheets = <Datasheet[]>[];
-    const usedDatapoints = <DataPoint[]>[];
 
     const inputKeys = new Keys();
+
+    let totalSheets = 0;
+    let totalDataPoints = 0;
 
     for (const level in allTagIds) {
       const tagIds = allTagIds[level];
@@ -282,17 +286,20 @@ export default class Query {
         );
       }
 
+      totalSheets += dataSheets.length;
+      totalDataPoints += this.countDataPoints(dataSheets);
+      this.assertDataPointBudget(totalSheets, totalDataPoints);
+
       const datapoints = this.extractDataPoints(dataSheets, Number(level));
 
       inputKeys.addPoints(datapoints);
 
-      usedDatapoints.push(...datapoints);
       usedTags.push(selectionTags);
-      usedDatasheets.push(...dataSheets);
+      pushAll(usedDatasheets, dataSheets);
 
       const pointsCls = this.modifyDataPoints(datapoints, Number(level));
 
-      modifiedDataPoints.push(...pointsCls.points);
+      pushAll(modifiedDataPoints, pointsCls.points);
     }
 
     return {
@@ -542,6 +549,45 @@ export default class Query {
 
     return categoryCount.filter(
       (categoryCount) => categoryCount.categoryIds.length <= smallestCount
+    );
+  }
+
+  /**
+   * The number of datapoints a set of datasheets will expand into. Counted on
+   * the raw sheets, i.e. before extractDataPoints allocates a DataPoint per
+   * cell.
+   */
+  countDataPoints(sheets: Datasheet[]): number {
+    let count = 0;
+    for (const sheet of sheets) {
+      for (const row of sheet.data) {
+        count += row.length;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Stop a query that matches far more data than any legitimate selection.
+   * A selection that lost a restriction (e.g. an inherited loop that resolved
+   * to no tag) silently widens to every study/country of the project; building
+   * its points is what turns a merely wrong query into an out-of-memory one.
+   * Thrown as a string, like the other query-level rejections, so a host can
+   * catch and log it with its own request context.
+   */
+  assertDataPointBudget(totalSheets: number, totalDataPoints: number): void {
+    if (!this.maxDataPoints || totalDataPoints <= this.maxDataPoints) {
+      return;
+    }
+
+    throw (
+      "Exceeded maxDataPoints (" +
+      this.maxDataPoints +
+      "): the selection matches " +
+      totalSheets +
+      " sheet(s) holding " +
+      totalDataPoints +
+      " datapoints. Add more tags to the selection."
     );
   }
 

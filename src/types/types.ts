@@ -213,6 +213,10 @@ export type QueryOptions = {
   grid?: DataGrid;
   prisma?: PrismaClient;
   maxSheets?: number;
+  // Upper bound of datapoints one query may materialize, counted across all
+  // selection levels before the points are built. Guards against a selection
+  // that lost its scoping and matches thousands of sheets. 0/undefined = off.
+  maxDataPoints?: number;
   cache?: ICache;
   tagsCache?: ITagsCache;
   selectionValidator?: (tags: Tag[]) => boolean;
